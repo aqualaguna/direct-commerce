@@ -1,0 +1,20 @@
+name = "ecommerce-platform"
+main = "src/index.js"
+compatibility_date = "2024-01-01"
+
+[env.production]
+name = "ecommerce-platform-prod"
+
+[env.staging]
+name = "ecommerce-platform-staging"
+
+[build]
+command = "npm run build"
+
+[[env.production.routes]]
+pattern = "api.ecommerce.com/*"
+zone_name = "ecommerce.com"
+
+[[env.staging.routes]]
+pattern = "staging-api.ecommerce.com/*"
+zone_name = "ecommerce.com"

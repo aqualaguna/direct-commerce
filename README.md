@@ -1,61 +1,131 @@
-# 🚀 Getting started with Strapi
+# Ecommerce Platform
 
-Strapi comes with a full featured [Command Line Interface](https://docs.strapi.io/dev-docs/cli) (CLI) which lets you scaffold and manage your project in seconds.
+Single-Seller Ecommerce Platform built with Strapi backend and Astro frontend in a monorepo structure.
 
-### `develop`
+## Tech Stack
 
-Start your Strapi application with autoReload enabled. [Learn more](https://docs.strapi.io/dev-docs/cli#strapi-develop)
+- **Backend**: Strapi 5.23.1+ with TypeScript
+- **Frontend**: Astro 4.5+ with React 18.3+ (coming soon)
+- **Database**: PostgreSQL 16+ (Docker)
+- **Monorepo**: Nx workspace
+- **Package Manager**: npm
 
-```
-npm run develop
-# or
-yarn develop
-```
+## Prerequisites
 
-### `start`
+- Node.js 18+ (currently using v22.18.0)
+- Docker and Docker Compose
+- npm 8+
 
-Start your Strapi application with autoReload disabled. [Learn more](https://docs.strapi.io/dev-docs/cli#strapi-start)
+## Quick Start
 
-```
-npm run start
-# or
-yarn start
-```
+### 1. Clone and Install Dependencies
 
-### `build`
-
-Build your admin panel. [Learn more](https://docs.strapi.io/dev-docs/cli#strapi-build)
-
-```
-npm run build
-# or
-yarn build
+```bash
+git clone <repository-url>
+cd my-strapi-project
+npm install
 ```
 
-## ⚙️ Deployment
+### 2. Start Development Environment
 
-Strapi gives you many possible deployment options for your project including [Strapi Cloud](https://cloud.strapi.io). Browse the [deployment section of the documentation](https://docs.strapi.io/dev-docs/deployment) to find the best solution for your use case.
+```bash
+# Start PostgreSQL database
+npm run db:up
+
+# Or use the full setup script
+npm run dev:setup
+```
+
+### 3. Start Strapi Development Server
+
+```bash
+npm run strapi:dev
+```
+
+### 4. Access the Application
+
+- **Strapi Admin**: http://localhost:1337/admin
+- **Strapi API**: http://localhost:1337/api
+- **pgAdmin**: http://localhost:5050 (admin@ecommerce.local / admin_password)
+
+## Development Scripts
+
+### Database Management
+
+```bash
+npm run db:up      # Start PostgreSQL database
+npm run db:down    # Stop all containers
+npm run db:reset   # Reset database (removes all data)
+```
+
+### Strapi Commands
+
+```bash
+npm run strapi:dev    # Start Strapi in development mode
+npm run strapi:build  # Build Strapi for production
+npm run strapi:start  # Start Strapi in production mode
+```
+
+### Nx Commands
+
+```bash
+npx nx build strapi    # Build Strapi project
+npx nx build web       # Build web project (when available)
+npx nx show projects   # List all projects
+```
+
+## Project Structure
 
 ```
-yarn strapi deploy
+ecommerce-platform/
+├── apps/
+│   ├── strapi/          # Strapi backend application
+│   └── web/             # Astro frontend (coming soon)
+├── packages/
+│   ├── shared/          # Shared types and utilities
+│   ├── ui/              # Shared UI components
+│   └── config/          # Shared configuration files
+├── infrastructure/      # Infrastructure configuration
+├── scripts/             # Development scripts
+└── docs/                # Documentation
 ```
 
-## 📚 Learn more
+## Environment Configuration
 
-- [Resource center](https://strapi.io/resource-center) - Strapi resource center.
-- [Strapi documentation](https://docs.strapi.io) - Official Strapi documentation.
-- [Strapi tutorials](https://strapi.io/tutorials) - List of tutorials made by the core team and the community.
-- [Strapi blog](https://strapi.io/blog) - Official Strapi blog containing articles made by the Strapi team and the community.
-- [Changelog](https://strapi.io/changelog) - Find out about the Strapi product updates, new features and general improvements.
+Copy the example environment file and update with your specific values:
 
-Feel free to check out the [Strapi GitHub repository](https://github.com/strapi/strapi). Your feedback and contributions are welcome!
+```bash
+cp apps/strapi/config/env.example apps/strapi/.env
+```
 
-## ✨ Community
+### Required Environment Variables
 
-- [Discord](https://discord.strapi.io) - Come chat with the Strapi community including the core team.
-- [Forum](https://forum.strapi.io/) - Place to discuss, ask questions and find answers, show your Strapi project and get feedback or just talk with other Community members.
-- [Awesome Strapi](https://github.com/strapi/awesome-strapi) - A curated list of awesome things related to Strapi.
+- `DATABASE_CLIENT`: postgres
+- `DATABASE_HOST`: localhost
+- `DATABASE_PORT`: 5432
+- `DATABASE_NAME`: strapi_ecommerce
+- `DATABASE_USERNAME`: strapi
+- `DATABASE_PASSWORD`: strapi_password
 
----
+## Database Setup
 
-<sub>🤫 Psst! [Strapi is hiring](https://strapi.io/careers).</sub>
+The project uses PostgreSQL 16+ running in Docker. The database is automatically initialized with:
+
+- Database name: `strapi_ecommerce`
+- Username: `strapi`
+- Password: `strapi_password`
+- Port: `5432`
+
+## Contributing
+
+1. Follow the coding standards defined in `docs/architecture/coding-standards.md`
+2. Use the defined project structure in `docs/architecture/project-structure.md`
+3. Follow the tech stack versions in `docs/architecture/tech-stack.md`
+
+## Architecture Documentation
+
+- [Product Requirements Document](docs/prd.md)
+- [Architecture Overview](docs/architecture.md)
+- [Tech Stack](docs/architecture/tech-stack.md)
+- [Project Structure](docs/architecture/project-structure.md)
+- [Coding Standards](docs/architecture/coding-standards.md)

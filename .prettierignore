@@ -1,0 +1,54 @@
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build outputs
+dist/
+build/
+.cache/
+.tmp/
+.next/
+.nuxt/
+.output/
+
+# Generated files
+*.min.js
+*.min.css
+*.d.ts
+
+# Strapi specific
+.strapi/
+.strapi-updater.json
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Nx cache
+.nx/
+
+# BMAD files
+.bmad-core/
+.bmad-infrastructure-devops/
+.claude/
+
+# Documentation (markdown files)
+docs/**/*.md
+*.md
+
+# Package lock files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Environment files
+.env*
+
+# Docker
+docker-compose.yml
+
+# Generated TypeScript files
+apps/strapi/types/generated/

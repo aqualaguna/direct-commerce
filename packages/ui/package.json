@@ -1,0 +1,30 @@
+{
+  "name": "@ecommerce-platform/ui",
+  "version": "1.0.0",
+  "description": "Reusable UI components for the ecommerce platform",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "vitest",
+    "lint": "eslint src --ext .ts,.tsx"
+  },
+  "dependencies": {
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.0.0",
+    "@types/react-dom": "^18.0.0",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.9.2",
+    "vitest": "^2.0.0",
+    "eslint": "^8.0.0"
+  },
+  "peerDependencies": {
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0",
+    "typescript": "^5.9.2"
+  }
+}

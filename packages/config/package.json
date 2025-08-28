@@ -1,0 +1,20 @@
+{
+  "name": "@ecommerce-platform/config",
+  "version": "1.0.0",
+  "description": "Shared configuration files for the ecommerce platform",
+  "main": "index.js",
+  "scripts": {
+    "build": "echo 'Config package - no build needed'",
+    "test": "echo 'Config package - no tests needed'"
+  },
+  "dependencies": {
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.0.0",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-react": "^7.0.0",
+    "eslint-plugin-react-hooks": "^4.0.0",
+    "prettier": "^3.0.0",
+    "typescript": "^5.9.2"
+  }
+}

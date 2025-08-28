@@ -1,0 +1,21 @@
+{
+  "run": {
+    "command": "nx build strapi",
+    "startTime": "2025-08-28T04:03:34.273Z",
+    "endTime": "2025-08-28T04:03:53.825Z",
+    "inner": false
+  },
+  "tasks": [
+    {
+      "taskId": "strapi:build",
+      "target": "build",
+      "projectName": "strapi",
+      "hash": "9168196858301016184",
+      "startTime": "2025-08-28T04:03:34.327Z",
+      "endTime": "2025-08-28T04:03:53.748Z",
+      "params": "",
+      "cacheStatus": "cache-miss",
+      "status": 0
+    }
+  ]
+}

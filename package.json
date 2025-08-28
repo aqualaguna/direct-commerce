@@ -1,44 +1,47 @@
 {
-  "name": "my-strapi-project",
-  "version": "0.1.0",
+  "name": "ecommerce-platform",
+  "version": "1.0.0",
+  "description": "Single-Seller Ecommerce Platform - Monorepo with Strapi backend and Astro frontend",
   "private": true,
-  "description": "A Strapi application",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
-    "build": "strapi build",
-    "console": "strapi console",
-    "deploy": "strapi deploy",
-    "dev": "strapi develop",
-    "develop": "strapi develop",
-    "seed:example": "node ./scripts/seed.js",
-    "start": "strapi start",
-    "strapi": "strapi",
-    "upgrade": "npx @strapi/upgrade latest",
-    "upgrade:dry": "npx @strapi/upgrade latest --dry"
-  },
-  "dependencies": {
-    "@strapi/plugin-cloud": "5.23.0",
-    "@strapi/plugin-users-permissions": "5.23.0",
-    "@strapi/strapi": "5.23.0",
-    "better-sqlite3": "11.3.0",
-    "fs-extra": "^10.0.0",
-    "mime-types": "^2.1.27",
-    "react": "^18.0.0",
-    "react-dom": "^18.0.0",
-    "react-router-dom": "^6.0.0",
-    "styled-components": "^6.0.0"
+    "build": "nx run-many --target=build",
+    "dev": "nx run-many --target=dev",
+    "test": "nx run-many --target=test",
+    "lint": "nx run-many --target=lint",
+    "strapi:dev": "nx run strapi:dev",
+    "strapi:build": "nx run strapi:build",
+    "strapi:start": "nx run strapi:start",
+    "web:dev": "nx run web:dev",
+    "web:build": "nx run web:build",
+    "db:up": "docker-compose up -d postgres",
+    "db:down": "docker-compose down",
+    "db:reset": "docker-compose down -v && docker-compose up -d postgres",
+    "dev:setup": "./scripts/dev-setup.sh",
+    "lint": "eslint . --ext .ts,.tsx,.js,.jsx",
+    "lint:fix": "eslint . --ext .ts,.tsx,.js,.jsx --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "type-check": "tsc --noEmit"
   },
   "devDependencies": {
-    "@types/node": "^20",
-    "@types/react": "^18",
-    "@types/react-dom": "^18",
-    "typescript": "^5"
+    "@nx/workspace": "^21.4.1",
+    "nx": "^21.4.1",
+    "typescript": "^5.9.2",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.0.0",
+    "eslint-config-prettier": "^9.0.0",
+    "prettier": "^3.0.0",
+    "@tailwindcss/forms": "^0.5.0",
+    "@tailwindcss/typography": "^0.5.0",
+    "@tailwindcss/aspect-ratio": "^0.4.0"
   },
   "engines": {
-    "node": ">=18.0.0 <=22.x.x",
-    "npm": ">=6.0.0"
-  },
-  "strapi": {
-    "uuid": "3cacbb8b-196b-4431-8162-501713697b52",
-    "installId": "20fc5063b8ebcdde6b93f5e456e0b7f867c7aa149d6f8b26ced7d929b4767210"
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
   }
 }

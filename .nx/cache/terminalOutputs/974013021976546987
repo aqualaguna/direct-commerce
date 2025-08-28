@@ -1,0 +1,17 @@
+> npm run build
+
+
+> strapi@0.1.0 build
+> strapi build
+
+[1G[0K[?25l[36m⠋[39m Compiling TS[2K[1G[?25h[32m✔[39m Compiling TS (687ms)
+[?25l[36m⠋[39m Building build context
+[34m[INFO][39m Including the following ENV variables as part of the JS bundle:
+    - ADMIN_PATH
+    - STRAPI_ADMIN_BACKEND_URL
+    - STRAPI_TELEMETRY_DISABLED
+    - STRAPI_ANALYTICS_URL
+[2K[1G[36m⠙[39m Building build context[2K[1G[?25h[32m✔[39m Building build context (143ms)
+[?25l[36m⠋[39m Building admin panel
+[2K[1G[36m⠙[39m Building admin panel[2K[1G[36m⠹[39m Building admin panel[2K[1G[36m⠸[39m Building admin panel[2K[1G[36m⠼[39m Building admin panel[2K[1G[36m⠴[39m Building admin panel[2K[1G[36m⠦[39m Building admin panel[2K[1G[36m⠧[39m Building admin panel[2K[1G[36m⠇[39m Building admin panel[2K[1G[36m⠏[39m Building admin panel[2K[1G[36m⠋[39m Building admin panel[2K[1G[36m⠙[39m Building admin panel[2K[1G[36m⠹[39m Building admin panel[2K[1G[36m⠸[39m Building admin panel[2K[1G[36m⠼[39m Building admin panel[2K[1G[36m⠴[39m Building admin panel[2K[1G[36m⠦[39m Building admin panel[2K[1G[36m⠧[39m Building admin panel[2K[1G[36m⠇[39m Building admin panel[2K[1G[2K[1G[36m⠏[39m Building admin panel[2K[1G[36m⠋[39m Building admin panel[2K[1G[36m⠙[39m Building admin panel[2K[1G[36m⠹[39m Building admin panel[2K[1G[36m⠸[39m Building admin panel[2K[1G[36m⠼[39m Building admin panel[2K[1G[36m⠴[39m Building admin panel[2K[1G[36m⠦[39m Building admin panel[2K[1G[36m⠧[39m Building admin panel[2K[1G[36m⠇[39m Building admin panel[2K[1G[36m⠏[39m Building admin panel[2K[1G[36m⠋[39m Building admin panel[2K[1G[36m⠙[39m Building admin panel[2K[1G[36m⠹[39m Building admin panel[2K[1G[36m⠸[39m Building admin panel[2K[1G[36m⠼[39m Building admin panel[2K[1G[36m⠴[39m Building admin panel[2K[1G[36m⠦[39m Building admin panel[2K[1G[2K[1G[2K[1G[2K[1G[2K[1G[2K[1G[2K[1G[2K[1G[2K[1G[2K[1G[2K[1G[2K[1G[2K[1G[2K[1G[2K[1G[2K[1G[2K[1G[2K[1G[2K[1G[2K[1G[2K[1G[2K[1G[2K[1G[2K[1G[2K[1G[2K[1G[2K[1G[2K[1G[2K[1G[2K[1G[2K[1G[2K[1G[2K[1G[2K[1G[2K[1G[2K[1G[2K[1G[2K[1G[2K[1G[2K[1G[2K[1G[2K[1G[2K[1G[2K[1G[36m⠧[39m Building admin panel[2K[1G[36m⠇[39m Building admin panel[2K[1G[36m⠏[39m Building admin panel[2K[1G[36m⠋[39m Building admin panel[2K[1G[36m⠙[39m Building admin panel[2K[1G[36m⠹[39m Building admin panel[2K[1G[36m⠸[39m Building admin panel[2K[1G[36m⠼[39m Building admin panel[2K[1G[36m⠴[39m Building admin panel[2K[1G[36m⠦[39m Building admin panel[2K[1G[36m⠧[39m Building admin panel[2K[1G[36m⠇[39m Building admin panel[2K[1G[36m⠏[39m Building admin panel[2K[1G[36m⠋[39m Building admin panel[2K[1G[36m⠙[39m Building admin panel[2K[1G[36m⠹[39m Building admin panel[2K[1G[36m⠸[39m Building admin panel[2K[1G[36m⠼[39m Building admin panel[2K[1G[36m⠴[39m Building admin panel[2K[1G[36m⠦[39m Building admin panel[2K[1G[36m⠧[39m Building admin panel[2K[1G[36m⠇[39m Building admin panel[2K[1G[36m⠏[39m Building admin panel[2K[1G[36m⠋[39m Building admin panel[2K[1G[?25h[32m✔[39m Building admin panel (14055ms)
+[?25h[1G[0K⠙[1G[0K
