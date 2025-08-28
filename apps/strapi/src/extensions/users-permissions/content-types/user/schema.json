@@ -1,0 +1,52 @@
+{
+  "kind": "collectionType",
+  "collectionName": "up_users",
+  "info": {
+    "name": "user",
+    "description": "",
+    "singularName": "user",
+    "pluralName": "users",
+    "displayName": "User"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "firstName": {
+      "type": "string",
+      "maxLength": 255
+    },
+    "lastName": {
+      "type": "string",
+      "maxLength": 255
+    },
+    "phone": {
+      "type": "string",
+      "maxLength": 20
+    },
+    "isActive": {
+      "type": "boolean",
+      "default": true
+    },
+    "emailVerified": {
+      "type": "boolean",
+      "default": false
+    },
+    "role": {
+      "type": "enumeration",
+      "enum": ["customer", "admin"],
+      "default": "customer"
+    },
+    "addresses": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::address.address",
+      "mappedBy": "user"
+    },
+    "wishlist": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::product.product"
+    }
+  }
+}

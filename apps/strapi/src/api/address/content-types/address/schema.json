@@ -1,0 +1,80 @@
+
+{
+  "kind": "collectionType",
+  "collectionName": "addresses",
+  "info": {
+    "singularName": "address",
+    "pluralName": "addresses",
+    "displayName": "Address",
+    "description": "Customer addresses for shipping and billing"
+  },
+  "options": {
+    "draftAndPublish": false,
+    "comment": "Address content type for customer address management"
+  },
+  "attributes": {
+    "user": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user",
+      "inversedBy": "addresses"
+    },
+    "type": {
+      "type": "enumeration",
+      "enum": ["shipping", "billing", "both"],
+      "required": true
+    },
+    "firstName": {
+      "type": "string",
+      "required": true,
+      "maxLength": 255
+    },
+    "lastName": {
+      "type": "string",
+      "required": true,
+      "maxLength": 255
+    },
+    "company": {
+      "type": "string",
+      "maxLength": 255
+    },
+    "address1": {
+      "type": "string",
+      "required": true,
+      "maxLength": 255
+    },
+    "address2": {
+      "type": "string",
+      "maxLength": 255
+    },
+    "city": {
+      "type": "string",
+      "required": true,
+      "maxLength": 255
+    },
+    "state": {
+      "type": "string",
+      "required": true,
+      "maxLength": 255
+    },
+    "postalCode": {
+      "type": "string",
+      "required": true,
+      "maxLength": 20
+    },
+    "country": {
+      "type": "string",
+      "required": true,
+      "maxLength": 255
+    },
+    "phone": {
+      "type": "string",
+      "required": true,
+      "maxLength": 20
+    },
+    "isDefault": {
+      "type": "boolean",
+      "default": false
+    }
+  }
+}

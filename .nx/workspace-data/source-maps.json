@@ -48,6 +48,18 @@
       "apps/strapi/package.json",
       "nx/core/package-json"
     ],
+    "metadata.targetGroups.NPM Scripts.6": [
+      "apps/strapi/package.json",
+      "nx/core/package-json"
+    ],
+    "metadata.targetGroups.NPM Scripts.7": [
+      "apps/strapi/package.json",
+      "nx/core/package-json"
+    ],
+    "metadata.targetGroups.NPM Scripts.8": [
+      "apps/strapi/package.json",
+      "nx/core/package-json"
+    ],
     "metadata.description": [
       "apps/strapi/package.json",
       "nx/core/package-json"
@@ -177,6 +189,90 @@
       "nx/core/package-json"
     ],
     "targets.strapi.metadata.runCommand": [
+      "apps/strapi/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.test:watch": [
+      "apps/strapi/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.test:watch.executor": [
+      "apps/strapi/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.test:watch.options": [
+      "apps/strapi/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.test:watch.metadata": [
+      "apps/strapi/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.test:watch.options.script": [
+      "apps/strapi/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.test:watch.metadata.scriptContent": [
+      "apps/strapi/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.test:watch.metadata.runCommand": [
+      "apps/strapi/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.test:coverage": [
+      "apps/strapi/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.test:coverage.executor": [
+      "apps/strapi/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.test:coverage.options": [
+      "apps/strapi/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.test:coverage.metadata": [
+      "apps/strapi/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.test:coverage.options.script": [
+      "apps/strapi/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.test:coverage.metadata.scriptContent": [
+      "apps/strapi/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.test:coverage.metadata.runCommand": [
+      "apps/strapi/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.lint:fix": [
+      "apps/strapi/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.lint:fix.executor": [
+      "apps/strapi/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.lint:fix.options": [
+      "apps/strapi/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.lint:fix.metadata": [
+      "apps/strapi/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.lint:fix.options.script": [
+      "apps/strapi/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.lint:fix.metadata.scriptContent": [
+      "apps/strapi/package.json",
+      "nx/core/package-json"
+    ],
+    "targets.lint:fix.metadata.runCommand": [
       "apps/strapi/package.json",
       "nx/core/package-json"
     ],
