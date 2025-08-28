@@ -253,7 +253,28 @@
               "strapi",
               "test:watch",
               "test:coverage",
+              "test:ci",
+              "test:unit",
+              "test:integration",
+              "test:e2e",
+              "migrate",
+              "seed",
+              "bootstrap",
+              "reset",
+              "setup:env",
+              "setup:env:prod",
+              "validate:env",
+              "env:info",
+              "setup",
+              "dev:full",
+              "dev:quick",
+              "db",
+              "quality",
+              "quality:auto",
+              "test:auto",
               "lint:fix",
+              "format",
+              "format:check",
               "upgrade",
               "upgrade:dry"
             ]
@@ -337,6 +358,234 @@
             "configurations": {},
             "parallelism": true
           },
+          "test:ci": {
+            "executor": "nx:run-script",
+            "options": {
+              "script": "test:ci"
+            },
+            "metadata": {
+              "scriptContent": "jest --ci --coverage --watchAll=false",
+              "runCommand": "npm run test:ci"
+            },
+            "configurations": {},
+            "parallelism": true
+          },
+          "test:unit": {
+            "executor": "nx:run-script",
+            "options": {
+              "script": "test:unit"
+            },
+            "metadata": {
+              "scriptContent": "jest --testPathPattern=unit",
+              "runCommand": "npm run test:unit"
+            },
+            "configurations": {},
+            "parallelism": true
+          },
+          "test:integration": {
+            "executor": "nx:run-script",
+            "options": {
+              "script": "test:integration"
+            },
+            "metadata": {
+              "scriptContent": "jest --testPathPattern=integration",
+              "runCommand": "npm run test:integration"
+            },
+            "configurations": {},
+            "parallelism": true
+          },
+          "test:e2e": {
+            "executor": "nx:run-script",
+            "options": {
+              "script": "test:e2e"
+            },
+            "metadata": {
+              "scriptContent": "jest --testPathPattern=e2e",
+              "runCommand": "npm run test:e2e"
+            },
+            "configurations": {},
+            "parallelism": true
+          },
+          "migrate": {
+            "executor": "nx:run-script",
+            "options": {
+              "script": "migrate"
+            },
+            "metadata": {
+              "scriptContent": "node scripts/migrate.js migrate",
+              "runCommand": "npm run migrate"
+            },
+            "configurations": {},
+            "parallelism": true
+          },
+          "seed": {
+            "executor": "nx:run-script",
+            "options": {
+              "script": "seed"
+            },
+            "metadata": {
+              "scriptContent": "node scripts/migrate.js seed",
+              "runCommand": "npm run seed"
+            },
+            "configurations": {},
+            "parallelism": true
+          },
+          "bootstrap": {
+            "executor": "nx:run-script",
+            "options": {
+              "script": "bootstrap"
+            },
+            "metadata": {
+              "scriptContent": "node scripts/migrate.js bootstrap",
+              "runCommand": "npm run bootstrap"
+            },
+            "configurations": {},
+            "parallelism": true
+          },
+          "reset": {
+            "executor": "nx:run-script",
+            "options": {
+              "script": "reset"
+            },
+            "metadata": {
+              "scriptContent": "node scripts/migrate.js reset",
+              "runCommand": "npm run reset"
+            },
+            "configurations": {},
+            "parallelism": true
+          },
+          "setup:env": {
+            "executor": "nx:run-script",
+            "options": {
+              "script": "setup:env"
+            },
+            "metadata": {
+              "scriptContent": "node scripts/setup-env.js dev",
+              "runCommand": "npm run setup:env"
+            },
+            "configurations": {},
+            "parallelism": true
+          },
+          "setup:env:prod": {
+            "executor": "nx:run-script",
+            "options": {
+              "script": "setup:env:prod"
+            },
+            "metadata": {
+              "scriptContent": "node scripts/setup-env.js production",
+              "runCommand": "npm run setup:env:prod"
+            },
+            "configurations": {},
+            "parallelism": true
+          },
+          "validate:env": {
+            "executor": "nx:run-script",
+            "options": {
+              "script": "validate:env"
+            },
+            "metadata": {
+              "scriptContent": "node scripts/setup-env.js validate",
+              "runCommand": "npm run validate:env"
+            },
+            "configurations": {},
+            "parallelism": true
+          },
+          "env:info": {
+            "executor": "nx:run-script",
+            "options": {
+              "script": "env:info"
+            },
+            "metadata": {
+              "scriptContent": "node scripts/setup-env.js info",
+              "runCommand": "npm run env:info"
+            },
+            "configurations": {},
+            "parallelism": true
+          },
+          "setup": {
+            "executor": "nx:run-script",
+            "options": {
+              "script": "setup"
+            },
+            "metadata": {
+              "scriptContent": "node scripts/dev-automation.js setup",
+              "runCommand": "npm run setup"
+            },
+            "configurations": {},
+            "parallelism": true
+          },
+          "dev:full": {
+            "executor": "nx:run-script",
+            "options": {
+              "script": "dev:full"
+            },
+            "metadata": {
+              "scriptContent": "node scripts/dev-automation.js dev",
+              "runCommand": "npm run dev:full"
+            },
+            "configurations": {},
+            "parallelism": true
+          },
+          "dev:quick": {
+            "executor": "nx:run-script",
+            "options": {
+              "script": "dev:quick"
+            },
+            "metadata": {
+              "scriptContent": "node scripts/dev-automation.js quick",
+              "runCommand": "npm run dev:quick"
+            },
+            "configurations": {},
+            "parallelism": true
+          },
+          "db": {
+            "executor": "nx:run-script",
+            "options": {
+              "script": "db"
+            },
+            "metadata": {
+              "scriptContent": "node scripts/dev-automation.js db",
+              "runCommand": "npm run db"
+            },
+            "configurations": {},
+            "parallelism": true
+          },
+          "quality": {
+            "executor": "nx:run-script",
+            "options": {
+              "script": "quality"
+            },
+            "metadata": {
+              "scriptContent": "npm run lint && npm run format:check && npm run test:ci",
+              "runCommand": "npm run quality"
+            },
+            "configurations": {},
+            "parallelism": true
+          },
+          "quality:auto": {
+            "executor": "nx:run-script",
+            "options": {
+              "script": "quality:auto"
+            },
+            "metadata": {
+              "scriptContent": "node scripts/dev-automation.js quality",
+              "runCommand": "npm run quality:auto"
+            },
+            "configurations": {},
+            "parallelism": true
+          },
+          "test:auto": {
+            "executor": "nx:run-script",
+            "options": {
+              "script": "test:auto"
+            },
+            "metadata": {
+              "scriptContent": "node scripts/dev-automation.js test",
+              "runCommand": "npm run test:auto"
+            },
+            "configurations": {},
+            "parallelism": true
+          },
           "lint:fix": {
             "executor": "nx:run-script",
             "options": {
@@ -345,6 +594,30 @@
             "metadata": {
               "scriptContent": "eslint src/api --ext .ts,.js --fix",
               "runCommand": "npm run lint:fix"
+            },
+            "configurations": {},
+            "parallelism": true
+          },
+          "format": {
+            "executor": "nx:run-script",
+            "options": {
+              "script": "format"
+            },
+            "metadata": {
+              "scriptContent": "prettier --write src/**/*.{ts,js,json}",
+              "runCommand": "npm run format"
+            },
+            "configurations": {},
+            "parallelism": true
+          },
+          "format:check": {
+            "executor": "nx:run-script",
+            "options": {
+              "script": "format:check"
+            },
+            "metadata": {
+              "scriptContent": "prettier --check src/**/*.{ts,js,json}",
+              "runCommand": "npm run format:check"
             },
             "configurations": {},
             "parallelism": true
@@ -5376,6 +5649,24 @@
         "version": "8.57.1",
         "packageName": "eslint",
         "hash": "sha512-ypowyDxpVSYpkXr9WPv2PAZCtNip1Mv5KTW0SCurXv/9iOpcrH9PaqUElksqEB6pChqHGDRCFTyrZlGhnLNGiA=="
+      }
+    },
+    "npm:eslint-config-prettier@10.1.8": {
+      "type": "npm",
+      "name": "npm:eslint-config-prettier@10.1.8",
+      "data": {
+        "version": "10.1.8",
+        "packageName": "eslint-config-prettier",
+        "hash": "sha512-82GZUjRS0p/jganf6q1rEO25VSoHH0hKPCTrgillPjdI/3bgBhAE1QzHrHTizjpRvy6pGAvKjDJtk2pF9NDq8w=="
+      }
+    },
+    "npm:eslint-config-prettier": {
+      "type": "npm",
+      "name": "npm:eslint-config-prettier",
+      "data": {
+        "version": "9.1.2",
+        "packageName": "eslint-config-prettier",
+        "hash": "sha512-iI1f+D2ViGn+uvv5HuHVUamg8ll4tN+JRHGc6IJi4TP9Kl976C57fzPXgseXNs8v0iA8aSJpHsTWjDb9QJamGQ=="
       }
     },
     "npm:eslint-scope@5.1.1": {
@@ -13280,13 +13571,13 @@
         "hash": "sha512-NiSupZ4OeuGwr68lGIeym/ksIZMJodUGOSCZ/FSnTxcrekbvqrgdUxlJOMpijaKZVjAJrWrGs/6Jy8OMuyj9ow=="
       }
     },
-    "npm:eslint-config-prettier": {
+    "npm:eslint-plugin-prettier": {
       "type": "npm",
-      "name": "npm:eslint-config-prettier",
+      "name": "npm:eslint-plugin-prettier",
       "data": {
-        "version": "9.1.2",
-        "packageName": "eslint-config-prettier",
-        "hash": "sha512-iI1f+D2ViGn+uvv5HuHVUamg8ll4tN+JRHGc6IJi4TP9Kl976C57fzPXgseXNs8v0iA8aSJpHsTWjDb9QJamGQ=="
+        "version": "5.5.4",
+        "packageName": "eslint-plugin-prettier",
+        "hash": "sha512-swNtI95SToIz05YINMA6Ox5R057IMAmWZ26GqPxusAp1TZzj+IdY9tXNWWD3vkF/wEqydCONcwjTFpxybBqZsg=="
       }
     },
     "npm:eslint-plugin-react": {
@@ -13422,6 +13713,15 @@
         "version": "3.1.3",
         "packageName": "fast-deep-equal",
         "hash": "sha512-f3qQ9oQy9j2AhBe/H9VC91wLmKBCCU/gDOnKNAYG5hswO7BLKj09Hc5HYNz9cGI++xlpDCIgDaitVs03ATR84Q=="
+      }
+    },
+    "npm:fast-diff": {
+      "type": "npm",
+      "name": "npm:fast-diff",
+      "data": {
+        "version": "1.3.0",
+        "packageName": "fast-diff",
+        "hash": "sha512-VxPP4NqbUjj6MaAOafWeUn2cXWLcCtljklUtZf0Ind4XQ+QPtmA0b18zZy0jIQx+ExRVCR/ZQpBmik5lXshNsw=="
       }
     },
     "npm:fast-glob": {
@@ -15170,6 +15470,15 @@
         "hash": "sha512-vkcDPrRZo1QZLbn5RLGPpg/WmIQ65qoWWhcGKf/b5eplkkarX0m9z8ppCat4mlOqUsWpyNuYgO3VRyrYHSzX5g=="
       }
     },
+    "npm:prettier-linter-helpers": {
+      "type": "npm",
+      "name": "npm:prettier-linter-helpers",
+      "data": {
+        "version": "1.0.0",
+        "packageName": "prettier-linter-helpers",
+        "hash": "sha512-GbK2cP9nraSSUF9N2XwUwqfzlAFlMNYYl+ShE/V+H8a9uNl/oUqB1w2EL54Jh0OlyRSd8RfWYJ3coVS4TROP2w=="
+      }
+    },
     "npm:prop-types": {
       "type": "npm",
       "name": "npm:prop-types",
@@ -16236,7 +16545,22 @@
       },
       {
         "source": "strapi",
+        "target": "npm:eslint-config-prettier@10.1.8",
+        "type": "static"
+      },
+      {
+        "source": "strapi",
+        "target": "npm:eslint-plugin-prettier",
+        "type": "static"
+      },
+      {
+        "source": "strapi",
         "target": "npm:jest",
+        "type": "static"
+      },
+      {
+        "source": "strapi",
+        "target": "npm:prettier@3.3.3",
         "type": "static"
       },
       {
@@ -25088,6 +25412,13 @@
       {
         "source": "npm:eslint@9.34.0",
         "target": "npm:optionator",
+        "type": "static"
+      }
+    ],
+    "npm:eslint-config-prettier@10.1.8": [
+      {
+        "source": "npm:eslint-config-prettier@10.1.8",
+        "target": "npm:eslint@9.34.0",
         "type": "static"
       }
     ],
@@ -34193,6 +34524,33 @@
         "type": "static"
       }
     ],
+    "npm:eslint-plugin-prettier": [
+      {
+        "source": "npm:eslint-plugin-prettier",
+        "target": "npm:eslint",
+        "type": "static"
+      },
+      {
+        "source": "npm:eslint-plugin-prettier",
+        "target": "npm:eslint-config-prettier",
+        "type": "static"
+      },
+      {
+        "source": "npm:eslint-plugin-prettier",
+        "target": "npm:prettier",
+        "type": "static"
+      },
+      {
+        "source": "npm:eslint-plugin-prettier",
+        "target": "npm:prettier-linter-helpers",
+        "type": "static"
+      },
+      {
+        "source": "npm:eslint-plugin-prettier",
+        "target": "npm:synckit",
+        "type": "static"
+      }
+    ],
     "npm:eslint-plugin-react": [
       {
         "source": "npm:eslint-plugin-react",
@@ -37265,6 +37623,13 @@
         "type": "static"
       }
     ],
+    "npm:prettier-linter-helpers": [
+      {
+        "source": "npm:prettier-linter-helpers",
+        "target": "npm:fast-diff",
+        "type": "static"
+      }
+    ],
     "npm:pretty-format": [
       {
         "source": "npm:pretty-format",
@@ -39132,5 +39497,5 @@
   },
   "version": "6.0",
   "errors": [],
-  "computedAt": 1756358458541
+  "computedAt": 1756361030153
 }

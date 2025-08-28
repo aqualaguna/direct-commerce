@@ -13,8 +13,8 @@ describe('Product Integration Tests', () => {
         sku: 'TEST-001',
         inventory: 10,
         isActive: true,
-        featured: false
-      }
+        featured: false,
+      };
 
       // In a real integration test, we would:
       // 1. Create a category first
@@ -22,19 +22,19 @@ describe('Product Integration Tests', () => {
       // 3. Verify the relationship is properly established
       // 4. Query the product and verify category data is included
 
-      expect(productData).toBeDefined()
-      expect(productData.title).toBe('Test Product')
-      expect(productData.price).toBe(29.99)
-    })
-  })
+      expect(productData).toBeDefined();
+      expect(productData.title).toBe('Test Product');
+      expect(productData.price).toBe(29.99);
+    });
+  });
 
   describe('Product-User Wishlist Relationship', () => {
     it('should allow users to add products to wishlist', async () => {
       // Test that users can add products to their wishlist
       const wishlistData = {
         userId: 'user-123',
-        productId: 'product-456'
-      }
+        productId: 'product-456',
+      };
 
       // In a real integration test, we would:
       // 1. Create a user
@@ -43,20 +43,20 @@ describe('Product Integration Tests', () => {
       // 4. Verify the many-to-many relationship is established
       // 5. Query user's wishlist and verify products are included
 
-      expect(wishlistData).toBeDefined()
-      expect(wishlistData.userId).toBe('user-123')
-      expect(wishlistData.productId).toBe('product-456')
-    })
+      expect(wishlistData).toBeDefined();
+      expect(wishlistData.userId).toBe('user-123');
+      expect(wishlistData.productId).toBe('product-456');
+    });
 
     it('should allow querying products by wishlisted users', async () => {
       // Test that we can find products that are in users' wishlists
       const queryParams = {
         populate: {
           wishlistedBy: {
-            fields: ['id', 'username', 'email']
-          }
-        }
-      }
+            fields: ['id', 'username', 'email'],
+          },
+        },
+      };
 
       // In a real integration test, we would:
       // 1. Create multiple users and products
@@ -64,10 +64,10 @@ describe('Product Integration Tests', () => {
       // 3. Query products with wishlistedBy populated
       // 4. Verify the relationship data is returned correctly
 
-      expect(queryParams).toBeDefined()
-      expect(queryParams.populate.wishlistedBy).toBeDefined()
-    })
-  })
+      expect(queryParams).toBeDefined();
+      expect(queryParams.populate.wishlistedBy).toBeDefined();
+    });
+  });
 
   describe('Product-Media Relationship', () => {
     it('should allow products to have multiple images', async () => {
@@ -77,9 +77,9 @@ describe('Product Integration Tests', () => {
         images: [
           { url: '/uploads/image1.jpg', alternativeText: 'Main product image' },
           { url: '/uploads/image2.jpg', alternativeText: 'Product detail' },
-          { url: '/uploads/image3.jpg', alternativeText: 'Product in use' }
-        ]
-      }
+          { url: '/uploads/image3.jpg', alternativeText: 'Product in use' },
+        ],
+      };
 
       // In a real integration test, we would:
       // 1. Upload media files to Strapi
@@ -87,10 +87,10 @@ describe('Product Integration Tests', () => {
       // 3. Verify the media files are properly associated
       // 4. Query the product and verify images are included
 
-      expect(productWithImages.images).toHaveLength(3)
-      expect(productWithImages.images[0].url).toBe('/uploads/image1.jpg')
-    })
-  })
+      expect(productWithImages.images).toHaveLength(3);
+      expect(productWithImages.images[0].url).toBe('/uploads/image1.jpg');
+    });
+  });
 
   describe('API Endpoint Functionality', () => {
     it('should support filtering products by category', async () => {
@@ -98,28 +98,28 @@ describe('Product Integration Tests', () => {
       const filterParams = {
         filters: {
           category: {
-            slug: 'electronics'
-          }
-        }
-      }
+            slug: 'electronics',
+          },
+        },
+      };
 
       // In a real integration test, we would:
       // 1. Create categories and products
       // 2. Filter products by category
       // 3. Verify only products from that category are returned
 
-      expect(filterParams.filters.category.slug).toBe('electronics')
-    })
+      expect(filterParams.filters.category.slug).toBe('electronics');
+    });
 
     it('should support filtering products by wishlist status', async () => {
       // Test that products can be filtered by wishlist status
       const filterParams = {
         filters: {
           wishlistedBy: {
-            id: 'user-123'
-          }
-        }
-      }
+            id: 'user-123',
+          },
+        },
+      };
 
       // In a real integration test, we would:
       // 1. Create users and products
@@ -127,7 +127,7 @@ describe('Product Integration Tests', () => {
       // 3. Filter products by wishlistedBy user
       // 4. Verify only products in that user's wishlist are returned
 
-      expect(filterParams.filters.wishlistedBy.id).toBe('user-123')
-    })
-  })
-})
+      expect(filterParams.filters.wishlistedBy.id).toBe('user-123');
+    });
+  });
+});

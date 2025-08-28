@@ -4869,6 +4869,24 @@
         "hash": "sha512-ypowyDxpVSYpkXr9WPv2PAZCtNip1Mv5KTW0SCurXv/9iOpcrH9PaqUElksqEB6pChqHGDRCFTyrZlGhnLNGiA=="
       }
     },
+    "npm:eslint-config-prettier@10.1.8": {
+      "type": "npm",
+      "name": "npm:eslint-config-prettier@10.1.8",
+      "data": {
+        "version": "10.1.8",
+        "packageName": "eslint-config-prettier",
+        "hash": "sha512-82GZUjRS0p/jganf6q1rEO25VSoHH0hKPCTrgillPjdI/3bgBhAE1QzHrHTizjpRvy6pGAvKjDJtk2pF9NDq8w=="
+      }
+    },
+    "npm:eslint-config-prettier": {
+      "type": "npm",
+      "name": "npm:eslint-config-prettier",
+      "data": {
+        "version": "9.1.2",
+        "packageName": "eslint-config-prettier",
+        "hash": "sha512-iI1f+D2ViGn+uvv5HuHVUamg8ll4tN+JRHGc6IJi4TP9Kl976C57fzPXgseXNs8v0iA8aSJpHsTWjDb9QJamGQ=="
+      }
+    },
     "npm:eslint-scope@5.1.1": {
       "type": "npm",
       "name": "npm:eslint-scope@5.1.1",
@@ -12771,13 +12789,13 @@
         "hash": "sha512-NiSupZ4OeuGwr68lGIeym/ksIZMJodUGOSCZ/FSnTxcrekbvqrgdUxlJOMpijaKZVjAJrWrGs/6Jy8OMuyj9ow=="
       }
     },
-    "npm:eslint-config-prettier": {
+    "npm:eslint-plugin-prettier": {
       "type": "npm",
-      "name": "npm:eslint-config-prettier",
+      "name": "npm:eslint-plugin-prettier",
       "data": {
-        "version": "9.1.2",
-        "packageName": "eslint-config-prettier",
-        "hash": "sha512-iI1f+D2ViGn+uvv5HuHVUamg8ll4tN+JRHGc6IJi4TP9Kl976C57fzPXgseXNs8v0iA8aSJpHsTWjDb9QJamGQ=="
+        "version": "5.5.4",
+        "packageName": "eslint-plugin-prettier",
+        "hash": "sha512-swNtI95SToIz05YINMA6Ox5R057IMAmWZ26GqPxusAp1TZzj+IdY9tXNWWD3vkF/wEqydCONcwjTFpxybBqZsg=="
       }
     },
     "npm:eslint-plugin-react": {
@@ -12913,6 +12931,15 @@
         "version": "3.1.3",
         "packageName": "fast-deep-equal",
         "hash": "sha512-f3qQ9oQy9j2AhBe/H9VC91wLmKBCCU/gDOnKNAYG5hswO7BLKj09Hc5HYNz9cGI++xlpDCIgDaitVs03ATR84Q=="
+      }
+    },
+    "npm:fast-diff": {
+      "type": "npm",
+      "name": "npm:fast-diff",
+      "data": {
+        "version": "1.3.0",
+        "packageName": "fast-diff",
+        "hash": "sha512-VxPP4NqbUjj6MaAOafWeUn2cXWLcCtljklUtZf0Ind4XQ+QPtmA0b18zZy0jIQx+ExRVCR/ZQpBmik5lXshNsw=="
       }
     },
     "npm:fast-glob": {
@@ -14659,6 +14686,15 @@
         "version": "1.2.1",
         "packageName": "prelude-ls",
         "hash": "sha512-vkcDPrRZo1QZLbn5RLGPpg/WmIQ65qoWWhcGKf/b5eplkkarX0m9z8ppCat4mlOqUsWpyNuYgO3VRyrYHSzX5g=="
+      }
+    },
+    "npm:prettier-linter-helpers": {
+      "type": "npm",
+      "name": "npm:prettier-linter-helpers",
+      "data": {
+        "version": "1.0.0",
+        "packageName": "prettier-linter-helpers",
+        "hash": "sha512-GbK2cP9nraSSUF9N2XwUwqfzlAFlMNYYl+ShE/V+H8a9uNl/oUqB1w2EL54Jh0OlyRSd8RfWYJ3coVS4TROP2w=="
       }
     },
     "npm:prop-types": {
@@ -24039,6 +24075,11 @@
       "type": "static"
     },
     {
+      "source": "npm:eslint-config-prettier@10.1.8",
+      "target": "npm:eslint@9.34.0",
+      "type": "static"
+    },
+    {
       "source": "npm:eslint-scope@5.1.1",
       "target": "npm:esrecurse",
       "type": "static"
@@ -32749,6 +32790,31 @@
       "type": "static"
     },
     {
+      "source": "npm:eslint-plugin-prettier",
+      "target": "npm:eslint",
+      "type": "static"
+    },
+    {
+      "source": "npm:eslint-plugin-prettier",
+      "target": "npm:eslint-config-prettier",
+      "type": "static"
+    },
+    {
+      "source": "npm:eslint-plugin-prettier",
+      "target": "npm:prettier",
+      "type": "static"
+    },
+    {
+      "source": "npm:eslint-plugin-prettier",
+      "target": "npm:prettier-linter-helpers",
+      "type": "static"
+    },
+    {
+      "source": "npm:eslint-plugin-prettier",
+      "target": "npm:synckit",
+      "type": "static"
+    },
+    {
       "source": "npm:eslint-plugin-react",
       "target": "npm:eslint",
       "type": "static"
@@ -35806,6 +35872,11 @@
     {
       "source": "npm:postgres-interval",
       "target": "npm:xtend",
+      "type": "static"
+    },
+    {
+      "source": "npm:prettier-linter-helpers",
+      "target": "npm:fast-diff",
       "type": "static"
     },
     {

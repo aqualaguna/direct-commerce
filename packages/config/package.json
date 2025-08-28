@@ -1,6 +1,7 @@
 {
   "name": "@ecommerce-platform/config",
   "version": "1.0.0",
+  "type": "module",
   "description": "Shared configuration files for the ecommerce platform",
   "main": "index.js",
   "scripts": {

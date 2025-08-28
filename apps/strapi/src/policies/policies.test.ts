@@ -26,12 +26,12 @@ describe('Authentication Policies', () => {
 
     it('should return true for admin users', () => {
       const policyContext = {
-        state: { 
-          user: { 
-            id: 1, 
+        state: {
+          user: {
+            id: 1,
             username: 'admin',
-            role: { type: 'admin' }
-          } 
+            role: { type: 'admin' },
+          },
         },
       };
 
@@ -41,12 +41,12 @@ describe('Authentication Policies', () => {
 
     it('should return false for non-admin users', () => {
       const policyContext = {
-        state: { 
-          user: { 
-            id: 2, 
+        state: {
+          user: {
+            id: 2,
             username: 'user',
-            role: { type: 'authenticated' }
-          } 
+            role: { type: 'authenticated' },
+          },
         },
       };
 
@@ -69,12 +69,12 @@ describe('Authentication Policies', () => {
 
     it('should return true for admin users', () => {
       const policyContext = {
-        state: { 
-          user: { 
-            id: 1, 
+        state: {
+          user: {
+            id: 1,
             username: 'admin',
-            role: { type: 'admin' }
-          } 
+            role: { type: 'admin' },
+          },
         },
         params: { id: '999' },
       };
@@ -85,12 +85,12 @@ describe('Authentication Policies', () => {
 
     it('should return true when user owns the resource', () => {
       const policyContext = {
-        state: { 
-          user: { 
-            id: 1, 
+        state: {
+          user: {
+            id: 1,
             username: 'user',
-            role: { type: 'authenticated' }
-          } 
+            role: { type: 'authenticated' },
+          },
         },
         params: { id: '1' },
       };
@@ -101,12 +101,12 @@ describe('Authentication Policies', () => {
 
     it('should return false when user does not own the resource', () => {
       const policyContext = {
-        state: { 
-          user: { 
-            id: 1, 
+        state: {
+          user: {
+            id: 1,
             username: 'user',
-            role: { type: 'authenticated' }
-          } 
+            role: { type: 'authenticated' },
+          },
         },
         params: { id: '999' },
       };

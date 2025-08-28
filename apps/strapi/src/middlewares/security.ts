@@ -19,7 +19,7 @@ export default (config, { strapi }: { strapi: Strapi }) => {
     });
 
     // Apply rate limiting
-    await new Promise((resolve) => {
+    await new Promise(resolve => {
       limiter(ctx.req, ctx.res, resolve);
     });
 
