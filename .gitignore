@@ -79,6 +79,10 @@ jspm_packages/
 .strapi/
 .strapi-updater.json
 
+# Nx specific
+.nx/
+nx-cache/
+
 # Database
 *.db
 *.sqlite
