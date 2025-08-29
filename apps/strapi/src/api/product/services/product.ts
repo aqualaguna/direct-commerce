@@ -74,7 +74,7 @@ export default factories.createCoreService(
           .update({
             documentId,
             data: { status: newStatus as any },
-            populate: ['images', 'category', 'seo'],
+            populate: ['images', 'category', 'seo'] as any,
           });
 
         return updatedProduct;

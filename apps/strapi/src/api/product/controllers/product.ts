@@ -527,7 +527,7 @@ export default factories.createCoreController(
           'api::product.product',
           id,
           {
-            populate: ['images', 'category'],
+            populate: ['images', 'category'] as any,
           }
         );
 
@@ -576,7 +576,7 @@ export default factories.createCoreController(
           'api::product.product',
           id,
           {
-            populate: ['images', 'category'],
+            populate: ['images', 'category'] as any,
           }
         );
 

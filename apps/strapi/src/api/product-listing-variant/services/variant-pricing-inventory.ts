@@ -6,7 +6,12 @@ export default ({ strapi }) => ({
   /**
    * Calculate variant price with overrides
    */
-  async calculateVariantPrice(variantId, options = {}) {
+  async calculateVariantPrice(variantId: string, options: {
+    discountPercent?: number;
+    quantity?: number;
+    bulkPricing?: any;
+    currency?: string;
+  } = {}) {
     const variant = await strapi
       .documents('api::product-listing-variant.product-listing-variant')
       .findOne({
@@ -48,7 +53,7 @@ export default ({ strapi }) => ({
   /**
    * Calculate bulk pricing
    */
-  calculateBulkPrice(basePrice, quantity, bulkPricing) {
+  calculateBulkPrice(basePrice: number, quantity: number, bulkPricing: any) {
     // Find the applicable bulk pricing tier
     const [applicableTier] = bulkPricing
       .filter(tier => quantity >= tier.minQuantity)
@@ -65,10 +70,10 @@ export default ({ strapi }) => ({
    * Update variant inventory
    */
   async updateVariantInventory(
-    variantId,
-    quantity,
-    operation = 'set',
-    reason = 'manual'
+    variantId: string,
+    quantity: number,
+    operation: 'set' | 'add' | 'subtract' | 'reserve' = 'set',
+    reason: string = 'manual'
   ) {
     const variant = await strapi
       .documents('api::product-listing-variant.product-listing-variant')

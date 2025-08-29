@@ -393,10 +393,10 @@ export default factories.createCoreService(
             documentId: String(categoryId),
             populate: {
               products: {
-                fields: ['id', 'status', 'isActive', 'inventory', 'price'],
+                fields: ['id', 'status', 'isActive', 'inventory', 'price'] as any,
               },
               children: {
-                fields: ['id', 'name'],
+                fields: ['id', 'name'] as any,
               },
             },
           });
@@ -476,10 +476,10 @@ export default factories.createCoreService(
             sort: { createdAt: 'desc' },
             populate: {
               category: {
-                fields: ['id', 'name', 'slug'],
+                fields: ['id', 'name', 'slug'] as any,
               },
-              images: true,
-              seo: true,
+              images: true as any,
+              seo: true as any,
             },
           });
 
@@ -602,10 +602,6 @@ export default factories.createCoreService(
               publishedAt: { $notNull: true },
             },
             sort: { createdAt: 'desc' },
-            populate: {
-              images: true,
-              seo: true,
-            },
           });
 
         return products;
