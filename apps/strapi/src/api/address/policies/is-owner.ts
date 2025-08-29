@@ -2,7 +2,7 @@
  * is-owner policy for addresses
  */
 
-module.exports = async (policyContext, config, { strapi }) => {
+export default async (policyContext: any, config: any, { strapi }: any) => {
   const { user } = policyContext.state;
   const { id } = policyContext.params;
 

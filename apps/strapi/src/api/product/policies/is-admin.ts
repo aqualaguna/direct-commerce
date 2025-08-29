@@ -2,7 +2,7 @@
  * is-admin policy
  */
 
-module.exports = async (policyContext, _config, { strapi: _strapi }) => {
+export default async (policyContext: any, _config: any, { strapi: _strapi }: any) => {
   const { user } = policyContext.state;
 
   if (!user) {

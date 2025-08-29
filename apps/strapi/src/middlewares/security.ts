@@ -1,9 +1,9 @@
-import { Strapi } from '@strapi/strapi';
-import rateLimit from 'express-rate-limit';
+// Remove Strapi import as it's not needed
+import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 
-export default (config, { strapi }: { strapi: Strapi }) => {
+export default (config, { strapi }: { strapi: any }) => {
   return async (ctx, next) => {
-    // Rate limiting configuration
+    // Rate limiting configuration with proper IP detection
     const limiter = rateLimit({
       windowMs: 15 * 60 * 1000, // 15 minutes
       max: 100, // limit each IP to 100 requests per windowMs
@@ -16,6 +16,17 @@ export default (config, { strapi }: { strapi: Strapi }) => {
       },
       standardHeaders: true,
       legacyHeaders: false,
+      // Use the proper ipKeyGenerator helper for IPv6 support
+      keyGenerator: ipKeyGenerator,
+      // Skip rate limiting for certain conditions
+      skip: (req) => {
+        // Skip if IP is undefined or unknown
+        const ip = req.ip || 
+                   req.connection?.remoteAddress || 
+                   req.socket?.remoteAddress || 
+                   req.connection?.socket?.remoteAddress;
+        return !ip || ip === 'unknown';
+      },
     });
 
     // Apply rate limiting

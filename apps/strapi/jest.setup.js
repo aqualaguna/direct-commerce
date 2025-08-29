@@ -4,19 +4,24 @@
 global.jest = jest;
 
 // Mock console methods to reduce noise in tests
-global.console = {
-  ...console,
-  log: jest.fn(),
-  debug: jest.fn(),
-  info: jest.fn(),
-  warn: jest.fn(),
-  error: jest.fn(),
-};
+// global.console = {
+//   ...console,
+// //   log: jest.fn(),
+//   debug: jest.fn(),
+//   info: jest.fn(),
+//   warn: jest.fn(),
+//   error: jest.fn(),
+// };
 
 // Mock process.env for testing
 process.env.NODE_ENV = 'test';
-process.env.DATABASE_CLIENT = 'sqlite';
-process.env.DATABASE_FILENAME = ':memory:';
+process.env.DATABASE_CLIENT = 'postgres';
+process.env.DATABASE_HOST = 'localhost';
+process.env.DATABASE_PORT = '5432';
+process.env.DATABASE_NAME = 'strapi_test';
+process.env.DATABASE_USERNAME = 'strapi';
+process.env.DATABASE_PASSWORD = 'strapi_password';
+process.env.DATABASE_SSL = 'false';
 
 // Global test utilities
 global.testUtils = {

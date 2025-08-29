@@ -2,7 +2,7 @@
  * is-public policy
  */
 
-module.exports = async (policyContext, _config, { strapi: _strapi }) => {
+export default async (policyContext: any, _config: any, { strapi: _strapi }: any) => {
   // Allow public access to published products
   const { user } = policyContext.state;
 

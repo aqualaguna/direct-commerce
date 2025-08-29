@@ -25,6 +25,40 @@
     },
     "canonicalURL": {
       "type": "string"
+    },
+    "metaRobots": {
+      "type": "enumeration",
+      "enum": ["index,follow", "noindex,follow", "index,nofollow", "noindex,nofollow"],
+      "default": "index,follow"
+    },
+    "structuredData": {
+      "type": "json"
+    },
+    "ogTitle": {
+      "type": "string",
+      "maxLength": 60
+    },
+    "ogDescription": {
+      "type": "text",
+      "maxLength": 160
+    },
+    "ogType": {
+      "type": "enumeration",
+      "enum": ["website", "article", "product"],
+      "default": "product"
+    },
+    "twitterCard": {
+      "type": "enumeration",
+      "enum": ["summary", "summary_large_image", "app", "player"],
+      "default": "summary_large_image"
+    },
+    "twitterTitle": {
+      "type": "string",
+      "maxLength": 60
+    },
+    "twitterDescription": {
+      "type": "text",
+      "maxLength": 160
     }
   }
 }

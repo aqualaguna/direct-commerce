@@ -63,6 +63,12 @@
       "type": "boolean",
       "default": false
     },
+    "status": {
+      "type": "enumeration",
+      "enum": ["draft", "active", "inactive"],
+      "default": "draft",
+      "required": true
+    },
     "images": {
       "type": "media",
       "multiple": true,

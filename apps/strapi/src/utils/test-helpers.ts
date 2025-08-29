@@ -1,7 +1,6 @@
-import type { Strapi } from '@strapi/strapi';
-
 /**
  * Test utilities for Strapi testing
+ * Following Strapi official testing documentation
  */
 
 export interface MockContext {

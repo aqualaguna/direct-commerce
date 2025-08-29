@@ -566,6 +566,9 @@ export interface ApiProductProduct extends Struct.CollectionTypeSchema {
         maxLength: 100;
       }>;
     slug: Schema.Attribute.UID<'title'> & Schema.Attribute.Required;
+    status: Schema.Attribute.Enumeration<['draft', 'active', 'inactive']> &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'draft'>;
     title: Schema.Attribute.String &
       Schema.Attribute.Required &
       Schema.Attribute.Unique &

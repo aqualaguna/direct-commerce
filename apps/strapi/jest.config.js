@@ -32,6 +32,8 @@ export default {
   restoreMocks: true,
   testPathIgnorePatterns: [
     '/node_modules/',
+    '.tmp',
+    '.cache',
     '/dist/',
     '/build/',
     '/.strapi/',
