@@ -1,10 +1,10 @@
 /**
  * Product search controller tests
- * 
+ *
  * Tests for search controller endpoints and request handling
  */
 
-import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 
 // Mock search service
 const mockSearchService = {
@@ -19,12 +19,24 @@ const mockFilterService = {
   getAvailableFilters: jest.fn() as jest.MockedFunction<any>,
 };
 
-// Mock Strapi
+// Mock Strapi with Document Service API
 const mockStrapi = {
   contentType: jest.fn().mockReturnValue({
     kind: 'collectionType',
   }),
-  service: jest.fn((serviceName) => {
+  documents: jest.fn(contentType => ({
+    findOne: jest.fn() as jest.MockedFunction<any>,
+    findFirst: jest.fn() as jest.MockedFunction<any>,
+    findMany: jest.fn() as jest.MockedFunction<any>,
+    create: jest.fn() as jest.MockedFunction<any>,
+    update: jest.fn() as jest.MockedFunction<any>,
+    delete: jest.fn() as jest.MockedFunction<any>,
+    count: jest.fn() as jest.MockedFunction<any>,
+    publish: jest.fn() as jest.MockedFunction<any>,
+    unpublish: jest.fn() as jest.MockedFunction<any>,
+    discardDraft: jest.fn() as jest.MockedFunction<any>,
+  })),
+  service: jest.fn(serviceName => {
     if (serviceName === 'api::product.search') {
       return mockSearchService;
     }
@@ -33,9 +45,6 @@ const mockStrapi = {
     }
     return {};
   }),
-  entityService: {
-    findMany: jest.fn() as jest.MockedFunction<any>,
-  },
   db: {
     query: jest.fn(() => ({
       findMany: jest.fn() as jest.MockedFunction<any>,
@@ -62,7 +71,7 @@ describe('Product Search Controller', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Set up default mock return values (will be overridden in specific tests)
     mockFilterService.validateFilterParams.mockReturnValue({});
     mockFilterService.getAvailableFilters.mockResolvedValue({
@@ -73,15 +82,15 @@ describe('Product Search Controller', () => {
       priceRange: { min: 10.99, max: 49.99 },
       inventoryOptions: [],
     });
-    
+
     // Set up the factory mock
     const { factories } = require('@strapi/strapi');
-    (factories.createCoreController as jest.MockedFunction<any>).mockImplementation(
-      (serviceName, controllerFunction) => {
-        return controllerFunction({ strapi: mockStrapi });
-      }
-    );
-    
+    (
+      factories.createCoreController as jest.MockedFunction<any>
+    ).mockImplementation((serviceName, controllerFunction) => {
+      return controllerFunction({ strapi: mockStrapi });
+    });
+
     // Import the search controller
     const searchControllerModule = require('./search').default;
     searchController = searchControllerModule;
@@ -120,18 +129,18 @@ describe('Product Search Controller', () => {
 
       await searchController.search(mockContext);
 
-          expect(mockSearchService.fullTextSearch).toHaveBeenCalledWith('test', {
-      page: 1,
-      pageSize: 25,
-      categoryId: undefined,
-      priceRange: undefined,
-      attributes: undefined,
-      sortBy: 'relevance',
-      sortOrder: 'desc',
-      includeInactive: false,
-      inStockOnly: undefined,
-      minStock: undefined,
-    });
+      expect(mockSearchService.fullTextSearch).toHaveBeenCalledWith('test', {
+        page: 1,
+        pageSize: 25,
+        categoryId: undefined,
+        priceRange: undefined,
+        attributes: undefined,
+        sortBy: 'relevance',
+        sortOrder: 'desc',
+        includeInactive: false,
+        inStockOnly: undefined,
+        minStock: undefined,
+      });
 
       expect(mockContext.send).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -149,54 +158,54 @@ describe('Product Search Controller', () => {
       );
     });
 
-      it('should handle search with filters', async () => {
-    const mockResults = {
-      data: [],
-      meta: {
-        pagination: {
-          page: 1,
-          pageSize: 25,
-          pageCount: 0,
-          total: 0,
+    it('should handle search with filters', async () => {
+      const mockResults = {
+        data: [],
+        meta: {
+          pagination: {
+            page: 1,
+            pageSize: 25,
+            pageCount: 0,
+            total: 0,
+          },
         },
-      },
-    };
+      };
 
-    // Set specific mock values for this test
-    mockFilterService.validateFilterParams.mockReturnValue({
-      categoryId: 1,
-      priceRange: { min: 10.99, max: 49.99 },
-      attributes: {},
-      inStockOnly: false,
-      minStock: undefined,
+      // Set specific mock values for this test
+      mockFilterService.validateFilterParams.mockReturnValue({
+        categoryId: 1,
+        priceRange: { min: 10.99, max: 49.99 },
+        attributes: {},
+        inStockOnly: false,
+        minStock: undefined,
+      });
+
+      mockSearchService.fullTextSearch.mockResolvedValue(mockResults);
+      mockContext.query = {
+        q: 'test',
+        categoryId: '1',
+        minPrice: '10.99',
+        maxPrice: '49.99',
+        sortBy: 'price_asc',
+        page: '2',
+        pageSize: '10',
+      };
+
+      await searchController.search(mockContext);
+
+      expect(mockSearchService.fullTextSearch).toHaveBeenCalledWith('test', {
+        page: 2,
+        pageSize: 10,
+        categoryId: 1,
+        priceRange: { min: 10.99, max: 49.99 },
+        attributes: {},
+        sortBy: 'price_asc',
+        sortOrder: 'desc',
+        includeInactive: false,
+        inStockOnly: false,
+        minStock: undefined,
+      });
     });
-
-    mockSearchService.fullTextSearch.mockResolvedValue(mockResults);
-    mockContext.query = {
-      q: 'test',
-      categoryId: '1',
-      minPrice: '10.99',
-      maxPrice: '49.99',
-      sortBy: 'price_asc',
-      page: '2',
-      pageSize: '10',
-    };
-
-    await searchController.search(mockContext);
-
-    expect(mockSearchService.fullTextSearch).toHaveBeenCalledWith('test', {
-      page: 2,
-      pageSize: 10,
-      categoryId: 1,
-      priceRange: { min: 10.99, max: 49.99 },
-      attributes: {},
-      sortBy: 'price_asc',
-      sortOrder: 'desc',
-      includeInactive: false,
-      inStockOnly: false,
-      minStock: undefined,
-    });
-  });
 
     it('should validate pagination parameters', async () => {
       mockContext.query = {
@@ -244,7 +253,9 @@ describe('Product Search Controller', () => {
 
       await searchController.search(mockContext);
 
-      expect(mockContext.badRequest).toHaveBeenCalledWith('Invalid price range values');
+      expect(mockContext.badRequest).toHaveBeenCalledWith(
+        'Invalid price range values'
+      );
     });
 
     it('should validate price range logic', async () => {
@@ -269,7 +280,9 @@ describe('Product Search Controller', () => {
 
       await searchController.search(mockContext);
 
-      expect(mockContext.badRequest).toHaveBeenCalledWith('Invalid category ID');
+      expect(mockContext.badRequest).toHaveBeenCalledWith(
+        'Invalid category ID'
+      );
     });
 
     it('should validate sort options', async () => {
@@ -280,12 +293,16 @@ describe('Product Search Controller', () => {
 
       await searchController.search(mockContext);
 
-      expect(mockContext.badRequest).toHaveBeenCalledWith('Invalid sort option');
+      expect(mockContext.badRequest).toHaveBeenCalledWith(
+        'Invalid sort option'
+      );
     });
 
     it('should handle service errors', async () => {
       mockContext.query = { q: 'test' };
-      mockSearchService.fullTextSearch.mockRejectedValue(new Error('Service error'));
+      mockSearchService.fullTextSearch.mockRejectedValue(
+        new Error('Service error')
+      );
 
       await searchController.search(mockContext);
 
@@ -304,7 +321,10 @@ describe('Product Search Controller', () => {
 
       await searchController.suggestions(mockContext);
 
-      expect(mockSearchService.getSearchSuggestions).toHaveBeenCalledWith('test', 5);
+      expect(mockSearchService.getSearchSuggestions).toHaveBeenCalledWith(
+        'test',
+        5
+      );
       expect(mockContext.send).toHaveBeenCalledWith({
         suggestions: mockSuggestions,
       });
@@ -325,12 +345,17 @@ describe('Product Search Controller', () => {
 
       await searchController.suggestions(mockContext);
 
-      expect(mockSearchService.getSearchSuggestions).toHaveBeenCalledWith('test', 20); // Capped at 20
+      expect(mockSearchService.getSearchSuggestions).toHaveBeenCalledWith(
+        'test',
+        20
+      ); // Capped at 20
     });
 
     it('should handle service errors', async () => {
       mockContext.query = { q: 'test' };
-      mockSearchService.getSearchSuggestions.mockRejectedValue(new Error('Service error'));
+      mockSearchService.getSearchSuggestions.mockRejectedValue(
+        new Error('Service error')
+      );
 
       await searchController.suggestions(mockContext);
 
@@ -366,7 +391,9 @@ describe('Product Search Controller', () => {
 
     it('should handle service errors', async () => {
       mockContext.query = {};
-      mockSearchService.getPopularSearchTerms.mockRejectedValue(new Error('Service error'));
+      mockSearchService.getPopularSearchTerms.mockRejectedValue(
+        new Error('Service error')
+      );
 
       await searchController.popular(mockContext);
 
@@ -377,61 +404,63 @@ describe('Product Search Controller', () => {
   });
 
   describe('getFilterOptions', () => {
-      it('should return filter options', async () => {
-    // Set specific mock for this test
-    mockFilterService.getAvailableFilters.mockResolvedValue({
-      categories: [
-        { id: 1, name: 'Electronics', slug: 'electronics' },
-        { id: 2, name: 'Clothing', slug: 'clothing' },
-      ],
-      priceRange: { min: 10.99, max: 49.99 },
-      inventoryOptions: [],
+    it('should return filter options', async () => {
+      // Set specific mock for this test
+      mockFilterService.getAvailableFilters.mockResolvedValue({
+        categories: [
+          { id: 1, name: 'Electronics', slug: 'electronics' },
+          { id: 2, name: 'Clothing', slug: 'clothing' },
+        ],
+        priceRange: { min: 10.99, max: 49.99 },
+        inventoryOptions: [],
+      });
+
+      await searchController.getFilterOptions(mockContext);
+
+      expect(mockContext.send).toHaveBeenCalledWith({
+        categories: [
+          { id: 1, name: 'Electronics', slug: 'electronics' },
+          { id: 2, name: 'Clothing', slug: 'clothing' },
+        ],
+        priceRange: { min: 10.99, max: 49.99 },
+        inventoryOptions: [],
+        sortOptions: expect.arrayContaining([
+          { value: 'relevance', label: 'Most Relevant' },
+          { value: 'price_asc', label: 'Price: Low to High' },
+          { value: 'price_desc', label: 'Price: High to Low' },
+        ]),
+      });
     });
 
-    await searchController.getFilterOptions(mockContext);
+    it('should handle empty price stats', async () => {
+      // Set specific mock for this test
+      mockFilterService.getAvailableFilters.mockResolvedValue({
+        categories: [],
+        priceRange: { min: 0, max: 1000 },
+        inventoryOptions: [],
+      });
 
-    expect(mockContext.send).toHaveBeenCalledWith({
-      categories: [
-        { id: 1, name: 'Electronics', slug: 'electronics' },
-        { id: 2, name: 'Clothing', slug: 'clothing' },
-      ],
-      priceRange: { min: 10.99, max: 49.99 },
-      inventoryOptions: [],
-      sortOptions: expect.arrayContaining([
-        { value: 'relevance', label: 'Most Relevant' },
-        { value: 'price_asc', label: 'Price: Low to High' },
-        { value: 'price_desc', label: 'Price: High to Low' },
-      ]),
-    });
-  });
+      await searchController.getFilterOptions(mockContext);
 
-      it('should handle empty price stats', async () => {
-    // Set specific mock for this test
-    mockFilterService.getAvailableFilters.mockResolvedValue({
-      categories: [],
-      priceRange: { min: 0, max: 1000 },
-      inventoryOptions: [],
+      expect(mockContext.send).toHaveBeenCalledWith({
+        categories: [],
+        priceRange: { min: 0, max: 1000 },
+        inventoryOptions: [],
+        sortOptions: expect.any(Array),
+      });
     });
 
-    await searchController.getFilterOptions(mockContext);
+    it('should handle service errors', async () => {
+      // Set specific mock to throw error for this test
+      mockFilterService.getAvailableFilters.mockRejectedValue(
+        new Error('Database error')
+      );
 
-    expect(mockContext.send).toHaveBeenCalledWith({
-      categories: [],
-      priceRange: { min: 0, max: 1000 },
-      inventoryOptions: [],
-      sortOptions: expect.any(Array),
+      await searchController.getFilterOptions(mockContext);
+
+      expect(mockContext.internalServerError).toHaveBeenCalledWith(
+        'Failed to get filter options'
+      );
     });
-  });
-
-      it('should handle service errors', async () => {
-    // Set specific mock to throw error for this test
-    mockFilterService.getAvailableFilters.mockRejectedValue(new Error('Database error'));
-
-    await searchController.getFilterOptions(mockContext);
-
-    expect(mockContext.internalServerError).toHaveBeenCalledWith(
-      'Failed to get filter options'
-    );
-  });
   });
 });

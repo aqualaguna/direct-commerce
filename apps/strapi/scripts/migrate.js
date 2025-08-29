@@ -2,7 +2,7 @@
 
 /**
  * Database Migration Script for Strapi Ecommerce Platform
- * 
+ *
  * This script handles database migrations for different environments:
  * - Development: Uses SQLite in-memory database
  * - Production: Uses PostgreSQL database
@@ -18,12 +18,12 @@ const config = {
   development: {
     database: 'sqlite',
     filename: ':memory:',
-    description: 'Development database (SQLite in-memory)'
+    description: 'Development database (SQLite in-memory)',
   },
   test: {
     database: 'sqlite',
     filename: ':memory:',
-    description: 'Test database (SQLite in-memory)'
+    description: 'Test database (SQLite in-memory)',
   },
   production: {
     database: 'postgres',
@@ -32,8 +32,8 @@ const config = {
     name: process.env.DATABASE_NAME || 'strapi_ecommerce',
     username: process.env.DATABASE_USERNAME || 'strapi',
     password: process.env.DATABASE_PASSWORD || 'strapi_password',
-    description: 'Production database (PostgreSQL)'
-  }
+    description: 'Production database (PostgreSQL)',
+  },
 };
 
 /**
@@ -42,7 +42,7 @@ const config = {
 function getEnvironment() {
   const args = process.argv.slice(2);
   const envIndex = args.findIndex(arg => arg === '--env' || arg === '-e');
-  
+
   if (envIndex !== -1 && args[envIndex + 1]) {
     const env = args[envIndex + 1];
     if (config[env]) {
@@ -53,7 +53,7 @@ function getEnvironment() {
       process.exit(1);
     }
   }
-  
+
   return 'development';
 }
 
@@ -62,7 +62,7 @@ function getEnvironment() {
  */
 function setEnvironmentVariables(env) {
   const envConfig = config[env];
-  
+
   if (envConfig.database === 'sqlite') {
     process.env.DATABASE_CLIENT = 'sqlite';
     process.env.DATABASE_FILENAME = envConfig.filename;
@@ -74,7 +74,7 @@ function setEnvironmentVariables(env) {
     process.env.DATABASE_USERNAME = envConfig.username;
     process.env.DATABASE_PASSWORD = envConfig.password;
   }
-  
+
   process.env.NODE_ENV = env;
 }
 
@@ -84,9 +84,9 @@ function setEnvironmentVariables(env) {
 function runStrapiCommand(command, env) {
   try {
     console.log(`🔄 Running: ${command}`);
-    execSync(command, { 
+    execSync(command, {
       stdio: 'inherit',
-      env: { ...process.env, NODE_ENV: env }
+      env: { ...process.env, NODE_ENV: env },
     });
     console.log(`✅ ${command} completed successfully`);
     return true;
@@ -103,7 +103,7 @@ function showStatus(env) {
   console.log('\n📊 Migration Status:');
   console.log(`Environment: ${env}`);
   console.log(`Database: ${config[env].description}`);
-  
+
   if (env === 'production') {
     console.log(`Host: ${config[env].host}:${config[env].port}`);
     console.log(`Database: ${config[env].name}`);
@@ -116,13 +116,13 @@ function showStatus(env) {
 function migrate() {
   const env = getEnvironment();
   const action = process.argv[2];
-  
+
   console.log('🚀 Strapi Database Migration Tool');
   console.log('================================');
-  
+
   setEnvironmentVariables(env);
   showStatus(env);
-  
+
   switch (action) {
     case 'migrate':
       console.log('\n🔄 Running database migrations...');
@@ -132,7 +132,7 @@ function migrate() {
         process.exit(1);
       }
       break;
-      
+
     case 'seed':
       console.log('\n🌱 Running database seeding...');
       if (runStrapiCommand('npx strapi database:seed', env)) {
@@ -141,7 +141,7 @@ function migrate() {
         process.exit(1);
       }
       break;
-      
+
     case 'reset':
       console.log('\n🔄 Resetting database...');
       if (runStrapiCommand('npx strapi database:reset', env)) {
@@ -150,24 +150,28 @@ function migrate() {
         process.exit(1);
       }
       break;
-      
+
     case 'bootstrap':
       console.log('\n🚀 Bootstrapping database (migrate + seed)...');
-      if (runStrapiCommand('npx strapi database:migrate', env) &&
-          runStrapiCommand('npx strapi database:seed', env)) {
+      if (
+        runStrapiCommand('npx strapi database:migrate', env) &&
+        runStrapiCommand('npx strapi database:seed', env)
+      ) {
         console.log('✅ Database bootstrap completed successfully');
       } else {
         process.exit(1);
       }
       break;
-      
+
     default:
       console.log('\n📖 Usage:');
       console.log('  node scripts/migrate.js <action> [--env <environment>]');
       console.log('\nActions:');
       console.log('  migrate   - Run database migrations');
       console.log('  seed      - Run database seeding');
-      console.log('  reset     - Reset database (WARNING: This will delete all data)');
+      console.log(
+        '  reset     - Reset database (WARNING: This will delete all data)'
+      );
       console.log('  bootstrap - Run migrations and seeding');
       console.log('\nEnvironments:');
       console.log('  development (default)');

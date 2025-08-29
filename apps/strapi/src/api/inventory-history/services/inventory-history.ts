@@ -4,4 +4,6 @@
 
 import { factories } from '@strapi/strapi';
 
-export default factories.createCoreService('api::inventory-history.inventory-history');
+export default factories.createCoreService(
+  'api::inventory-history.inventory-history' as any
+);

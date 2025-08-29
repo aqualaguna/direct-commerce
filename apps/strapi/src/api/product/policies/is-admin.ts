@@ -14,5 +14,5 @@ export default async (
   }
 
   // Check if user has admin role
-  return user.role && user.role.type === 'admin';
+  return !!(user.role && user.role.type === 'admin');
 };

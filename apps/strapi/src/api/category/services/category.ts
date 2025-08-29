@@ -22,13 +22,14 @@ export default factories.createCoreService(
           filters.parent = { $null: true };
         }
 
-        const categories = await strapi.entityService.findMany(
-          'api::category.category',
-          {
+        const categories = await strapi
+          .documents('api::category.category')
+          .findMany({
             filters,
-            limit: 1,
-          }
-        );
+            pagination: {
+              limit: 1,
+            },
+          });
 
         return categories.length > 0 ? categories[0] : null;
       } catch (error) {
@@ -59,19 +60,19 @@ export default factories.createCoreService(
 
           visited.add(currentId);
 
-          const category = await strapi.entityService.findOne(
-            'api::category.category',
-            currentId,
-            {
+          const category = await strapi
+            .documents('api::category.category')
+            .findOne({
+              documentId: String(currentId),
               populate: { parent: true },
-            }
-          );
+              fields: ['id', 'name', 'slug'],
+            });
 
           if (!category) {
             break;
           }
 
-          currentId = (category as any).parent?.id;
+          currentId = (category as any).parent?.documentId;
         }
 
         return false;
@@ -94,14 +95,15 @@ export default factories.createCoreService(
           filters.parent = { $null: true };
         }
 
-        const categories = await strapi.entityService.findMany(
-          'api::category.category',
-          {
+        const categories = await strapi
+          .documents('api::category.category')
+          .findMany({
             filters,
             sort: { sortOrder: 'desc' },
-            limit: 1,
-          }
-        );
+            pagination: {
+              limit: 1,
+            },
+          });
 
         if (categories.length === 0) {
           return 0;
@@ -120,9 +122,9 @@ export default factories.createCoreService(
     async getCategoryTree() {
       try {
         // Get all categories with their relationships
-        const allCategories = await strapi.entityService.findMany(
-          'api::category.category',
-          {
+        const allCategories = await strapi
+          .documents('api::category.category')
+          .findMany({
             filters: {
               publishedAt: { $notNull: true },
             },
@@ -132,8 +134,7 @@ export default factories.createCoreService(
               children: true,
               products: true,
             },
-          }
-        );
+          });
 
         // Build tree structure
         const categoryMap = new Map();
@@ -141,7 +142,7 @@ export default factories.createCoreService(
 
         // First pass: create category map
         allCategories.forEach(category => {
-          categoryMap.set(category.id, {
+          categoryMap.set(category.documentId, {
             ...category,
             children: [],
           });
@@ -149,10 +150,10 @@ export default factories.createCoreService(
 
         // Second pass: build tree relationships
         allCategories.forEach(category => {
-          const categoryWithChildren = categoryMap.get(category.id);
+          const categoryWithChildren = categoryMap.get(category.documentId);
 
           if ((category as any).parent) {
-            const parent = categoryMap.get((category as any).parent.id);
+            const parent = categoryMap.get((category as any).parent.documentId);
             if (parent) {
               parent.children.push(categoryWithChildren);
             }
@@ -161,18 +162,30 @@ export default factories.createCoreService(
           }
         });
 
-        // Sort children recursively
-        const sortCategoriesRecursively = (categories: any[]) => {
+        // Sort children recursively with cycle protection
+        const sortCategoriesRecursively = (
+          categories: any[],
+          visited = new Set()
+        ) => {
           categories.sort((a, b) => {
-            if (a.sortOrder !== b.sortOrder) {
-              return a.sortOrder - b.sortOrder;
+            // Handle null/undefined sortOrder
+            const aSort = a.sortOrder ?? 999999;
+            const bSort = b.sortOrder ?? 999999;
+            if (aSort !== bSort) {
+              return aSort - bSort;
             }
-            return a.name.localeCompare(b.name);
+            return (a.name || '').localeCompare(b.name || '');
           });
 
           categories.forEach(category => {
-            if (category.children.length > 0) {
-              sortCategoriesRecursively(category.children);
+            if (
+              category.children &&
+              category.children.length > 0 &&
+              !visited.has(category.documentId)
+            ) {
+              visited.add(category.documentId);
+              sortCategoriesRecursively(category.children, visited);
+              visited.delete(category.documentId);
             }
           });
         };
@@ -195,28 +208,27 @@ export default factories.createCoreService(
         let currentId = categoryId;
 
         while (currentId) {
-          const category = await strapi.entityService.findOne(
-            'api::category.category',
-            currentId,
-            {
+          const category = await strapi
+            .documents('api::category.category')
+            .findOne({
+              documentId: String(currentId),
               populate: {
                 parent: true,
               },
               fields: ['id', 'name', 'slug'],
-            }
-          );
+            });
 
           if (!category) {
             break;
           }
 
           breadcrumbs.unshift({
-            id: category.id,
+            documentId: category.documentId,
             name: category.name,
             slug: category.slug,
           });
 
-          currentId = (category as any).parent?.id;
+          currentId = (category as any).parent?.documentId;
         }
 
         return breadcrumbs;
@@ -250,16 +262,15 @@ export default factories.createCoreService(
         while (toProcess.length > 0) {
           const currentId = toProcess.shift();
 
-          const children = await strapi.entityService.findMany(
-            'api::category.category',
-            {
+          const children = await strapi
+            .documents('api::category.category')
+            .findMany({
               filters: {
                 parent: currentId as any,
                 publishedAt: { $notNull: true },
               },
               fields: ['id', 'name', 'slug'],
-            }
-          );
+            });
 
           children.forEach(child => {
             descendants.push(child);
@@ -283,16 +294,15 @@ export default factories.createCoreService(
         let currentId = categoryId;
 
         while (currentId) {
-          const category = await strapi.entityService.findOne(
-            'api::category.category',
-            currentId,
-            {
+          const category = await strapi
+            .documents('api::category.category')
+            .findOne({
+              documentId: String(currentId),
               populate: {
                 parent: true,
               },
               fields: ['id', 'name', 'slug'],
-            }
-          );
+            });
 
           if (!category || !(category as any).parent) {
             break;
@@ -319,11 +329,12 @@ export default factories.createCoreService(
      */
     async reorderCategories(
       parentId: number | null,
-      categoryOrders: { id: number; sortOrder: number }[]
+      categoryOrders: { documentId: string; sortOrder: number }[]
     ) {
       try {
-        const updatePromises = categoryOrders.map(({ id, sortOrder }) =>
-          strapi.entityService.update('api::category.category', id, {
+        const updatePromises = categoryOrders.map(({ documentId, sortOrder }) =>
+          strapi.documents('api::category.category').update({
+            documentId: String(documentId),
             data: { sortOrder },
           })
         );
@@ -355,7 +366,7 @@ export default factories.createCoreService(
           }
         }
 
-        return await strapi.entityService.findMany('api::category.category', {
+        return await strapi.documents('api::category.category').findMany({
           filters,
           sort: { sortOrder: 'asc', name: 'asc' },
           populate: {
@@ -376,10 +387,10 @@ export default factories.createCoreService(
     async getCategoryStatistics(categoryId: number | string) {
       try {
         // Get the category with its products
-        const category = await strapi.entityService.findOne(
-          'api::category.category',
-          categoryId,
-          {
+        const category = await strapi
+          .documents('api::category.category')
+          .findOne({
+            documentId: String(categoryId),
             populate: {
               products: {
                 fields: ['id', 'status', 'isActive', 'inventory', 'price'],
@@ -388,8 +399,7 @@ export default factories.createCoreService(
                 fields: ['id', 'name'],
               },
             },
-          }
-        );
+          });
 
         if (!category) {
           throw new Error('Category not found');
@@ -404,7 +414,7 @@ export default factories.createCoreService(
           categoryName: category.name,
           totalProducts: products.length,
           activeProducts: products.filter(
-            (p: any) => p.isActive && p.status === 'active'
+            (p: any) => p.isActive === true && p.status === 'published'
           ).length,
           draftProducts: products.filter((p: any) => p.status === 'draft')
             .length,
@@ -456,9 +466,9 @@ export default factories.createCoreService(
           categoryIds = [categoryId, ...descendants.map(cat => cat.id)];
         }
 
-        const products = await strapi.entityService.findMany(
-          'api::product.product',
-          {
+        const products = await strapi
+          .documents('api::product.product')
+          .findMany({
             filters: {
               category: { $in: categoryIds } as any,
               publishedAt: { $notNull: true },
@@ -471,8 +481,7 @@ export default factories.createCoreService(
               images: true,
               seo: true,
             },
-          }
-        );
+          });
 
         return products;
       } catch (error) {
@@ -489,18 +498,18 @@ export default factories.createCoreService(
       categoryId: number | string
     ) {
       try {
-        const product = await strapi.entityService.findOne(
-          'api::product.product',
-          productId
-        );
+        const product = await strapi.documents('api::product.product').findOne({
+          documentId: String(productId),
+        });
         if (!product) {
           throw new Error('Product not found');
         }
 
-        const category = await strapi.entityService.findOne(
-          'api::category.category',
-          categoryId
-        );
+        const category = await strapi
+          .documents('api::category.category')
+          .findOne({
+            documentId: String(categoryId),
+          });
         if (!category) {
           throw new Error('Category not found');
         }
@@ -526,10 +535,11 @@ export default factories.createCoreService(
     ) {
       try {
         // Validate category first
-        const category = await strapi.entityService.findOne(
-          'api::category.category',
-          categoryId
-        );
+        const category = await strapi
+          .documents('api::category.category')
+          .findOne({
+            documentId: String(categoryId),
+          });
         if (!category) {
           throw new Error('Category not found');
         }
@@ -541,7 +551,9 @@ export default factories.createCoreService(
         // Validate all products exist
         const products = await Promise.all(
           productIds.map(id =>
-            strapi.entityService.findOne('api::product.product', id)
+            strapi.documents('api::product.product').findOne({
+              documentId: String(id),
+            })
           )
         );
 
@@ -557,7 +569,8 @@ export default factories.createCoreService(
 
         // Update all products
         const updatePromises = productIds.map(productId =>
-          strapi.entityService.update('api::product.product', productId, {
+          strapi.documents('api::product.product').update({
+            documentId: String(productId),
             data: { category: categoryId },
           })
         );
@@ -581,9 +594,9 @@ export default factories.createCoreService(
      */
     async getOrphanedProducts() {
       try {
-        const products = await strapi.entityService.findMany(
-          'api::product.product',
-          {
+        const products = await strapi
+          .documents('api::product.product')
+          .findMany({
             filters: {
               category: { $null: true } as any,
               publishedAt: { $notNull: true },
@@ -593,8 +606,7 @@ export default factories.createCoreService(
               images: true,
               seo: true,
             },
-          }
-        );
+          });
 
         return products;
       } catch (error) {
@@ -608,9 +620,9 @@ export default factories.createCoreService(
      */
     async getNavigationMenu(maxDepth: number = 3) {
       try {
-        const rootCategories = await strapi.entityService.findMany(
-          'api::category.category',
-          {
+        const rootCategories = await strapi
+          .documents('api::category.category')
+          .findMany({
             filters: {
               parent: { $null: true } as any,
               isActive: true,
@@ -627,8 +639,7 @@ export default factories.createCoreService(
               },
             },
             fields: ['id', 'name', 'slug', 'sortOrder'],
-          }
-        );
+          });
 
         // Build navigation menu with limited depth
         const buildMenuLevel = async (
@@ -701,15 +712,14 @@ export default factories.createCoreService(
      */
     async getSiblingCategories(categoryId: number) {
       try {
-        const category = await strapi.entityService.findOne(
-          'api::category.category',
-          categoryId,
-          {
+        const category = await strapi
+          .documents('api::category.category')
+          .findOne({
+            documentId: String(categoryId),
             populate: {
               parent: true,
             },
-          }
-        );
+          });
 
         if (!category) {
           throw new Error('Category not found');
@@ -732,14 +742,13 @@ export default factories.createCoreService(
         // Exclude the current category
         filters.id = { $ne: categoryId };
 
-        const siblings = await strapi.entityService.findMany(
-          'api::category.category',
-          {
+        const siblings = await strapi
+          .documents('api::category.category')
+          .findMany({
             filters,
             sort: { sortOrder: 'asc', name: 'asc' },
             fields: ['id', 'name', 'slug', 'sortOrder'],
-          }
-        );
+          });
 
         return siblings;
       } catch (error) {
@@ -753,9 +762,9 @@ export default factories.createCoreService(
      */
     async searchCategories(searchTerm: string, limit: number = 20) {
       try {
-        const categories = await strapi.entityService.findMany(
-          'api::category.category',
-          {
+        const categories = await strapi
+          .documents('api::category.category')
+          .findMany({
             filters: {
               $or: [
                 { name: { $containsi: searchTerm } },
@@ -773,8 +782,7 @@ export default factories.createCoreService(
               products: true,
             } as any,
             fields: ['id', 'name', 'slug', 'description'],
-          }
-        );
+          });
 
         return categories.map((category: any) => ({
           ...category,

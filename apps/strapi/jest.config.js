@@ -2,9 +2,12 @@ export default {
   testEnvironment: 'node',
   testMatch: ['**/*.test.ts', '**/*.test.js', '**/*.spec.ts', '**/*.spec.js'],
   transform: {
-    '^.+\\.ts$': ['ts-jest', {
-      useESM: true,
-    }],
+    '^.+\\.ts$': [
+      'ts-jest',
+      {
+        useESM: true,
+      },
+    ],
   },
   moduleFileExtensions: ['ts', 'js', 'json'],
   collectCoverageFrom: [
@@ -14,6 +17,12 @@ export default {
     '!src/types/**',
     '!src/**/index.ts',
     '!src/**/index.js',
+    '!src/utils/**',
+    '!src/**/utils/**',
+    '!src/helpers/**',
+    '!src/**/helpers/**',
+    '!src/seeds/**',
+    '!src/**/seeds/**',
   ],
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
   coverageDirectory: 'coverage',

@@ -1,16 +1,28 @@
 /**
  * Product filter service tests
- * 
+ *
  * Tests for product filtering functionality including category, price, and attribute filtering
  */
+
+// Create persistent mock objects for documents API
+const mockDocumentsAPI = {
+  findOne: jest.fn() as jest.MockedFunction<any>,
+  findFirst: jest.fn() as jest.MockedFunction<any>,
+  findMany: jest.fn() as jest.MockedFunction<any>,
+  create: jest.fn() as jest.MockedFunction<any>,
+  update: jest.fn() as jest.MockedFunction<any>,
+  delete: jest.fn() as jest.MockedFunction<any>,
+  count: jest.fn() as jest.MockedFunction<any>,
+  publish: jest.fn() as jest.MockedFunction<any>,
+  unpublish: jest.fn() as jest.MockedFunction<any>,
+  discardDraft: jest.fn() as jest.MockedFunction<any>,
+};
 
 const mockStrapi = {
   contentType: jest.fn().mockReturnValue({
     kind: 'collectionType',
   }),
-  entityService: {
-    findMany: jest.fn() as jest.MockedFunction<any>,
-  },
+  documents: jest.fn(() => mockDocumentsAPI),
   db: {
     query: jest.fn(() => ({
       findMany: jest.fn() as jest.MockedFunction<any>,
@@ -36,15 +48,15 @@ describe('Product Filter Service', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Set up the factory mock
     const { factories } = require('@strapi/strapi');
-    (factories.createCoreService as jest.MockedFunction<any>).mockImplementation(
-      (serviceName, serviceFunction) => {
-        return serviceFunction({ strapi: mockStrapi });
-      }
-    );
-    
+    (
+      factories.createCoreService as jest.MockedFunction<any>
+    ).mockImplementation((serviceName, serviceFunction) => {
+      return serviceFunction({ strapi: mockStrapi });
+    });
+
     // Import the filter service
     const filterServiceModule = require('./filter').default;
     filterService = filterServiceModule;
@@ -53,50 +65,65 @@ describe('Product Filter Service', () => {
   describe('applyCategoryFilter', () => {
     it('should return original filters when no category ID provided', async () => {
       const originalFilters = { status: 'active' };
-      
+
       const result = await filterService.applyCategoryFilter(originalFilters);
-      
+
       expect(result).toEqual(originalFilters);
     }, 5000); // 5 second timeout
 
     it('should apply simple category filter', async () => {
       const originalFilters = { status: 'active' };
-      mockStrapi.entityService.findMany.mockResolvedValue([]);
+      mockDocumentsAPI.findMany.mockResolvedValue([]);
 
-      const result = await filterService.applyCategoryFilter(originalFilters, 1, false);
-      
+      const result = await filterService.applyCategoryFilter(
+        originalFilters,
+        1,
+        false
+      );
+
       expect(result).toEqual({
         status: 'active',
-        category: { id: 1 },
+        category: { documentId: '1' },
       });
     }, 5000); // 5 second timeout
 
     it('should apply category filter with subcategories', async () => {
       const originalFilters = { status: 'active' };
       const mockSubcategories = [
-        { id: 2, name: 'Electronics > Phones' },
-        { id: 3, name: 'Electronics > Laptops' },
+        { documentId: '2', name: 'Electronics > Phones' },
+        { documentId: '3', name: 'Electronics > Laptops' },
       ];
-      
-      // Mock getSubcategories to prevent recursive calls
-      jest.spyOn(filterService, 'getSubcategories').mockResolvedValue(mockSubcategories);
 
-      const result = await filterService.applyCategoryFilter(originalFilters, 1, true);
-      
+      // Mock getSubcategories to prevent recursive calls
+      jest
+        .spyOn(filterService, 'getSubcategories')
+        .mockResolvedValue(mockSubcategories);
+
+      const result = await filterService.applyCategoryFilter(
+        originalFilters,
+        1,
+        true
+      );
+
       expect(result).toEqual({
         status: 'active',
-        category: { id: { $in: [1, 2, 3] } },
+        category: { documentId: { $in: ['1', '2', '3'] } },
       });
     }, 5000); // 5 second timeout
 
     it('should handle errors gracefully', async () => {
       const originalFilters = { status: 'active' };
-      
-      // Mock getSubcategories to throw an error
-      jest.spyOn(filterService, 'getSubcategories').mockRejectedValue(new Error('Database error'));
 
-      const result = await filterService.applyCategoryFilter(originalFilters, 1);
-      
+      // Mock getSubcategories to throw an error
+      jest
+        .spyOn(filterService, 'getSubcategories')
+        .mockRejectedValue(new Error('Database error'));
+
+      const result = await filterService.applyCategoryFilter(
+        originalFilters,
+        1
+      );
+
       expect(result).toEqual(originalFilters);
       expect(mockStrapi.log.error).toHaveBeenCalled();
     }, 5000); // 5 second timeout
@@ -104,34 +131,34 @@ describe('Product Filter Service', () => {
 
   describe('getSubcategories', () => {
     it('should return empty array when no subcategories exist', async () => {
-      mockStrapi.entityService.findMany.mockResolvedValue([]);
+      mockDocumentsAPI.findMany.mockResolvedValue([]);
 
       const result = await filterService.getSubcategories(1);
-      
+
       expect(result).toEqual([]);
     });
 
     it('should return direct subcategories', async () => {
       const mockSubcategories = [
-        { id: 2, name: 'Electronics > Phones' },
-        { id: 3, name: 'Electronics > Laptops' },
+        { documentId: '2', name: 'Electronics > Phones' },
+        { documentId: '3', name: 'Electronics > Laptops' },
       ];
-      
-      // First call returns the direct children, subsequent calls return empty arrays to prevent recursion
-      mockStrapi.entityService.findMany
-        .mockResolvedValueOnce(mockSubcategories)
-        .mockResolvedValue([]);
+
+      // Mock the first call to return direct children
+      mockDocumentsAPI.findMany.mockResolvedValueOnce(mockSubcategories);
+      // Mock subsequent recursive calls to return empty arrays
+      mockDocumentsAPI.findMany.mockResolvedValue([]);
 
       const result = await filterService.getSubcategories(1);
-      
+
       expect(result).toEqual(mockSubcategories);
     });
 
     it('should handle service errors', async () => {
-      mockStrapi.entityService.findMany.mockRejectedValue(new Error('Database error'));
+      mockDocumentsAPI.findMany.mockRejectedValue(new Error('Database error'));
 
       const result = await filterService.getSubcategories(1);
-      
+
       expect(result).toEqual([]);
       expect(mockStrapi.log.error).toHaveBeenCalled();
     });
@@ -140,17 +167,19 @@ describe('Product Filter Service', () => {
   describe('applyPriceFilter', () => {
     it('should return original filters when no price range provided', () => {
       const originalFilters = { status: 'active' };
-      
+
       const result = filterService.applyPriceFilter(originalFilters);
-      
+
       expect(result).toEqual(originalFilters);
     });
 
     it('should apply minimum price filter', () => {
       const originalFilters = { status: 'active' };
-      
-      const result = filterService.applyPriceFilter(originalFilters, { min: 10 });
-      
+
+      const result = filterService.applyPriceFilter(originalFilters, {
+        min: 10,
+      });
+
       expect(result).toEqual({
         status: 'active',
         price: { $gte: 10 },
@@ -159,9 +188,11 @@ describe('Product Filter Service', () => {
 
     it('should apply maximum price filter', () => {
       const originalFilters = { status: 'active' };
-      
-      const result = filterService.applyPriceFilter(originalFilters, { max: 100 });
-      
+
+      const result = filterService.applyPriceFilter(originalFilters, {
+        max: 100,
+      });
+
       expect(result).toEqual({
         status: 'active',
         price: { $lte: 100 },
@@ -170,9 +201,12 @@ describe('Product Filter Service', () => {
 
     it('should apply price range filter', () => {
       const originalFilters = { status: 'active' };
-      
-      const result = filterService.applyPriceFilter(originalFilters, { min: 10, max: 100 });
-      
+
+      const result = filterService.applyPriceFilter(originalFilters, {
+        min: 10,
+        max: 100,
+      });
+
       expect(result).toEqual({
         status: 'active',
         price: { $gte: 10, $lte: 100 },
@@ -183,18 +217,21 @@ describe('Product Filter Service', () => {
   describe('applyAttributeFilters', () => {
     it('should return original filters when no attributes provided', () => {
       const originalFilters = { status: 'active' };
-      
+
       const result = filterService.applyAttributeFilters(originalFilters);
-      
+
       expect(result).toEqual(originalFilters);
     });
 
     it('should apply string attribute filters', () => {
       const originalFilters = { status: 'active' };
       const attributes = { color: 'red', brand: 'Apple' };
-      
-      const result = filterService.applyAttributeFilters(originalFilters, attributes);
-      
+
+      const result = filterService.applyAttributeFilters(
+        originalFilters,
+        attributes
+      );
+
       expect(result).toEqual({
         status: 'active',
         color: { $containsi: 'red' },
@@ -205,9 +242,12 @@ describe('Product Filter Service', () => {
     it('should apply array attribute filters', () => {
       const originalFilters = { status: 'active' };
       const attributes = { colors: ['red', 'blue'], sizes: ['M', 'L'] };
-      
-      const result = filterService.applyAttributeFilters(originalFilters, attributes);
-      
+
+      const result = filterService.applyAttributeFilters(
+        originalFilters,
+        attributes
+      );
+
       expect(result).toEqual({
         status: 'active',
         colors: { $in: ['red', 'blue'] },
@@ -218,9 +258,12 @@ describe('Product Filter Service', () => {
     it('should apply boolean attribute filters', () => {
       const originalFilters = { status: 'active' };
       const attributes = { featured: true, onSale: false };
-      
-      const result = filterService.applyAttributeFilters(originalFilters, attributes);
-      
+
+      const result = filterService.applyAttributeFilters(
+        originalFilters,
+        attributes
+      );
+
       expect(result).toEqual({
         status: 'active',
         featured: true,
@@ -232,17 +275,17 @@ describe('Product Filter Service', () => {
   describe('applyInventoryFilter', () => {
     it('should return original filters when no inventory filters applied', () => {
       const originalFilters = { status: 'active' };
-      
+
       const result = filterService.applyInventoryFilter(originalFilters);
-      
+
       expect(result).toEqual(originalFilters);
     });
 
     it('should apply in-stock filter', () => {
       const originalFilters = { status: 'active' };
-      
+
       const result = filterService.applyInventoryFilter(originalFilters, true);
-      
+
       expect(result).toEqual({
         status: 'active',
         inventory: { $gt: 0 },
@@ -251,9 +294,13 @@ describe('Product Filter Service', () => {
 
     it('should apply minimum stock filter', () => {
       const originalFilters = { status: 'active' };
-      
-      const result = filterService.applyInventoryFilter(originalFilters, false, 5);
-      
+
+      const result = filterService.applyInventoryFilter(
+        originalFilters,
+        false,
+        5
+      );
+
       expect(result).toEqual({
         status: 'active',
         inventory: { $gte: 5 },
@@ -262,9 +309,13 @@ describe('Product Filter Service', () => {
 
     it('should combine in-stock and minimum stock filters', () => {
       const originalFilters = { status: 'active' };
-      
-      const result = filterService.applyInventoryFilter(originalFilters, true, 5);
-      
+
+      const result = filterService.applyInventoryFilter(
+        originalFilters,
+        true,
+        5
+      );
+
       expect(result).toEqual({
         status: 'active',
         inventory: { $gt: 0, $gte: 5 },
@@ -275,25 +326,25 @@ describe('Product Filter Service', () => {
   describe('validateFilterParams', () => {
     it('should validate and sanitize category ID', () => {
       const params = { categoryId: '123' };
-      
+
       const result = filterService.validateFilterParams(params);
-      
+
       expect(result).toEqual({ categoryId: 123 });
     });
 
     it('should reject invalid category ID', () => {
       const params = { categoryId: 'invalid' };
-      
+
       const result = filterService.validateFilterParams(params);
-      
+
       expect(result).toEqual({});
     });
 
     it('should validate price range', () => {
       const params = { minPrice: '10.99', maxPrice: '99.99' };
-      
+
       const result = filterService.validateFilterParams(params);
-      
+
       expect(result).toEqual({
         priceRange: { min: 10.99, max: 99.99 },
       });
@@ -301,7 +352,7 @@ describe('Product Filter Service', () => {
 
     it('should throw error for invalid price range', () => {
       const params = { minPrice: '100', maxPrice: '50' };
-      
+
       expect(() => filterService.validateFilterParams(params)).toThrow(
         'Minimum price cannot be greater than maximum price'
       );
@@ -309,9 +360,9 @@ describe('Product Filter Service', () => {
 
     it('should validate inventory filters', () => {
       const params = { inStockOnly: 'true', minStock: '5' };
-      
+
       const result = filterService.validateFilterParams(params);
-      
+
       expect(result).toEqual({
         inStockOnly: true,
         minStock: 5,
@@ -319,15 +370,15 @@ describe('Product Filter Service', () => {
     });
 
     it('should extract custom attributes', () => {
-      const params = { 
+      const params = {
         categoryId: '1',
         color: 'red',
         brand: 'Apple',
         size: 'M',
       };
-      
+
       const result = filterService.validateFilterParams(params);
-      
+
       expect(result).toEqual({
         categoryId: 1,
         attributes: {
@@ -349,14 +400,17 @@ describe('Product Filter Service', () => {
         inStockOnly: true,
       };
 
-      mockStrapi.entityService.findMany.mockResolvedValue([]);
+      mockDocumentsAPI.findMany.mockResolvedValue([]);
 
-      const result = await filterService.buildFilters(baseFilters, filterParams);
-      
+      const result = await filterService.buildFilters(
+        baseFilters,
+        filterParams
+      );
+
       expect(result).toEqual({
         status: 'active',
         publishedAt: { $notNull: true },
-        category: { id: { $in: [1] } },
+        category: { documentId: { $in: ['1'] } },
         price: { $gte: 10, $lte: 100 },
         color: { $containsi: 'red' },
         inventory: { $gt: 0 },
@@ -367,14 +421,14 @@ describe('Product Filter Service', () => {
   describe('buildCategoryHierarchy', () => {
     it('should build hierarchical structure from flat categories', () => {
       const flatCategories = [
-        { id: 1, name: 'Electronics', parent: null },
-        { id: 2, name: 'Phones', parent: { id: 1 } },
-        { id: 3, name: 'Laptops', parent: { id: 1 } },
-        { id: 4, name: 'Smartphones', parent: { id: 2 } },
+        { documentId: '1', name: 'Electronics', parent: null },
+        { documentId: '2', name: 'Phones', parent: { documentId: '1' } },
+        { documentId: '3', name: 'Laptops', parent: { documentId: '1' } },
+        { documentId: '4', name: 'Smartphones', parent: { documentId: '2' } },
       ];
 
       const result = filterService.buildCategoryHierarchy(flatCategories);
-      
+
       expect(result).toHaveLength(1);
       expect(result[0].name).toBe('Electronics');
       expect(result[0].children).toHaveLength(2);
@@ -385,12 +439,16 @@ describe('Product Filter Service', () => {
 
     it('should handle orphaned categories', () => {
       const flatCategories = [
-        { id: 1, name: 'Electronics', parent: null },
-        { id: 2, name: 'Orphan Category', parent: { id: 999 } }, // Parent doesn't exist
+        { documentId: '1', name: 'Electronics', parent: null },
+        {
+          documentId: '2',
+          name: 'Orphan Category',
+          parent: { documentId: '999' },
+        }, // Parent doesn't exist
       ];
 
       const result = filterService.buildCategoryHierarchy(flatCategories);
-      
+
       expect(result).toHaveLength(2);
       expect(result.map(cat => cat.name)).toContain('Orphan Category');
     });

@@ -1,36 +1,62 @@
 /**
  * Category controller tests
+ *
+ * Tests for category controller using new Document Service API and test standards
  */
 
-import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+// Third-party imports
+import { beforeEach, describe, expect, it, jest } from '@jest/globals';
+
+// Test utilities
+import {
+  createMockContext,
+  createMockStrapi,
+} from '../../../utils/test-helpers';
 
 // Mock all dependencies
 jest.mock('../services/category');
 
+// Create mock document service methods
+const mockDocumentMethods = {
+  findOne: jest.fn() as jest.MockedFunction<any>,
+  findFirst: jest.fn() as jest.MockedFunction<any>,
+  findMany: jest.fn() as jest.MockedFunction<any>,
+  create: jest.fn() as jest.MockedFunction<any>,
+  update: jest.fn() as jest.MockedFunction<any>,
+  delete: jest.fn() as jest.MockedFunction<any>,
+  count: jest.fn() as jest.MockedFunction<any>,
+  publish: jest.fn() as jest.MockedFunction<any>,
+  unpublish: jest.fn() as jest.MockedFunction<any>,
+  discardDraft: jest.fn() as jest.MockedFunction<any>,
+};
+
+// Mock service methods
+const mockServiceMethods = {
+  findByNameAndParent: jest.fn(),
+  checkCircularReference: jest.fn(),
+  getNextSortOrder: jest.fn(),
+  getCategoryTree: jest.fn(),
+  getBreadcrumbs: jest.fn(),
+  getCategoryPath: jest.fn(),
+  getDescendants: jest.fn(),
+  getAncestors: jest.fn(),
+  reorderCategories: jest.fn(),
+  getCategoriesByStatus: jest.fn(),
+  getCategoryStatistics: jest.fn() as jest.MockedFunction<any>,
+  getNavigationMenu: jest.fn() as jest.MockedFunction<any>,
+  getSiblingCategories: jest.fn() as jest.MockedFunction<any>,
+  searchCategories: jest.fn() as jest.MockedFunction<any>,
+};
+
+// Mock Strapi instance with Document Service API
 const mockStrapi: any = {
-  entityService: {
-    findOne: jest.fn(),
-    findMany: jest.fn(),
-    findPage: jest.fn(),
-    create: jest.fn(),
-    update: jest.fn(),
-    delete: jest.fn(),
-    count: jest.fn(),
-  },
-  service: jest.fn().mockReturnValue({
-    findByNameAndParent: jest.fn(),
-    checkCircularReference: jest.fn(),
-    getNextSortOrder: jest.fn(),
-    getCategoryTree: jest.fn(),
-    getBreadcrumbs: jest.fn(),
-    getCategoryPath: jest.fn(),
-    getDescendants: jest.fn(),
-    getAncestors: jest.fn(),
-    reorderCategories: jest.fn(),
-    getCategoriesByStatus: jest.fn(),
-  }),
+  documents: jest.fn(() => mockDocumentMethods),
+  service: jest.fn().mockReturnValue(mockServiceMethods),
   log: {
     error: jest.fn(),
+    warn: jest.fn(),
+    info: jest.fn(),
+    debug: jest.fn(),
   },
 };
 
@@ -60,7 +86,22 @@ describe('Category Controller', () => {
   beforeEach(() => {
     jest.clearAllMocks();
 
+    // Reset all mock document methods
+    Object.values(mockDocumentMethods).forEach((mockFn: any) => {
+      if (jest.isMockFunction(mockFn)) {
+        mockFn.mockReset();
+      }
+    });
+
+    // Reset all mock service methods
+    Object.values(mockServiceMethods).forEach((mockFn: any) => {
+      if (jest.isMockFunction(mockFn)) {
+        mockFn.mockReset();
+      }
+    });
+
     // Import the actual controller
+    delete require.cache[require.resolve('./category')];
     const categoryController = require('./category').default;
     controller = categoryController;
 
@@ -72,22 +113,30 @@ describe('Category Controller', () => {
   describe('find', () => {
     it('should return categories with default pagination and sorting', async () => {
       const mockCategories = [
-        { id: 1, name: 'Electronics', slug: 'electronics', sortOrder: 0 },
-        { id: 2, name: 'Clothing', slug: 'clothing', sortOrder: 1 },
+        {
+          documentId: 'cat1',
+          name: 'Electronics',
+          slug: 'electronics',
+          sortOrder: 0,
+        },
+        {
+          documentId: 'cat2',
+          name: 'Clothing',
+          slug: 'clothing',
+          sortOrder: 1,
+        },
       ];
-      const mockPagination = { page: 1, pageSize: 25, pageCount: 1, total: 2 };
 
-      mockStrapi.entityService.findPage.mockResolvedValue({
-        results: mockCategories,
-        pagination: mockPagination,
-      });
+      (mockDocumentMethods.findMany as any).mockResolvedValue(mockCategories);
 
       const result = await controller.find(mockCtx);
 
-      expect(mockStrapi.entityService.findPage).toHaveBeenCalledWith(
-        'api::category.category',
+      expect(mockStrapi.documents).toHaveBeenCalledWith(
+        'api::category.category'
+      );
+      expect(mockDocumentMethods.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          filters: { publishedAt: { $notNull: true } },
+          filters: { publishedAt: { $notNull: true } }, // Use publishedAt for Draft & Publish
           sort: { sortOrder: 'asc', name: 'asc' },
           pagination: { page: 1, pageSize: 25 },
         })
@@ -95,7 +144,7 @@ describe('Category Controller', () => {
 
       expect(result).toEqual({
         data: mockCategories,
-        meta: { pagination: mockPagination },
+        meta: {},
       });
     });
 
@@ -107,17 +156,13 @@ describe('Category Controller', () => {
         pageSize: 10,
       };
 
-      mockStrapi.entityService.findPage.mockResolvedValue({
-        results: [],
-        pagination: { page: 2, pageSize: 10, pageCount: 1, total: 0 },
-      });
+      (mockDocumentMethods.findMany as any).mockResolvedValue([]);
 
       await controller.find(mockCtx);
 
-      expect(mockStrapi.entityService.findPage).toHaveBeenCalledWith(
-        'api::category.category',
+      expect(mockDocumentMethods.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          filters: { isActive: true, publishedAt: { $notNull: true } },
+          filters: { isActive: true, publishedAt: { $notNull: true } }, // Use publishedAt for Draft & Publish
           sort: { name: 'desc' },
           pagination: { page: 2, pageSize: 10 },
         })
@@ -125,9 +170,9 @@ describe('Category Controller', () => {
     });
 
     it('should handle errors and throw 500', async () => {
-      mockStrapi.entityService.findPage.mockRejectedValue(
-        new Error('Database error')
-      );
+      mockStrapi
+        .documents('api::category.category')
+        .findMany.mockRejectedValue(new Error('Database error'));
 
       await controller.find(mockCtx);
 
@@ -142,26 +187,32 @@ describe('Category Controller', () => {
   describe('findOne', () => {
     it('should return category with breadcrumbs', async () => {
       const mockCategory = {
-        id: 1,
+        documentId: 'cat1',
         name: 'Electronics',
         slug: 'electronics',
         parent: null,
         children: [],
       };
       const mockBreadcrumbs = [
-        { id: 1, name: 'Electronics', slug: 'electronics' },
+        { documentId: 'cat1', name: 'Electronics', slug: 'electronics' },
       ];
 
-      mockCtx.params.id = '1';
-      mockStrapi.entityService.findOne.mockResolvedValue(mockCategory);
+      mockCtx.params.documentId = 'cat1';
+      mockStrapi
+        .documents('api::category.category')
+        .findOne.mockResolvedValue(mockCategory);
       mockStrapi.service().getBreadcrumbs.mockResolvedValue(mockBreadcrumbs);
 
       const result = await controller.findOne(mockCtx);
 
-      expect(mockStrapi.entityService.findOne).toHaveBeenCalledWith(
-        'api::category.category',
-        '1',
+      expect(mockStrapi.documents).toHaveBeenCalledWith(
+        'api::category.category'
+      );
+      expect(
+        mockStrapi.documents('api::category.category').findOne
+      ).toHaveBeenCalledWith(
         expect.objectContaining({
+          documentId: 'cat1',
           populate: expect.objectContaining({
             parent: true,
             children: true,
@@ -175,19 +226,21 @@ describe('Category Controller', () => {
       });
     });
 
-    it('should return bad request if no ID provided', async () => {
-      mockCtx.params.id = undefined;
+    it('should return bad request if no documentId provided', async () => {
+      mockCtx.params.documentId = undefined;
 
       await controller.findOne(mockCtx);
 
       expect(mockCtx.badRequest).toHaveBeenCalledWith(
-        'Category ID is required'
+        'Category documentId is required'
       );
     });
 
     it('should return not found if category does not exist', async () => {
-      mockCtx.params.id = '999';
-      mockStrapi.entityService.findOne.mockResolvedValue(null);
+      mockCtx.params.documentId = 'nonexistent';
+      mockStrapi
+        .documents('api::category.category')
+        .findOne.mockResolvedValue(null);
 
       await controller.findOne(mockCtx);
 
@@ -202,12 +255,14 @@ describe('Category Controller', () => {
         description: 'Electronic products',
         isActive: true,
       };
-      const mockCreatedCategory = { id: 1, ...categoryData };
+      const mockCreatedCategory = { documentId: 'cat1', ...categoryData };
 
       mockCtx.request.body = { data: categoryData };
       mockStrapi.service().findByNameAndParent.mockResolvedValue(null);
       mockStrapi.service().getNextSortOrder.mockResolvedValue(0);
-      mockStrapi.entityService.create.mockResolvedValue(mockCreatedCategory);
+      mockStrapi
+        .documents('api::category.category')
+        .create.mockResolvedValue(mockCreatedCategory);
 
       const result = await controller.create(mockCtx);
 
@@ -218,8 +273,12 @@ describe('Category Controller', () => {
       expect(mockStrapi.service().getNextSortOrder).toHaveBeenCalledWith(
         undefined
       );
-      expect(mockStrapi.entityService.create).toHaveBeenCalledWith(
-        'api::category.category',
+      expect(mockStrapi.documents).toHaveBeenCalledWith(
+        'api::category.category'
+      );
+      expect(
+        mockStrapi.documents('api::category.category').create
+      ).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({ ...categoryData, sortOrder: 0 }),
         })
@@ -231,14 +290,21 @@ describe('Category Controller', () => {
     it('should validate parent category exists', async () => {
       const categoryData = {
         name: 'Laptops',
-        parent: 1,
+        parent: 'parent-cat-id',
       };
 
       mockCtx.request.body = { data: categoryData };
-      mockStrapi.entityService.findOne.mockResolvedValue(null);
+      mockStrapi
+        .documents('api::category.category')
+        .findOne.mockResolvedValue(null);
 
       await controller.create(mockCtx);
 
+      expect(
+        mockStrapi.documents('api::category.category').findOne
+      ).toHaveBeenCalledWith({
+        documentId: 'parent-cat-id',
+      });
       expect(mockCtx.badRequest).toHaveBeenCalledWith(
         'Parent category not found'
       );
@@ -251,8 +317,8 @@ describe('Category Controller', () => {
       };
 
       mockCtx.request.body = { data: categoryData };
-      mockStrapi.entityService.findOne.mockResolvedValue({
-        id: 1,
+      mockStrapi.documents('api::category.category').findOne.mockResolvedValue({
+        documentId: 'parent-1',
         name: 'Electronics',
       });
       mockStrapi.service().checkCircularReference.mockResolvedValue(true);
@@ -271,8 +337,8 @@ describe('Category Controller', () => {
       };
 
       mockCtx.request.body = { data: categoryData };
-      mockStrapi.entityService.findOne.mockResolvedValue({
-        id: 1,
+      mockStrapi.documents('api::category.category').findOne.mockResolvedValue({
+        documentId: 'parent-1',
         name: 'Electronics',
       });
       mockStrapi.service().checkCircularReference.mockResolvedValue(false);
@@ -311,17 +377,18 @@ describe('Category Controller', () => {
       };
       const mockUpdatedCategory = { ...existingCategory, ...updateData };
 
-      mockCtx.params.id = '1';
+      mockCtx.params.documentId = '1';
       mockCtx.request.body = { data: updateData };
-      mockStrapi.entityService.findOne.mockResolvedValue(existingCategory);
-      mockStrapi.entityService.update.mockResolvedValue(mockUpdatedCategory);
+      (mockDocumentMethods.findOne as any).mockResolvedValue(existingCategory);
+      (mockDocumentMethods.update as any).mockResolvedValue(
+        mockUpdatedCategory
+      );
 
       const result = await controller.update(mockCtx);
 
-      expect(mockStrapi.entityService.update).toHaveBeenCalledWith(
-        'api::category.category',
-        '1',
+      expect(mockDocumentMethods.update).toHaveBeenCalledWith(
         expect.objectContaining({
+          documentId: '1',
           data: updateData,
         })
       );
@@ -333,12 +400,14 @@ describe('Category Controller', () => {
       const updateData = { parent: 2 };
       const existingCategory = { id: 1, name: 'Electronics', parent: null };
 
-      mockCtx.params.id = '1';
+      mockCtx.params.documentId = '1';
       mockCtx.request.body = { data: updateData };
-      mockStrapi.entityService.findOne
+      (mockDocumentMethods.findOne as any)
         .mockResolvedValueOnce(existingCategory)
-        .mockResolvedValueOnce({ id: 2, name: 'Computers' });
-      mockStrapi.service().checkCircularReference.mockResolvedValue(true);
+        .mockResolvedValueOnce({ documentId: '2', name: 'Computers' });
+      (mockServiceMethods.checkCircularReference as any).mockResolvedValue(
+        true
+      );
 
       await controller.update(mockCtx);
 
@@ -348,8 +417,8 @@ describe('Category Controller', () => {
     });
 
     it('should return not found if category does not exist', async () => {
-      mockCtx.params.id = '999';
-      mockStrapi.entityService.findOne.mockResolvedValue(null);
+      mockCtx.params.documentId = '999';
+      (mockDocumentMethods.findOne as any).mockResolvedValue(null);
 
       await controller.update(mockCtx);
 
@@ -366,15 +435,16 @@ describe('Category Controller', () => {
         products: [],
       };
 
-      mockCtx.params.id = '1';
-      mockStrapi.entityService.findOne.mockResolvedValue(category);
-      mockStrapi.entityService.delete.mockResolvedValue(category);
+      mockCtx.params.documentId = '1';
+      (mockDocumentMethods.findOne as any).mockResolvedValue(category);
+      (mockDocumentMethods.delete as any).mockResolvedValue(category);
 
       const result = await controller.delete(mockCtx);
 
-      expect(mockStrapi.entityService.delete).toHaveBeenCalledWith(
-        'api::category.category',
-        '1'
+      expect(mockDocumentMethods.delete).toHaveBeenCalledWith(
+        expect.objectContaining({
+          documentId: '1',
+        })
       );
       expect(result).toEqual({ data: category });
     });
@@ -387,8 +457,8 @@ describe('Category Controller', () => {
         products: { count: 0 },
       };
 
-      mockCtx.params.id = '1';
-      mockStrapi.entityService.findOne.mockResolvedValue(category);
+      mockCtx.params.documentId = '1';
+      (mockDocumentMethods.findOne as any).mockResolvedValue(category);
 
       await controller.delete(mockCtx);
 
@@ -408,8 +478,8 @@ describe('Category Controller', () => {
         ],
       };
 
-      mockCtx.params.id = '1';
-      mockStrapi.entityService.findOne.mockResolvedValue(category);
+      mockCtx.params.documentId = '1';
+      (mockDocumentMethods.findOne as any).mockResolvedValue(category);
 
       await controller.delete(mockCtx);
 
@@ -462,22 +532,250 @@ describe('Category Controller', () => {
         { id: 2, name: 'Laptops', slug: 'laptops' },
       ];
 
-      mockCtx.params.id = '2';
-      mockStrapi.service().getBreadcrumbs.mockResolvedValue(mockBreadcrumbs);
+      mockCtx.params.documentId = '2';
+      (mockServiceMethods.getBreadcrumbs as any).mockResolvedValue(
+        mockBreadcrumbs
+      );
 
       const result = await controller.getBreadcrumbs(mockCtx);
 
-      expect(mockStrapi.service().getBreadcrumbs).toHaveBeenCalledWith('2');
+      expect(mockServiceMethods.getBreadcrumbs).toHaveBeenCalledWith('2');
       expect(result).toEqual({ data: mockBreadcrumbs });
     });
 
     it('should require category ID', async () => {
-      mockCtx.params.id = undefined;
+      mockCtx.params.documentId = undefined;
 
       await controller.getBreadcrumbs(mockCtx);
 
       expect(mockCtx.badRequest).toHaveBeenCalledWith(
-        'Category ID is required'
+        'Category documentId is required'
+      );
+    });
+  });
+
+  describe('getProducts', () => {
+    it('should return products for a category', async () => {
+      const mockProducts = [
+        { documentId: 'prod1', title: 'Product 1', price: 29.99 },
+        { documentId: 'prod2', title: 'Product 2', price: 39.99 },
+      ];
+
+      mockCtx.params.documentId = 'cat1';
+      mockCtx.query = { page: 1, pageSize: 10 };
+      mockDocumentMethods.findOne.mockResolvedValueOnce({
+        documentId: 'cat1',
+        name: 'Electronics',
+      });
+      mockDocumentMethods.findMany.mockResolvedValueOnce(mockProducts);
+
+      const result = await controller.getProducts(mockCtx);
+
+      expect(mockStrapi.documents).toHaveBeenCalledWith(
+        'api::category.category'
+      );
+      expect(mockStrapi.documents).toHaveBeenCalledWith('api::product.product');
+      expect(result).toEqual({
+        data: mockProducts,
+        meta: {},
+      });
+    });
+
+    it('should return 404 if category not found', async () => {
+      mockCtx.params.documentId = 'nonexistent';
+      mockDocumentMethods.findOne.mockResolvedValueOnce(null);
+
+      await controller.getProducts(mockCtx);
+
+      expect(mockCtx.notFound).toHaveBeenCalledWith('Category not found');
+    });
+
+    it('should require category documentId', async () => {
+      mockCtx.params.documentId = undefined;
+
+      await controller.getProducts(mockCtx);
+
+      expect(mockCtx.badRequest).toHaveBeenCalledWith(
+        'Category documentId is required'
+      );
+    });
+  });
+
+  describe('assignProducts', () => {
+    it('should assign products to category', async () => {
+      const productIds = ['prod1', 'prod2'];
+      mockCtx.params.documentId = 'cat1';
+      mockCtx.request.body = { productIds };
+      mockDocumentMethods.findOne.mockResolvedValueOnce({
+        documentId: 'cat1',
+        name: 'Electronics',
+      });
+      mockDocumentMethods.update.mockResolvedValue({});
+
+      const result = await controller.assignProducts(mockCtx);
+
+      expect(result.data.message).toBe('Products assigned successfully');
+      expect(result.data.productCount).toBe(2);
+    });
+
+    it('should return 404 if category not found', async () => {
+      mockCtx.params.documentId = 'nonexistent';
+      mockCtx.request.body = { productIds: ['prod1'] };
+      mockDocumentMethods.findOne.mockResolvedValueOnce(null);
+
+      await controller.assignProducts(mockCtx);
+
+      expect(mockCtx.notFound).toHaveBeenCalledWith('Category not found');
+    });
+
+    it('should validate product IDs array', async () => {
+      mockCtx.params.documentId = 'cat1';
+      mockCtx.request.body = { productIds: 'invalid' };
+
+      await controller.assignProducts(mockCtx);
+
+      expect(mockCtx.badRequest).toHaveBeenCalledWith(
+        'Product IDs array is required'
+      );
+    });
+  });
+
+  describe('removeProducts', () => {
+    it('should remove products from category', async () => {
+      const productIds = ['prod1', 'prod2'];
+      mockCtx.params.documentId = 'cat1';
+      mockCtx.request.body = { productIds };
+      mockDocumentMethods.findOne.mockResolvedValueOnce({
+        documentId: 'cat1',
+        name: 'Electronics',
+      });
+      mockDocumentMethods.update.mockResolvedValue({});
+
+      const result = await controller.removeProducts(mockCtx);
+
+      expect(result.data.message).toBe('Products removed successfully');
+      expect(result.data.productCount).toBe(2);
+    });
+  });
+
+  describe('moveProducts', () => {
+    it('should move products between categories', async () => {
+      const productIds = ['prod1', 'prod2'];
+      const targetCategoryId = 'cat2';
+      mockCtx.params.documentId = 'cat1';
+      mockCtx.request.body = { productIds, targetCategoryId };
+      mockDocumentMethods.findOne
+        .mockResolvedValueOnce({ documentId: 'cat1', name: 'Electronics' })
+        .mockResolvedValueOnce({ documentId: 'cat2', name: 'Computers' });
+      mockDocumentMethods.update.mockResolvedValue({});
+
+      const result = await controller.moveProducts(mockCtx);
+
+      expect(result.data.message).toBe('Products moved successfully');
+      expect(result.data.productCount).toBe(2);
+    });
+
+    it('should validate target category exists', async () => {
+      mockCtx.params.documentId = 'cat1';
+      mockCtx.request.body = {
+        productIds: ['prod1'],
+        targetCategoryId: 'nonexistent',
+      };
+      mockDocumentMethods.findOne
+        .mockResolvedValueOnce({ documentId: 'cat1', name: 'Electronics' })
+        .mockResolvedValueOnce(null);
+
+      await controller.moveProducts(mockCtx);
+
+      expect(mockCtx.badRequest).toHaveBeenCalledWith(
+        'Target category not found'
+      );
+    });
+  });
+
+  describe('getStats', () => {
+    it('should return category statistics', async () => {
+      const mockStats = {
+        categoryId: 'cat1',
+        totalProducts: 10,
+        activeProducts: 8,
+      };
+
+      mockCtx.params.documentId = 'cat1';
+      mockDocumentMethods.findOne.mockResolvedValueOnce({
+        documentId: 'cat1',
+        name: 'Electronics',
+      });
+      mockServiceMethods.getCategoryStatistics.mockResolvedValue(mockStats);
+
+      const result = await controller.getStats(mockCtx);
+
+      expect(result.data).toEqual(mockStats);
+    });
+  });
+
+  describe('getNavigation', () => {
+    it('should return navigation menu', async () => {
+      const mockNavigation = [
+        { id: 'cat1', name: 'Electronics', children: [] },
+      ];
+
+      mockServiceMethods.getNavigationMenu.mockResolvedValue(mockNavigation);
+
+      const result = await controller.getNavigation(mockCtx);
+
+      expect(result.data).toEqual(mockNavigation);
+    });
+
+    it('should handle maxDepth parameter', async () => {
+      mockCtx.query = { maxDepth: '2' };
+      mockServiceMethods.getNavigationMenu.mockResolvedValue([]);
+
+      await controller.getNavigation(mockCtx);
+
+      expect(mockServiceMethods.getNavigationMenu).toHaveBeenCalledWith(2);
+    });
+  });
+
+  describe('getSiblings', () => {
+    it('should return sibling categories', async () => {
+      const mockSiblings = [
+        { documentId: 'cat2', name: 'Computers' },
+        { documentId: 'cat3', name: 'Phones' },
+      ];
+
+      mockCtx.params.documentId = 'cat1';
+      mockServiceMethods.getSiblingCategories.mockResolvedValue(mockSiblings);
+
+      const result = await controller.getSiblings(mockCtx);
+
+      expect(result.data).toEqual(mockSiblings);
+    });
+  });
+
+  describe('search', () => {
+    it('should search categories', async () => {
+      const mockResults = [{ documentId: 'cat1', name: 'Electronics' }];
+
+      mockCtx.query = { q: 'electronics', limit: '10' };
+      mockServiceMethods.searchCategories.mockResolvedValue(mockResults);
+
+      const result = await controller.search(mockCtx);
+
+      expect(mockServiceMethods.searchCategories).toHaveBeenCalledWith(
+        'electronics',
+        10
+      );
+      expect(result.data).toEqual(mockResults);
+    });
+
+    it('should require search term', async () => {
+      mockCtx.query = {};
+
+      await controller.search(mockCtx);
+
+      expect(mockCtx.badRequest).toHaveBeenCalledWith(
+        'Search term is required'
       );
     });
   });

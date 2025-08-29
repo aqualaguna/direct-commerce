@@ -1,6 +1,6 @@
 /**
  * Product search routes
- * 
+ *
  * Defines routes for product search functionality
  */
 

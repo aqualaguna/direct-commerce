@@ -1,9 +1,14 @@
 /**
- * product controller
+ * Product controller - Migrated to new coding standards
+ *
+ * Implements product management operations following Strapi 5 Document Service API
+ * and TypeScript 5.9.2+ best practices
  */
 
+// Third-party imports
 import { factories } from '@strapi/strapi';
 
+// Type definitions following new standards - Updated for Strapi compatibility
 interface ProductQuery {
   filters?: any;
   sort?: any;
@@ -23,55 +28,31 @@ interface ProductData {
   comparePrice?: number;
   sku: string;
   inventory: number;
+  status?: string;
   isActive?: boolean;
   featured?: boolean;
-  category?: number;
+  category?: any;
   images?: any[];
   seo?: any;
 }
 
-interface StrapiQuery {
-  page?: string | number;
-  pageSize?: string | number;
-  filters?: any;
-  sort?: any;
-  [key: string]: any;
-}
-
-interface StrapiContext {
-  query: StrapiQuery;
-  params: { id?: string | number; status?: string };
-  request: {
-    body: {
-      data?: any;
-      csvData?: string;
-      jsonData?: any[];
-      productIds?: number[];
-      status?: string;
-      updateData?: any;
-    };
-  };
-  state: { user?: { role?: { type?: string } } };
-  badRequest: (message: string, details?: any) => any;
-  notFound: (message: string) => any;
-  throw: (status: number, message: string) => never;
-  set: (header: string, value: string) => void;
-}
+type ProductStatus = 'draft' | 'published';
+type UserRole = 'admin' | 'authenticated' | 'public';
 
 export default factories.createCoreController(
   'api::product.product',
   ({ strapi }) => ({
-    // Enhanced find method with filtering, sorting, and pagination
+    // Enhanced find method with filtering, sorting, and pagination - Updated to Document Service API
     async find(ctx) {
       try {
         const { query } = ctx;
 
-        // Build query parameters
+        // Build query parameters using new Document Service API patterns
         const queryParams: ProductQuery = {
           filters: {
-            ...((query.filters as any) || {}),
-            // Only return published products by default
-            publishedAt: { $notNull: true },
+            ...((query.filters as Record<string, unknown>) || {}),
+            // Use status filter instead of publishedAt for Strapi 5
+            status: 'published',
           },
           sort: query.sort || { createdAt: 'desc' },
           pagination: {
@@ -86,21 +67,22 @@ export default factories.createCoreController(
               fields: ['url', 'width', 'height', 'formats'],
             },
             category: {
-              fields: ['id', 'name', 'slug'],
+              fields: ['id', 'name', 'slug'], // Use documentId instead of id
             },
             seo: true,
           },
         };
 
-        // Handle admin requests (include unpublished products)
-        if (ctx.state.user && ctx.state.user.role?.type === 'admin') {
-          delete queryParams.filters.publishedAt;
+        // Handle admin requests (include draft products)
+        if (ctx.state.user?.role?.type === 'admin') {
+          // Admin can see both published and draft products
+          delete queryParams.filters?.status;
         }
 
-        const products = await strapi.entityService.findMany(
-          'api::product.product',
-          queryParams
-        );
+        // Use Document Service API instead of Entity Service
+        const products = await strapi
+          .documents('api::product.product')
+          .findMany(queryParams);
 
         return {
           data: products,
@@ -109,9 +91,10 @@ export default factories.createCoreController(
               page: queryParams.pagination!.page,
               pageSize: queryParams.pagination!.pageSize,
               pageCount: Math.ceil(
-                products.length / queryParams.pagination!.pageSize
+                (products as unknown[]).length /
+                  queryParams.pagination!.pageSize
               ),
-              total: products.length,
+              total: (products as unknown[]).length,
             },
           },
         };
@@ -121,37 +104,39 @@ export default factories.createCoreController(
       }
     },
 
-    // Enhanced findOne method with proper error handling
+    // Enhanced findOne method with proper error handling - Updated to Document Service API
     async findOne(ctx) {
       try {
-        const { id } = ctx.params;
+        // Support both legacy id and new documentId parameters
+        const documentId = ctx.params.documentId || ctx.params.id;
 
-        if (!id) {
-          return ctx.badRequest('Product ID is required');
+        if (!documentId) {
+          return ctx.badRequest('Product documentId is required');
         }
 
-        const product = await strapi.entityService.findOne(
-          'api::product.product',
-          id,
-          {
-            populate: {
-              images: {
-                fields: ['url', 'width', 'height', 'formats'],
-              },
-              category: {
-                fields: ['id', 'name', 'slug'],
-              },
-              seo: true,
+        // Use Document Service API with documentId
+        const product = await strapi.documents('api::product.product').findOne({
+          documentId,
+          populate: {
+            images: {
+              fields: ['url', 'width', 'height', 'formats'],
             },
-          }
-        );
+            category: {
+              fields: ['id', 'name', 'slug'], // Use documentId instead of id
+            },
+            seo: true,
+          },
+        });
 
         if (!product) {
           return ctx.notFound('Product not found');
         }
 
-        // Check if product is published (for non-admin users)
-        if (ctx.state.user?.role?.type !== 'admin' && !product.publishedAt) {
+        // Check if product is published (for non-admin users) using status
+        if (
+          ctx.state.user?.role?.type !== 'admin' &&
+          (product as any).status !== 'published'
+        ) {
           return ctx.notFound('Product not found');
         }
 
@@ -162,7 +147,7 @@ export default factories.createCoreController(
       }
     },
 
-    // Enhanced create method with validation
+    // Enhanced create method with validation - Updated to Document Service API
     async create(ctx) {
       try {
         const { data } = ctx.request.body;
@@ -171,8 +156,8 @@ export default factories.createCoreController(
           return ctx.badRequest('Product data is required');
         }
 
-        // Validate required fields
-        const requiredFields = [
+        // Validate required fields with proper type checking
+        const requiredFields: (keyof ProductData)[] = [
           'title',
           'description',
           'shortDescription',
@@ -180,45 +165,44 @@ export default factories.createCoreController(
           'sku',
           'inventory',
         ];
+
         for (const field of requiredFields) {
-          if (!data[field]) {
+          if (!data[field] && data[field] !== 0) {
             return ctx.badRequest(`${field} is required`);
           }
         }
 
-        // Validate price
-        if (data.price <= 0) {
+        // Validate price using modern type checking
+        if (typeof data.price !== 'number' || data.price <= 0) {
           return ctx.badRequest('Price must be greater than 0');
         }
 
         // Validate inventory
-        if (data.inventory < 0) {
+        if (typeof data.inventory !== 'number' || data.inventory < 0) {
           return ctx.badRequest('Inventory cannot be negative');
         }
 
-        // Check SKU uniqueness
-        const existingProduct = await strapi.entityService.findMany(
-          'api::product.product',
-          {
+        // Check SKU uniqueness using Document Service API
+        const existingProducts = await strapi
+          .documents('api::product.product')
+          .findMany({
             filters: { sku: data.sku },
-          }
-        );
+            fields: ['id'], // Only fetch documentId for efficiency
+          });
 
-        if (existingProduct.length > 0) {
+        if ((existingProducts as unknown[]).length > 0) {
           return ctx.badRequest('SKU must be unique');
         }
 
-        const product = await strapi.entityService.create(
-          'api::product.product',
-          {
-            data,
-            populate: {
-              images: true,
-              category: true,
-              seo: true,
-            },
-          }
-        );
+        // Create product using Document Service API
+        const product = await strapi.documents('api::product.product').create({
+          data,
+          populate: {
+            images: true,
+            category: true,
+            seo: true,
+          },
+        });
 
         return { data: product };
       } catch (error) {
@@ -227,65 +211,73 @@ export default factories.createCoreController(
       }
     },
 
-    // Enhanced update method with validation
+    // Enhanced update method with validation - Updated to Document Service API
     async update(ctx) {
       try {
-        const { id } = ctx.params;
+        // Support both legacy id and new documentId parameters
+        const documentId = ctx.params.documentId || ctx.params.id;
         const { data } = ctx.request.body;
 
-        if (!id) {
-          return ctx.badRequest('Product ID is required');
+        if (!documentId) {
+          return ctx.badRequest('Product documentId is required');
         }
 
         if (!data) {
           return ctx.badRequest('Product data is required');
         }
 
-        // Check if product exists
-        const existingProduct = await strapi.entityService.findOne(
-          'api::product.product',
-          id
-        );
+        // Check if product exists using Document Service API
+        const existingProduct = await strapi
+          .documents('api::product.product')
+          .findOne({
+            documentId,
+            fields: ['id', 'sku'], // Only fetch needed fields
+          });
+
         if (!existingProduct) {
           return ctx.notFound('Product not found');
         }
 
-        // Validate price if provided
-        if (data.price !== undefined && data.price <= 0) {
+        // Validate price if provided with proper type checking
+        if (
+          data.price !== undefined &&
+          (typeof data.price !== 'number' || data.price <= 0)
+        ) {
           return ctx.badRequest('Price must be greater than 0');
         }
 
         // Validate inventory if provided
-        if (data.inventory !== undefined && data.inventory < 0) {
+        if (
+          data.inventory !== undefined &&
+          (typeof data.inventory !== 'number' || data.inventory < 0)
+        ) {
           return ctx.badRequest('Inventory cannot be negative');
         }
 
         // Check SKU uniqueness if provided
-        if (data.sku && data.sku !== existingProduct.sku) {
-          const skuExists = await strapi.entityService.findMany(
-            'api::product.product',
-            {
+        if (data.sku && data.sku !== (existingProduct as any).sku) {
+          const skuExists = await strapi
+            .documents('api::product.product')
+            .findMany({
               filters: { sku: data.sku },
-            }
-          );
+              fields: ['id'],
+            });
 
-          if (skuExists.length > 0) {
+          if ((skuExists as unknown[]).length > 0) {
             return ctx.badRequest('SKU must be unique');
           }
         }
 
-        const product = await strapi.entityService.update(
-          'api::product.product',
-          id,
-          {
-            data,
-            populate: {
-              images: true,
-              category: true,
-              seo: true,
-            },
-          }
-        );
+        // Update product using Document Service API
+        const product = await strapi.documents('api::product.product').update({
+          documentId,
+          data,
+          populate: {
+            images: true,
+            category: true,
+            seo: true,
+          },
+        });
 
         return { data: product };
       } catch (error) {
@@ -294,25 +286,30 @@ export default factories.createCoreController(
       }
     },
 
-    // Enhanced delete method
+    // Enhanced delete method - Updated to Document Service API
     async delete(ctx) {
       try {
-        const { id } = ctx.params;
+        // Support both legacy id and new documentId parameters
+        const documentId = ctx.params.documentId || ctx.params.id;
 
-        if (!id) {
-          return ctx.badRequest('Product ID is required');
+        if (!documentId) {
+          return ctx.badRequest('Product documentId is required');
         }
 
-        // Check if product exists
-        const existingProduct = await strapi.entityService.findOne(
-          'api::product.product',
-          id
-        );
+        // Check if product exists using Document Service API
+        const existingProduct = await strapi
+          .documents('api::product.product')
+          .findOne({
+            documentId,
+            fields: ['id'], // Only fetch documentId for existence check
+          });
+
         if (!existingProduct) {
           return ctx.notFound('Product not found');
         }
 
-        await strapi.entityService.delete('api::product.product', id);
+        // Delete product using Document Service API
+        await strapi.documents('api::product.product').delete({ documentId });
 
         return { message: 'Product deleted successfully' };
       } catch (error) {
@@ -321,30 +318,31 @@ export default factories.createCoreController(
       }
     },
 
-    // Status management endpoints
+    // Status management endpoints - Updated to Document Service API
     async updateStatus(ctx) {
       try {
-        const { id } = ctx.params;
+        // Support both legacy id and new documentId parameters
+        const documentId = ctx.params.documentId || ctx.params.id;
         const { status } = ctx.request.body;
 
-        if (!id) {
-          return ctx.badRequest('Product ID is required');
+        if (!documentId) {
+          return ctx.badRequest('Product documentId is required');
         }
 
         if (!status) {
           return ctx.badRequest('Status is required');
         }
 
-        const validStatuses = ['draft', 'active', 'inactive'];
-        if (!validStatuses.includes(status)) {
+        const validStatuses: ProductStatus[] = ['draft', 'published'];
+        if (!validStatuses.includes(status as ProductStatus)) {
           return ctx.badRequest(
-            'Invalid status. Must be one of: draft, active, inactive'
+            'Invalid status. Must be one of: draft, published'
           );
         }
 
         const product = await strapi
           .service('api::product.product')
-          .updateStatus(id, status);
+          .updateStatus(documentId, status);
 
         return { data: product };
       } catch (error) {
@@ -442,19 +440,22 @@ export default factories.createCoreController(
       }
     },
 
+    // Publish product using Document Service API Draft & Publish
     async publishProduct(ctx) {
       try {
-        const { id } = ctx.params;
+        // Support both legacy id and new documentId parameters
+        const documentId = ctx.params.documentId || ctx.params.id;
 
-        if (!id) {
-          return ctx.badRequest('Product ID is required');
+        if (!documentId) {
+          return ctx.badRequest('Product documentId is required');
         }
 
-        const product = await strapi
-          .service('api::product.product')
-          .publishProduct(id);
+        // Use Document Service API publish method
+        const result = await strapi.documents('api::product.product').publish({
+          documentId,
+        });
 
-        return { data: product };
+        return { data: result };
       } catch (error) {
         strapi.log.error('Error publishing product:', error);
         if (error instanceof Error) {
@@ -464,19 +465,24 @@ export default factories.createCoreController(
       }
     },
 
+    // Unpublish product using Document Service API Draft & Publish
     async unpublishProduct(ctx) {
       try {
-        const { id } = ctx.params;
+        // Support both legacy id and new documentId parameters
+        const documentId = ctx.params.documentId || ctx.params.id;
 
-        if (!id) {
-          return ctx.badRequest('Product ID is required');
+        if (!documentId) {
+          return ctx.badRequest('Product documentId is required');
         }
 
-        const product = await strapi
-          .service('api::product.product')
-          .unpublishProduct(id);
+        // Use Document Service API unpublish method
+        const result = await strapi
+          .documents('api::product.product')
+          .unpublish({
+            documentId,
+          });
 
-        return { data: product };
+        return { data: result };
       } catch (error) {
         strapi.log.error('Error unpublishing product:', error);
         if (error instanceof Error) {
@@ -756,18 +762,18 @@ export default factories.createCoreController(
       }
     },
 
-    // Custom method for product search
+    // Custom method for product search - Updated to Document Service API
     async search(ctx) {
       try {
         const { query } = ctx;
         const { q, category, minPrice, maxPrice, featured, isActive } = query;
 
-        const filters: any = {
-          publishedAt: { $notNull: true },
+        const filters: Record<string, unknown> = {
+          status: 'published', // Use status filter instead of publishedAt
         };
 
-        // Text search
-        if (q) {
+        // Text search with proper typing
+        if (q && typeof q === 'string') {
           filters.$or = [
             { title: { $containsi: q } },
             { description: { $containsi: q } },
@@ -777,15 +783,25 @@ export default factories.createCoreController(
         }
 
         // Category filter
-        if (category) {
+        if (category && typeof category === 'string') {
           filters.category = { slug: category };
         }
 
-        // Price range filter
+        // Price range filter with proper type checking
         if (minPrice || maxPrice) {
           filters.price = {};
-          if (minPrice) filters.price.$gte = parseFloat(String(minPrice));
-          if (maxPrice) filters.price.$lte = parseFloat(String(maxPrice));
+          if (minPrice) {
+            const min = parseFloat(String(minPrice));
+            if (!isNaN(min)) {
+              (filters.price as Record<string, number>).$gte = min;
+            }
+          }
+          if (maxPrice) {
+            const max = parseFloat(String(maxPrice));
+            if (!isNaN(max)) {
+              (filters.price as Record<string, number>).$lte = max;
+            }
+          }
         }
 
         // Featured filter
@@ -798,9 +814,10 @@ export default factories.createCoreController(
           filters.isActive = isActive === 'true';
         }
 
-        const products = await strapi.entityService.findMany(
-          'api::product.product',
-          {
+        // Use Document Service API for search
+        const products = await strapi
+          .documents('api::product.product')
+          .findMany({
             filters,
             sort: { createdAt: 'desc' },
             pagination: {
@@ -815,11 +832,10 @@ export default factories.createCoreController(
                 fields: ['url', 'width', 'height', 'formats'],
               },
               category: {
-                fields: ['id', 'name', 'slug'],
+                fields: ['id', 'name', 'slug'], // Use documentId instead of id
               },
             },
-          }
-        );
+          });
 
         return {
           data: products,
@@ -828,9 +844,10 @@ export default factories.createCoreController(
               page: parseInt(String(query.page || 1)),
               pageSize: parseInt(String(query.pageSize || 25)),
               pageCount: Math.ceil(
-                products.length / parseInt(String(query.pageSize || 25))
+                (products as unknown[]).length /
+                  parseInt(String(query.pageSize || 25))
               ),
-              total: products.length,
+              total: (products as unknown[]).length,
             },
           },
         };

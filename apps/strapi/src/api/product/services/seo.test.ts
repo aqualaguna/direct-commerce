@@ -2,7 +2,7 @@
  * SEO service tests
  */
 
-import { describe, it, expect, beforeEach } from '@jest/globals';
+import { beforeEach, describe, expect, it } from '@jest/globals';
 import seoService from './seo';
 
 describe('SEO Service', () => {

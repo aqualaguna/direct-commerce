@@ -2,7 +2,7 @@
  * Product validation service tests
  */
 
-import { describe, it, expect, beforeEach } from '@jest/globals';
+import { beforeEach, describe, expect, it } from '@jest/globals';
 import productValidationService from './product-validation';
 
 describe('Product Validation Service', () => {

@@ -1,24 +1,34 @@
 /**
- * Product controller tests
+ * Product controller tests - Updated to new test standards
+ *
+ * Tests following Jest 30+ configuration and Document Service API patterns
  */
 
-import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 
-// Mock all dependencies
+// Mock all dependencies following new patterns
 jest.mock('../services/product-validation');
 jest.mock('../services/product');
 jest.mock('../services/seo');
 jest.mock('../services/bulk-operations');
 
+// Create mock functions for Document Service API
+const mockDocumentService = {
+  findOne: jest.fn() as jest.MockedFunction<any>,
+  findFirst: jest.fn() as jest.MockedFunction<any>,
+  findMany: jest.fn() as jest.MockedFunction<any>,
+  create: jest.fn() as jest.MockedFunction<any>,
+  update: jest.fn() as jest.MockedFunction<any>,
+  delete: jest.fn() as jest.MockedFunction<any>,
+  count: jest.fn() as jest.MockedFunction<any>,
+  publish: jest.fn() as jest.MockedFunction<any>,
+  unpublish: jest.fn() as jest.MockedFunction<any>,
+  discardDraft: jest.fn() as jest.MockedFunction<any>,
+};
+
+// Mock Strapi with Document Service API following new test standards
 const mockStrapi: any = {
-  entityService: {
-    findOne: jest.fn(),
-    findMany: jest.fn(),
-    create: jest.fn(),
-    update: jest.fn(),
-    delete: jest.fn(),
-    count: jest.fn(),
-  },
+  documents: jest.fn(() => mockDocumentService),
   service: jest.fn().mockReturnValue({
     updateStatus: jest.fn(),
     findByStatus: jest.fn(),
@@ -43,6 +53,9 @@ const mockStrapi: any = {
   }),
   log: {
     error: jest.fn(),
+    warn: jest.fn(),
+    info: jest.fn(),
+    debug: jest.fn(),
   },
 };
 
@@ -63,6 +76,16 @@ describe('Product Controller', () => {
   beforeEach(() => {
     jest.clearAllMocks();
 
+    // Reset all Document Service API mocks
+    mockDocumentService.findOne.mockClear();
+    mockDocumentService.findMany.mockClear();
+    mockDocumentService.create.mockClear();
+    mockDocumentService.update.mockClear();
+    mockDocumentService.delete.mockClear();
+    mockDocumentService.publish.mockClear();
+    mockDocumentService.unpublish.mockClear();
+    mockDocumentService.count.mockClear();
+
     // Import the actual controller
     const productController = require('./product').default;
     controller = productController;
@@ -71,73 +94,94 @@ describe('Product Controller', () => {
   describe('find', () => {
     it('should return products with pagination', async () => {
       const mockProducts = [
-        { id: 1, title: 'Product 1', price: 29.99 },
-        { id: 2, title: 'Product 2', price: 39.99 },
+        {
+          documentId: 'doc1',
+          title: 'Product 1',
+          price: 29.99,
+          status: 'published',
+        },
+        {
+          documentId: 'doc2',
+          title: 'Product 2',
+          price: 39.99,
+          status: 'published',
+        },
       ];
 
-      mockStrapi.entityService.findMany.mockResolvedValue(mockProducts);
+      mockDocumentService.findMany.mockResolvedValue(mockProducts);
 
       const ctx = {
         query: { page: 1, pageSize: 10 },
         state: { user: null },
-        set: jest.fn(),
+        throw: jest.fn(),
       };
 
       const result = await controller.find(ctx);
 
       expect(result.data).toEqual(mockProducts);
-      expect(mockStrapi.entityService.findMany).toHaveBeenCalled();
+      expect(mockStrapi.documents).toHaveBeenCalledWith('api::product.product');
+      expect(mockDocumentService.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          filters: expect.objectContaining({
+            status: 'published',
+          }),
+        })
+      );
     });
 
     it('should allow admin to see unpublished products', async () => {
       const mockProducts = [
-        { id: 1, title: 'Published Product', publishedAt: new Date() },
-        { id: 2, title: 'Unpublished Product', publishedAt: null },
+        { documentId: 'doc1', title: 'Published Product', status: 'published' },
+        { documentId: 'doc2', title: 'Draft Product', status: 'draft' },
       ];
 
-      mockStrapi.entityService.findMany.mockResolvedValue(mockProducts);
+      mockDocumentService.findMany.mockResolvedValue(mockProducts);
 
       const ctx = {
         query: { page: 1, pageSize: 10 },
         state: { user: { role: { type: 'admin' } } },
-        set: jest.fn(),
+        throw: jest.fn(),
       };
 
       const result = await controller.find(ctx);
 
       expect(result.data).toEqual(mockProducts);
-      expect(mockStrapi.entityService.findMany).toHaveBeenCalled();
+      expect(mockDocumentService.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          filters: expect.not.objectContaining({
+            status: expect.anything(),
+          }),
+        })
+      );
     });
   });
 
   describe('findOne', () => {
-    it('should return a single product by ID', async () => {
+    it('should return a single product by documentId', async () => {
       const mockProduct = {
-        id: 1,
+        documentId: 'doc123',
         title: 'Test Product',
         price: 29.99,
-        publishedAt: new Date(),
+        status: 'published',
       };
 
-      mockStrapi.entityService.findOne.mockResolvedValue(mockProduct);
+      mockDocumentService.findOne.mockResolvedValue(mockProduct);
 
       const ctx = {
-        params: { id: 1 },
+        params: { documentId: 'doc123' },
         state: { user: null },
         badRequest: jest.fn(),
         notFound: jest.fn(),
-        set: jest.fn(),
         throw: jest.fn(),
       };
 
       const result = await controller.findOne(ctx);
 
       expect(result).toEqual({ data: mockProduct });
-      expect(mockStrapi.entityService.findOne).toHaveBeenCalledWith(
-        'api::product.product',
-        1,
-        {
-          populate: {
+      expect(mockDocumentService.findOne).toHaveBeenCalledWith(
+        expect.objectContaining({
+          documentId: 'doc123',
+          populate: expect.objectContaining({
             images: {
               fields: ['url', 'width', 'height', 'formats'],
             },
@@ -145,25 +189,52 @@ describe('Product Controller', () => {
               fields: ['id', 'name', 'slug'],
             },
             seo: true,
-          },
-        }
+          }),
+        })
       );
     });
 
     it('should return 404 for non-existent product', async () => {
-      mockStrapi.entityService.findOne.mockResolvedValue(null);
+      mockDocumentService.findOne.mockResolvedValue(null);
 
       const ctx = {
-        params: { id: 99999 },
+        params: { documentId: 'non-existent' },
         state: { user: null },
         badRequest: jest.fn(),
         notFound: jest.fn(),
-        set: jest.fn(),
+        throw: jest.fn(),
       };
 
       await controller.findOne(ctx);
 
       expect(ctx.notFound).toHaveBeenCalledWith('Product not found');
+    });
+
+    it('should support legacy id parameter', async () => {
+      const mockProduct = {
+        documentId: 'doc123',
+        title: 'Test Product',
+        status: 'published',
+      };
+
+      mockDocumentService.findOne.mockResolvedValue(mockProduct);
+
+      const ctx = {
+        params: { id: 'doc123' }, // Legacy id parameter
+        state: { user: null },
+        badRequest: jest.fn(),
+        notFound: jest.fn(),
+        throw: jest.fn(),
+      };
+
+      const result = await controller.findOne(ctx);
+
+      expect(result).toEqual({ data: mockProduct });
+      expect(mockDocumentService.findOne).toHaveBeenCalledWith(
+        expect.objectContaining({
+          documentId: 'doc123',
+        })
+      );
     });
   });
 
@@ -178,22 +249,21 @@ describe('Product Controller', () => {
         inventory: 10,
       };
 
-      const mockCreatedProduct = { id: 1, ...productData };
+      const mockCreatedProduct = { documentId: 'doc123', ...productData };
 
-      mockStrapi.entityService.create.mockResolvedValue(mockCreatedProduct);
-      mockStrapi.entityService.findMany.mockResolvedValue([]); // No existing SKU
+      mockDocumentService.create.mockResolvedValue(mockCreatedProduct);
+      mockDocumentService.findMany.mockResolvedValue([]); // No existing SKU
 
       const ctx = {
         request: { body: { data: productData } },
         badRequest: jest.fn(),
-        set: jest.fn(),
+        throw: jest.fn(),
       };
 
       const result = await controller.create(ctx);
 
       expect(result.data).toEqual(mockCreatedProduct);
-      expect(mockStrapi.entityService.create).toHaveBeenCalledWith(
-        'api::product.product',
+      expect(mockDocumentService.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: productData,
           populate: expect.any(Object),
@@ -210,19 +280,45 @@ describe('Product Controller', () => {
       const ctx = {
         request: { body: { data: invalidData } },
         badRequest: jest.fn(),
-        set: jest.fn(),
+        throw: jest.fn(),
       };
 
       await controller.create(ctx);
 
       expect(ctx.badRequest).toHaveBeenCalled();
     });
+
+    it('should check SKU uniqueness', async () => {
+      const productData = {
+        title: 'New Product',
+        description: 'New product description',
+        shortDescription: 'New short desc',
+        price: 29.99,
+        sku: 'EXISTING-SKU',
+        inventory: 10,
+      };
+
+      // Mock existing product with same SKU
+      mockDocumentService.findMany.mockResolvedValue([
+        { documentId: 'existing-doc', sku: 'EXISTING-SKU' },
+      ]);
+
+      const ctx = {
+        request: { body: { data: productData } },
+        badRequest: jest.fn(),
+        throw: jest.fn(),
+      };
+
+      await controller.create(ctx);
+
+      expect(ctx.badRequest).toHaveBeenCalledWith('SKU must be unique');
+    });
   });
 
   describe('update', () => {
     it('should update an existing product', async () => {
       const existingProduct = {
-        id: 1,
+        documentId: 'doc123',
         title: 'Original Product',
         sku: 'ORIG-001',
         price: 29.99,
@@ -235,27 +331,55 @@ describe('Product Controller', () => {
 
       const mockUpdatedProduct = { ...existingProduct, ...updateData };
 
-      mockStrapi.entityService.findOne.mockResolvedValue(existingProduct);
-      mockStrapi.entityService.update.mockResolvedValue(mockUpdatedProduct);
+      mockDocumentService.findOne.mockResolvedValue(existingProduct);
+      mockDocumentService.update.mockResolvedValue(mockUpdatedProduct);
 
       const ctx = {
-        params: { id: 1 },
+        params: { documentId: 'doc123' },
         request: { body: { data: updateData } },
         badRequest: jest.fn(),
         notFound: jest.fn(),
-        set: jest.fn(),
+        throw: jest.fn(),
       };
 
       const result = await controller.update(ctx);
 
       expect(result.data).toEqual(mockUpdatedProduct);
-      expect(mockStrapi.entityService.update).toHaveBeenCalledWith(
-        'api::product.product',
-        1,
+      expect(mockDocumentService.update).toHaveBeenCalledWith(
         expect.objectContaining({
+          documentId: 'doc123',
           data: updateData,
           populate: expect.any(Object),
         })
+      );
+    });
+
+    it('should validate price updates', async () => {
+      const existingProduct = {
+        documentId: 'doc123',
+        title: 'Test Product',
+        sku: 'TEST-001',
+        price: 29.99,
+      };
+
+      const invalidUpdateData = {
+        price: -10, // Invalid negative price
+      };
+
+      mockDocumentService.findOne.mockResolvedValue(existingProduct);
+
+      const ctx = {
+        params: { documentId: 'doc123' },
+        request: { body: { data: invalidUpdateData } },
+        badRequest: jest.fn(),
+        notFound: jest.fn(),
+        throw: jest.fn(),
+      };
+
+      await controller.update(ctx);
+
+      expect(ctx.badRequest).toHaveBeenCalledWith(
+        'Price must be greater than 0'
       );
     });
   });
@@ -263,52 +387,156 @@ describe('Product Controller', () => {
   describe('delete', () => {
     it('should delete an existing product', async () => {
       const existingProduct = {
-        id: 1,
+        documentId: 'doc123',
         title: 'Product to Delete',
       };
 
-      mockStrapi.entityService.findOne.mockResolvedValue(existingProduct);
-      mockStrapi.entityService.delete.mockResolvedValue(true);
+      mockDocumentService.findOne.mockResolvedValue(existingProduct);
+      mockDocumentService.delete.mockResolvedValue(true);
 
       const ctx = {
-        params: { id: 1 },
+        params: { documentId: 'doc123' },
         badRequest: jest.fn(),
         notFound: jest.fn(),
-        set: jest.fn(),
+        throw: jest.fn(),
       };
 
       const result = await controller.delete(ctx);
 
       expect(result.message).toBe('Product deleted successfully');
-      expect(mockStrapi.entityService.delete).toHaveBeenCalledWith(
-        'api::product.product',
-        1
+      expect(mockDocumentService.delete).toHaveBeenCalledWith(
+        expect.objectContaining({
+          documentId: 'doc123',
+        })
       );
+    });
+
+    it('should return 404 for non-existent product', async () => {
+      mockDocumentService.findOne.mockResolvedValue(null);
+
+      const ctx = {
+        params: { documentId: 'non-existent' },
+        badRequest: jest.fn(),
+        notFound: jest.fn(),
+        throw: jest.fn(),
+      };
+
+      await controller.delete(ctx);
+
+      expect(ctx.notFound).toHaveBeenCalledWith('Product not found');
     });
   });
 
   describe('search', () => {
     it('should search products by text', async () => {
-      const mockProducts = [{ id: 1, title: 'Apple iPhone', price: 999.99 }];
+      const mockProducts = [
+        {
+          documentId: 'doc1',
+          title: 'Apple iPhone',
+          price: 999.99,
+          status: 'published',
+        },
+      ];
 
-      mockStrapi.entityService.findMany.mockResolvedValue(mockProducts);
+      mockDocumentService.findMany.mockResolvedValue(mockProducts);
 
       const ctx = {
         query: { q: 'iPhone' },
-        set: jest.fn(),
+        throw: jest.fn(),
       };
 
       const result = await controller.search(ctx);
 
       expect(result.data).toEqual(mockProducts);
-      expect(mockStrapi.entityService.findMany).toHaveBeenCalledWith(
-        'api::product.product',
+      expect(mockDocumentService.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           filters: expect.objectContaining({
-            $or: expect.any(Array),
+            status: 'published',
+            $or: expect.arrayContaining([
+              expect.objectContaining({ title: { $containsi: 'iPhone' } }),
+            ]),
           }),
         })
       );
+    });
+
+    it('should search with price range filters', async () => {
+      const mockProducts = [
+        {
+          documentId: 'doc1',
+          title: 'Product',
+          price: 50.0,
+          status: 'published',
+        },
+      ];
+
+      mockDocumentService.findMany.mockResolvedValue(mockProducts);
+
+      const ctx = {
+        query: { minPrice: '25', maxPrice: '75' },
+        throw: jest.fn(),
+      };
+
+      const result = await controller.search(ctx);
+
+      expect(result.data).toEqual(mockProducts);
+      expect(mockDocumentService.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          filters: expect.objectContaining({
+            status: 'published',
+            price: {
+              $gte: 25,
+              $lte: 75,
+            },
+          }),
+        })
+      );
+    });
+  });
+
+  describe('Draft & Publish Operations', () => {
+    it('should publish a product', async () => {
+      const mockResult = {
+        documentId: 'doc123',
+        entries: [{ documentId: 'doc123', status: 'published' }],
+      };
+
+      mockDocumentService.publish.mockResolvedValue(mockResult);
+
+      const ctx = {
+        params: { documentId: 'doc123' },
+        badRequest: jest.fn(),
+        throw: jest.fn(),
+      };
+
+      const result = await controller.publishProduct(ctx);
+
+      expect(result.data).toEqual(mockResult);
+      expect(mockDocumentService.publish).toHaveBeenCalledWith({
+        documentId: 'doc123',
+      });
+    });
+
+    it('should unpublish a product', async () => {
+      const mockResult = {
+        documentId: 'doc123',
+        entries: [{ documentId: 'doc123', status: 'draft' }],
+      };
+
+      mockDocumentService.unpublish.mockResolvedValue(mockResult);
+
+      const ctx = {
+        params: { documentId: 'doc123' },
+        badRequest: jest.fn(),
+        throw: jest.fn(),
+      };
+
+      const result = await controller.unpublishProduct(ctx);
+
+      expect(result.data).toEqual(mockResult);
+      expect(mockDocumentService.unpublish).toHaveBeenCalledWith({
+        documentId: 'doc123',
+      });
     });
   });
 });

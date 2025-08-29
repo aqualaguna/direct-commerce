@@ -1,7 +1,10 @@
 /**
- * category router
+ * Category router
+ *
+ * Defines API routes for category management with proper policies
  */
 
+// Third-party imports
 import { factories } from '@strapi/strapi';
 
 const coreRoutes = factories.createCoreRouter('api::category.category', {
@@ -27,7 +30,7 @@ const coreRoutes = factories.createCoreRouter('api::category.category', {
 export default {
   routes: [
     // Core CRUD routes with policies
-    ...(coreRoutes.routes || []),
+    ...(Array.isArray(coreRoutes.routes) ? coreRoutes.routes : []),
 
     // Custom routes for hierarchy management
     {
@@ -40,7 +43,7 @@ export default {
     },
     {
       method: 'GET',
-      path: '/categories/:id/breadcrumbs',
+      path: '/categories/:documentId/breadcrumbs',
       handler: 'api::category.category.getBreadcrumbs',
       config: {
         policies: ['api::category.is-public'],
@@ -50,7 +53,7 @@ export default {
     // Custom routes for product relationship management
     {
       method: 'GET',
-      path: '/categories/:id/products',
+      path: '/categories/:documentId/products',
       handler: 'api::category.category.getProducts',
       config: {
         policies: ['api::category.is-public'],
@@ -58,7 +61,7 @@ export default {
     },
     {
       method: 'POST',
-      path: '/categories/:id/products/assign',
+      path: '/categories/:documentId/products/assign',
       handler: 'api::category.category.assignProducts',
       config: {
         policies: ['api::category.is-admin'],
@@ -66,7 +69,7 @@ export default {
     },
     {
       method: 'POST',
-      path: '/categories/:id/products/remove',
+      path: '/categories/:documentId/products/remove',
       handler: 'api::category.category.removeProducts',
       config: {
         policies: ['api::category.is-admin'],
@@ -74,7 +77,7 @@ export default {
     },
     {
       method: 'POST',
-      path: '/categories/:id/products/move',
+      path: '/categories/:documentId/products/move',
       handler: 'api::category.category.moveProducts',
       config: {
         policies: ['api::category.is-admin'],
@@ -82,7 +85,7 @@ export default {
     },
     {
       method: 'GET',
-      path: '/categories/:id/stats',
+      path: '/categories/:documentId/stats',
       handler: 'api::category.category.getStats',
       config: {
         policies: ['api::category.is-public'],
@@ -100,7 +103,7 @@ export default {
     },
     {
       method: 'GET',
-      path: '/categories/:id/siblings',
+      path: '/categories/:documentId/siblings',
       handler: 'api::category.category.getSiblings',
       config: {
         policies: ['api::category.is-public'],

@@ -21,7 +21,23 @@ export interface MockContext {
   set: jest.Mock;
 }
 
+export interface MockDocumentMethods {
+  findOne: jest.Mock;
+  findFirst: jest.Mock;
+  findMany: jest.Mock;
+  create: jest.Mock;
+  update: jest.Mock;
+  delete: jest.Mock;
+  count: jest.Mock;
+  publish: jest.Mock;
+  unpublish: jest.Mock;
+  discardDraft: jest.Mock;
+}
+
 export interface MockStrapi {
+  // Document Service API (Strapi v5)
+  documents: jest.Mock;
+  // Legacy Entity Service API (for backward compatibility)
   entityService: {
     findMany: jest.Mock;
     findOne: jest.Mock;
@@ -63,30 +79,53 @@ export const createMockContext = (
 });
 
 /**
- * Create a mock Strapi instance for testing
+ * Create mock document service methods
+ */
+export const createMockDocumentMethods = (): MockDocumentMethods => ({
+  findOne: jest.fn(),
+  findFirst: jest.fn(),
+  findMany: jest.fn(),
+  create: jest.fn(),
+  update: jest.fn(),
+  delete: jest.fn(),
+  count: jest.fn(),
+  publish: jest.fn(),
+  unpublish: jest.fn(),
+  discardDraft: jest.fn(),
+});
+
+/**
+ * Create a mock Strapi instance for testing with Document Service API
  */
 export const createMockStrapi = (
   overrides: Partial<MockStrapi> = {}
-): MockStrapi => ({
-  entityService: {
-    findMany: jest.fn(),
-    findOne: jest.fn(),
-    create: jest.fn(),
-    update: jest.fn(),
-    delete: jest.fn(),
-  },
-  plugin: jest.fn(() => ({
+): MockStrapi => {
+  const mockDocumentMethods = createMockDocumentMethods();
+
+  return {
+    // Document Service API (Strapi v5)
+    documents: jest.fn(() => mockDocumentMethods),
+    // Legacy Entity Service API (for backward compatibility)
+    entityService: {
+      findMany: jest.fn(),
+      findOne: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+    },
+    plugin: jest.fn(() => ({
+      service: jest.fn(),
+    })),
     service: jest.fn(),
-  })),
-  service: jest.fn(),
-  log: {
-    error: jest.fn(),
-    warn: jest.fn(),
-    info: jest.fn(),
-    debug: jest.fn(),
-  },
-  ...overrides,
-});
+    log: {
+      error: jest.fn(),
+      warn: jest.fn(),
+      info: jest.fn(),
+      debug: jest.fn(),
+    },
+    ...overrides,
+  };
+};
 
 /**
  * Create a mock user for testing
@@ -104,10 +143,11 @@ export const createMockUser = (overrides: any = {}) => ({
 });
 
 /**
- * Create a mock product for testing
+ * Create a mock product for testing with Document Service API
  */
 export const createMockProduct = (overrides: any = {}) => ({
-  id: 1,
+  documentId: 'prod-123',
+  id: 1, // Keep for backward compatibility
   title: 'Test Product',
   slug: 'test-product',
   description: 'Test product description',
@@ -116,24 +156,30 @@ export const createMockProduct = (overrides: any = {}) => ({
   inventory: 10,
   featured: false,
   inStock: true,
-  publishedAt: new Date(),
+  status: 'published', // Use status for Draft & Publish
+  publishedAt: new Date(), // Keep for backward compatibility
   createdAt: new Date(),
   updatedAt: new Date(),
   ...overrides,
 });
 
 /**
- * Create a mock category for testing
+ * Create a mock category for testing with Document Service API
  */
 export const createMockCategory = (overrides: any = {}) => ({
-  id: 1,
+  documentId: 'cat-123',
+  id: 1, // Keep for backward compatibility
   name: 'Test Category',
   slug: 'test-category',
   description: 'Test category description',
   isActive: true,
-  publishedAt: new Date(),
+  status: 'published', // Use status for Draft & Publish
+  publishedAt: new Date(), // Keep for backward compatibility
   createdAt: new Date(),
   updatedAt: new Date(),
+  sortOrder: 0,
+  parent: null,
+  children: [],
   ...overrides,
 });
 
@@ -144,16 +190,44 @@ export const waitFor = (ms: number = 100): Promise<void> =>
   new Promise(resolve => setTimeout(resolve, ms));
 
 /**
- * Mock database operations
+ * Mock database operations for Document Service API
  */
 export const mockDatabaseOperations = {
   findMany: jest.fn(),
   findOne: jest.fn(),
+  findFirst: jest.fn(),
   create: jest.fn(),
   update: jest.fn(),
   delete: jest.fn(),
   count: jest.fn(),
+  publish: jest.fn(),
+  unpublish: jest.fn(),
+  discardDraft: jest.fn(),
 };
+
+/**
+ * Create test data factory for categories
+ */
+export const createTestCategoryData = (overrides: any = {}) => ({
+  name: 'Test Category',
+  description: 'Test category description',
+  isActive: true,
+  sortOrder: 0,
+  ...overrides,
+});
+
+/**
+ * Create test data factory for products
+ */
+export const createTestProductData = (overrides: any = {}) => ({
+  title: 'Test Product',
+  description: 'Test product description',
+  price: 29.99,
+  sku: 'TEST-001',
+  inventory: 10,
+  inStock: true,
+  ...overrides,
+});
 
 /**
  * Reset all mocks

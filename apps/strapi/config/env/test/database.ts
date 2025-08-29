@@ -12,7 +12,10 @@ export default ({ env }: { env: any }) => ({
       },
       schema: env('DATABASE_SCHEMA', 'public'),
     },
-    pool: { min: env.int('DATABASE_POOL_MIN', 1), max: env.int('DATABASE_POOL_MAX', 5) },
+    pool: {
+      min: env.int('DATABASE_POOL_MIN', 1),
+      max: env.int('DATABASE_POOL_MAX', 5),
+    },
     debug: false,
   },
 });

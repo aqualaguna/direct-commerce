@@ -21,5 +21,5 @@ export default async (
 
   // For now, only allow admin users to manage products
   // In the future, this could be extended to allow sellers to manage their own products
-  return user.role && user.role.type === 'admin';
+  return !!(user.role && user.role.type === 'admin');
 };

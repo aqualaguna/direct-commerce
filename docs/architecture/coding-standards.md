@@ -519,7 +519,7 @@ const { title, description } = Astro.props
 ### 2. Controller Structure
 
 ```javascript
-// ✅ Good - Strapi 4.25+ controller with modern JavaScript features
+// ✅ Good - Strapi 5+ controller using Document Service API
 'use strict'
 
 module.exports = {
@@ -530,7 +530,8 @@ module.exports = {
       // Apply filters with improved error handling
       const filters = {
         ...query.filters,
-        publishedAt: { $notNull: true }
+        // Use status filter for Draft & Publish instead of publishedAt
+        status: 'published'
       }
       
       // Apply sorting with validation
@@ -542,7 +543,8 @@ module.exports = {
         pageSize: Math.min(Math.max(1, parseInt(query.pageSize) || 25), 100)
       }
       
-      const products = await strapi.entityService.findMany('api::product.product', {
+      // Use Document Service API instead of Entity Service
+      const products = await strapi.documents('api::product.product').findMany({
         filters,
         sort,
         pagination,
@@ -558,13 +560,15 @@ module.exports = {
   
   async findOne(ctx) {
     try {
-      const { id } = ctx.params
+      const { documentId } = ctx.params // Use documentId instead of id
       
-      if (!id) {
-        return ctx.badRequest('Product ID is required')
+      if (!documentId) {
+        return ctx.badRequest('Product documentId is required')
       }
       
-      const product = await strapi.entityService.findOne('api::product.product', id, {
+      // Use Document Service API with documentId
+      const product = await strapi.documents('api::product.product').findOne({
+        documentId,
         populate: ['images', 'category']
       })
       
@@ -577,6 +581,111 @@ module.exports = {
       strapi.log.error('Error in product findOne:', error)
       ctx.throw(500, 'Internal server error')
     }
+  },
+
+  async create(ctx) {
+    try {
+      const { data } = ctx.request.body
+      
+      if (!data.name || !data.price) {
+        return ctx.badRequest('Name and price are required')
+      }
+      
+      // Use Document Service API for creation
+      const product = await strapi.documents('api::product.product').create({
+        data,
+        populate: ['images', 'category']
+      })
+      
+      return product
+    } catch (error) {
+      strapi.log.error('Error in product create:', error)
+      ctx.throw(500, 'Internal server error')
+    }
+  },
+
+  async update(ctx) {
+    try {
+      const { documentId } = ctx.params
+      const { data } = ctx.request.body
+      
+      if (!documentId) {
+        return ctx.badRequest('Product documentId is required')
+      }
+      
+      // Use Document Service API for updates
+      const product = await strapi.documents('api::product.product').update({
+        documentId,
+        data,
+        populate: ['images', 'category']
+      })
+      
+      return product
+    } catch (error) {
+      strapi.log.error('Error in product update:', error)
+      ctx.throw(500, 'Internal server error')
+    }
+  },
+
+  async delete(ctx) {
+    try {
+      const { documentId } = ctx.params
+      
+      if (!documentId) {
+        return ctx.badRequest('Product documentId is required')
+      }
+      
+      // Use Document Service API for deletion
+      await strapi.documents('api::product.product').delete({
+        documentId
+      })
+      
+      return { message: 'Product deleted successfully' }
+    } catch (error) {
+      strapi.log.error('Error in product delete:', error)
+      ctx.throw(500, 'Internal server error')
+    }
+  },
+
+  // Draft & Publish operations
+  async publish(ctx) {
+    try {
+      const { documentId } = ctx.params
+      
+      if (!documentId) {
+        return ctx.badRequest('Product documentId is required')
+      }
+      
+      // Use Document Service API for publishing
+      const result = await strapi.documents('api::product.product').publish({
+        documentId
+      })
+      
+      return result
+    } catch (error) {
+      strapi.log.error('Error in product publish:', error)
+      ctx.throw(500, 'Internal server error')
+    }
+  },
+
+  async unpublish(ctx) {
+    try {
+      const { documentId } = ctx.params
+      
+      if (!documentId) {
+        return ctx.badRequest('Product documentId is required')
+      }
+      
+      // Use Document Service API for unpublishing
+      const result = await strapi.documents('api::product.product').unpublish({
+        documentId
+      })
+      
+      return result
+    } catch (error) {
+      strapi.log.error('Error in product unpublish:', error)
+      ctx.throw(500, 'Internal server error')
+    }
   }
 }
 ```
@@ -584,7 +693,7 @@ module.exports = {
 ### 3. Service Layer
 
 ```javascript
-// ✅ Good - Strapi service
+// ✅ Good - Strapi 5+ service using Document Service API
 'use strict'
 
 module.exports = {
@@ -604,7 +713,8 @@ module.exports = {
         })
       }
       
-      const product = await strapi.entityService.create('api::product.product', {
+      // Use Document Service API for creation
+      const product = await strapi.documents('api::product.product').create({
         data,
         populate: ['images', 'category']
       })
@@ -616,15 +726,19 @@ module.exports = {
     }
   },
   
-  async updateProductStock(productId, quantity) {
+  async updateProductStock(documentId, quantity) {
     try {
-      const product = await strapi.entityService.findOne('api::product.product', productId)
+      // Use Document Service API with documentId
+      const product = await strapi.documents('api::product.product').findOne({
+        documentId
+      })
       
       if (!product) {
         throw new Error('Product not found')
       }
       
-      const updatedProduct = await strapi.entityService.update('api::product.product', productId, {
+      const updatedProduct = await strapi.documents('api::product.product').update({
+        documentId,
         data: {
           inStock: quantity > 0
         }
@@ -635,9 +749,225 @@ module.exports = {
       strapi.log.error('Error updating product stock:', error)
       throw error
     }
+  },
+
+  async findProductsByStatus(status = 'published', options = {}) {
+    try {
+      // Use Document Service API with status filter
+      const products = await strapi.documents('api::product.product').findMany({
+        filters: { status },
+        sort: { createdAt: 'desc' },
+        pagination: { page: 1, pageSize: 25 },
+        populate: ['images', 'category'],
+        ...options
+      })
+      
+      return products
+    } catch (error) {
+      strapi.log.error('Error finding products by status:', error)
+      throw error
+    }
+  },
+
+  async publishProduct(documentId) {
+    try {
+      // Use Document Service API for publishing
+      const result = await strapi.documents('api::product.product').publish({
+        documentId
+      })
+      
+      return result
+    } catch (error) {
+      strapi.log.error('Error publishing product:', error)
+      throw error
+    }
+  },
+
+  async unpublishProduct(documentId) {
+    try {
+      // Use Document Service API for unpublishing
+      const result = await strapi.documents('api::product.product').unpublish({
+        documentId
+      })
+      
+      return result
+    } catch (error) {
+      strapi.log.error('Error unpublishing product:', error)
+      throw error
+    }
+  },
+
+  async countProducts(status = 'published') {
+    try {
+      // Use Document Service API for counting
+      const count = await strapi.documents('api::product.product').count({
+        status
+      })
+      
+      return count
+    } catch (error) {
+      strapi.log.error('Error counting products:', error)
+      throw error
+    }
   }
 }
 ```
+
+### 4. Document Service API Migration Guide
+
+```javascript
+// ❌ DEPRECATED - Entity Service API (Strapi v4)
+const product = await strapi.entityService.findOne('api::product.product', 1, {
+  populate: ['images', 'category']
+})
+
+// ✅ NEW - Document Service API (Strapi v5)
+const product = await strapi.documents('api::product.product').findOne({
+  documentId: 'a1b2c3d4e5f6g7h8i9j0klm',
+  populate: ['images', 'category']
+})
+
+// ❌ DEPRECATED - Using numeric ID
+const products = await strapi.entityService.findMany('api::product.product', {
+  filters: { publishedAt: { $notNull: true } }
+})
+
+// ✅ NEW - Using status filter
+const products = await strapi.documents('api::product.product').findMany({
+  filters: { status: 'published' }
+})
+
+// ❌ DEPRECATED - publishedAt checks
+if (product.publishedAt) {
+  // Product is published
+}
+
+// ✅ NEW - status checks
+if (product.status === 'published') {
+  // Product is published
+}
+```
+
+### 5. Document Service API Best Practices
+
+```javascript
+// ✅ Good - Use documentId for all operations
+const product = await strapi.documents('api::product.product').findOne({
+  documentId: 'a1b2c3d4e5f6g7h8i9j0klm'
+})
+
+// ✅ Good - Use status filters for Draft & Publish
+const publishedProducts = await strapi.documents('api::product.product').findMany({
+  filters: { status: 'published' }
+})
+
+const draftProducts = await strapi.documents('api::product.product').findMany({
+  filters: { status: 'draft' }
+})
+
+// ✅ Good - Use fields to limit returned data
+const products = await strapi.documents('api::product.product').findMany({
+  fields: ['documentId', 'name', 'price', 'slug'],
+  populate: {
+    images: {
+      fields: ['url', 'width', 'height']
+    }
+  }
+})
+
+// ✅ Good - Use findFirst for single record queries
+const firstProduct = await strapi.documents('api::product.product').findFirst({
+  filters: { status: 'published' },
+  sort: { createdAt: 'desc' }
+})
+
+// ✅ Good - Use count for performance
+const totalProducts = await strapi.documents('api::product.product').count({
+  status: 'published'
+})
+
+// ✅ Good - Draft & Publish operations
+const publishResult = await strapi.documents('api::product.product').publish({
+  documentId: 'a1b2c3d4e5f6g7h8i9j0klm'
+})
+
+const unpublishResult = await strapi.documents('api::product.product').unpublish({
+  documentId: 'a1b2c3d4e5f6g7h8i9j0klm'
+})
+
+const discardResult = await strapi.documents('api::product.product').discardDraft({
+  documentId: 'a1b2c3d4e5f6g7h8i9j0klm'
+})
+```
+
+### 6. Route Configuration for Document Service API
+
+```javascript
+// ✅ Good - Routes using documentId parameter
+module.exports = {
+  routes: [
+    {
+      method: 'GET',
+      path: '/products',
+      handler: 'product.find',
+      config: {
+        policies: ['global::is-public']
+      }
+    },
+    {
+      method: 'GET',
+      path: '/products/:documentId', // Use documentId instead of id
+      handler: 'product.findOne',
+      config: {
+        policies: ['global::is-public']
+      }
+    },
+    {
+      method: 'POST',
+      path: '/products',
+      handler: 'product.create',
+      config: {
+        policies: ['global::is-authenticated']
+      }
+    },
+    {
+      method: 'PUT',
+      path: '/products/:documentId', // Use documentId instead of id
+      handler: 'product.update',
+      config: {
+        policies: ['global::is-authenticated']
+      }
+    },
+    {
+      method: 'DELETE',
+      path: '/products/:documentId', // Use documentId instead of id
+      handler: 'product.delete',
+      config: {
+        policies: ['global::is-authenticated']
+      }
+    },
+    {
+      method: 'POST',
+      path: '/products/:documentId/publish',
+      handler: 'product.publish',
+      config: {
+        policies: ['global::is-admin']
+      }
+    },
+    {
+      method: 'POST',
+      path: '/products/:documentId/unpublish',
+      handler: 'product.unpublish',
+      config: {
+        policies: ['global::is-admin']
+      }
+    }
+  ]
+}
+```
+
+---
+
 # Coding Standards - Part 2
 
 *Continuation of coding-standards.md*
@@ -777,7 +1107,7 @@ describe('ProductCard', () => {
 ### 2. API Tests (Jest 30+ + Supertest)
 
 ```javascript
-// ✅ Good - Strapi API testing with Jest 30+ features
+// ✅ Good - Strapi 5+ API testing with Document Service API
 const request = require('supertest')
 const { createStrapiInstance } = require('@strapi/strapi')
 
@@ -819,19 +1149,80 @@ describe('Product API', () => {
       expect(response.body.meta.pagination.page).toBe(1)
       expect(response.body.meta.pagination.pageSize).toBe(100)
     })
+
+    it('should filter by publication status', async () => {
+      const response = await request(strapi.server)
+        .get('/api/products?status=published')
+        .expect(200)
+
+      expect(response.body.data).toBeDefined()
+    })
   })
 
-  describe('GET /api/products/:id', () => {
+  describe('GET /api/products/:documentId', () => {
     it('should return 404 for non-existent product', async () => {
       await request(strapi.server)
-        .get('/api/products/non-existent-id')
+        .get('/api/products/non-existent-document-id')
         .expect(404)
     })
 
-    it('should return 400 for invalid ID format', async () => {
+    it('should return 400 for invalid documentId format', async () => {
       await request(strapi.server)
-        .get('/api/products/invalid-id-format')
+        .get('/api/products/invalid-document-id-format')
         .expect(400)
+    })
+  })
+
+  describe('POST /api/products/:documentId/publish', () => {
+    it('should publish a draft product', async () => {
+      // First create a draft product
+      const createResponse = await request(strapi.server)
+        .post('/api/products')
+        .send({
+          data: {
+            name: 'Test Product',
+            price: 29.99,
+            status: 'draft'
+          }
+        })
+        .expect(201)
+
+      const documentId = createResponse.body.documentId
+
+      // Then publish it
+      const publishResponse = await request(strapi.server)
+        .post(`/api/products/${documentId}/publish`)
+        .expect(200)
+
+      expect(publishResponse.body.entries).toBeDefined()
+    })
+  })
+
+  describe('POST /api/products/:documentId/unpublish', () => {
+    it('should unpublish a published product', async () => {
+      // First create and publish a product
+      const createResponse = await request(strapi.server)
+        .post('/api/products')
+        .send({
+          data: {
+            name: 'Test Product',
+            price: 29.99
+          }
+        })
+        .expect(201)
+
+      const documentId = createResponse.body.documentId
+
+      await request(strapi.server)
+        .post(`/api/products/${documentId}/publish`)
+        .expect(200)
+
+      // Then unpublish it
+      const unpublishResponse = await request(strapi.server)
+        .post(`/api/products/${documentId}/unpublish`)
+        .expect(200)
+
+      expect(unpublishResponse.body.entries).toBeDefined()
     })
   })
 })
@@ -940,9 +1331,9 @@ const handleProductFilter = (filter: ProductFilter) => {
 ### 2. API Performance
 
 ```javascript
-// ✅ Good - Strapi 4.25+ query optimization with improved performance
-const products = await strapi.entityService.findMany('api::product.product', {
-  filters: { publishedAt: { $notNull: true } },
+// ✅ Good - Strapi 5+ query optimization with Document Service API
+const products = await strapi.documents('api::product.product').findMany({
+  filters: { status: 'published' }, // Use status instead of publishedAt
   sort: { createdAt: 'desc' },
   pagination: { page: 1, pageSize: 25 },
   populate: {
@@ -953,20 +1344,33 @@ const products = await strapi.entityService.findMany('api::product.product', {
       fields: ['name', 'slug']
     }
   },
-  // ✅ Good - Use select to limit fields
-  select: ['id', 'name', 'price', 'slug', 'inStock']
+  // ✅ Good - Use fields to limit returned data
+  fields: ['documentId', 'name', 'price', 'slug', 'inStock']
 })
 
 // ✅ Good - Batch operations for better performance
-const productIds = ['1', '2', '3']
+const documentIds = ['doc1', 'doc2', 'doc3'] // Use documentIds instead of numeric IDs
 const products = await Promise.all(
-  productIds.map(id => 
-    strapi.entityService.findOne('api::product.product', id, {
+  documentIds.map(documentId => 
+    strapi.documents('api::product.product').findOne({
+      documentId,
       populate: ['images'],
-      select: ['id', 'name', 'price']
+      fields: ['documentId', 'name', 'price']
     })
   )
 )
+
+// ✅ Good - Count operations for performance
+const totalProducts = await strapi.documents('api::product.product').count({
+  status: 'published'
+})
+
+// ✅ Good - Find first for single record queries
+const firstProduct = await strapi.documents('api::product.product').findFirst({
+  filters: { status: 'published' },
+  sort: { createdAt: 'desc' },
+  populate: ['images']
+})
 ```
 
 ---

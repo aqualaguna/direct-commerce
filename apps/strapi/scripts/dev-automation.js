@@ -65,7 +65,9 @@ async function fullDevelopmentSetup() {
   console.log('\n📋 Step 1: Validating environment...');
   const envResult = executeCommand('npm run validate:env');
   if (!envResult.success) {
-    console.error('❌ Environment validation failed. Please fix the issues above.');
+    console.error(
+      '❌ Environment validation failed. Please fix the issues above.'
+    );
     return false;
   }
 
@@ -73,7 +75,9 @@ async function fullDevelopmentSetup() {
   console.log('\n📋 Step 2: Setting up database...');
   const dbResult = executeCommand('npm run db:setup');
   if (!dbResult.success) {
-    console.error('❌ Database setup failed. Please check your database configuration.');
+    console.error(
+      '❌ Database setup failed. Please check your database configuration.'
+    );
     return false;
   }
 
@@ -115,19 +119,22 @@ function developmentWorkflow() {
   });
 
   // Set up file watching for additional automation
-  const watcher = chokidar.watch([
-    'src/**/*.{js,ts,json}',
-    'config/**/*.{js,ts,json}',
-    '!src/**/*.test.{js,ts}',
-    '!src/**/*.spec.{js,ts}',
-  ], {
-    ignored: /(node_modules|\.git|dist|build)/,
-    persistent: true,
-  });
+  const watcher = chokidar.watch(
+    [
+      'src/**/*.{js,ts,json}',
+      'config/**/*.{js,ts,json}',
+      '!src/**/*.test.{js,ts}',
+      '!src/**/*.spec.{js,ts}',
+    ],
+    {
+      ignored: /(node_modules|\.git|dist|build)/,
+      persistent: true,
+    }
+  );
 
   let isRunningTests = false;
 
-  watcher.on('change', async (filepath) => {
+  watcher.on('change', async filepath => {
     console.log(`📝 File changed: ${filepath}`);
 
     // Debounce test execution
@@ -137,7 +144,7 @@ function developmentWorkflow() {
     setTimeout(async () => {
       console.log('🧪 Running tests after file change...');
       const testResult = executeCommand('npm run test:unit', { silent: true });
-      
+
       if (testResult.success) {
         console.log('✅ Tests passed');
       } else {
@@ -437,7 +444,9 @@ function automation() {
       console.log('  node scripts/dev-automation.js <command> [subcommand]');
       console.log('\nCommands:');
       console.log('  setup              - Full development setup');
-      console.log('  dev, development   - Development workflow with hot reload');
+      console.log(
+        '  dev, development   - Development workflow with hot reload'
+      );
       console.log('  quick              - Quick development start');
       console.log('  db                 - Database automation');
       console.log('  quality            - Code quality automation');

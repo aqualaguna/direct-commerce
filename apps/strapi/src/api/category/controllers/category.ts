@@ -1,27 +1,134 @@
 /**
- * category controller
+ * Category controller
+ *
+ * Handles category management operations with hierarchical structure support
  */
 
+// Third-party imports
 import { factories } from '@strapi/strapi';
+
+// Type definitions for Strapi context and responses
+interface StrapiContext {
+  params: {
+    documentId?: string;
+    [key: string]: unknown;
+  };
+  query: {
+    filters?: Record<string, unknown>;
+    sort?: Record<string, string>;
+    page?: string;
+    pageSize?: string;
+    populate?: Record<string, unknown>;
+    maxDepth?: string;
+    q?: string;
+    limit?: string;
+    [key: string]: unknown;
+  };
+  request: {
+    body: {
+      data?: Record<string, unknown>;
+      productIds?: string[];
+      targetCategoryId?: string;
+      [key: string]: unknown;
+    };
+  };
+  state: {
+    user?: {
+      id: number;
+      role?: {
+        type: string;
+      };
+    };
+  };
+  badRequest: (message: string) => void;
+  notFound: (message: string) => void;
+  throw: (status: number, message: string) => void;
+}
+
+interface CategoryData {
+  documentId?: string;
+  name: string;
+  description?: string;
+  slug?: string;
+  parent?: string | null;
+  sortOrder?: number;
+  isActive?: boolean;
+  children?: CategoryData[];
+  products?: ProductData[];
+  seo?: Record<string, unknown>;
+  breadcrumbs?: CategoryData[];
+  [key: string]: unknown;
+}
+
+interface ProductData {
+  documentId: string;
+  name: string;
+  price: number;
+  category?: string;
+  [key: string]: unknown;
+}
+
+interface ApiResponse<T> {
+  data: T;
+  meta?: {
+    pagination?: {
+      page: number;
+      pageSize: number;
+      pageCount: number;
+      total: number;
+    };
+    [key: string]: unknown;
+  };
+}
+
+interface CategoryFilters {
+  publishedAt?: { $notNull: boolean };
+  parent?: string | null;
+  name?: unknown;
+  category?: string;
+  [key: string]: unknown;
+}
+
+interface PopulateOptions {
+  parent?: boolean;
+  children?: boolean;
+  seo?: boolean;
+  category?: boolean;
+  images?: boolean;
+  products?: boolean;
+  [key: string]: unknown;
+}
+
+interface PaginationOptions {
+  page: number;
+  pageSize: number;
+}
+
+interface SortOptions {
+  [key: string]: string;
+}
 
 export default factories.createCoreController(
   'api::category.category',
-  ({ strapi }) => ({
+  ({ strapi }: any) => ({
     /**
      * Find categories with hierarchical structure support
      */
-    async find(ctx) {
+    async find(ctx: any) {
       try {
         const { query } = ctx;
 
-        // Apply filters with improved error handling
-        const filters: any = {
+        // Apply filters with improved error handling - use publishedAt for Draft & Publish
+        const filters = {
           ...((query.filters as object) || {}),
           publishedAt: { $notNull: true },
         };
 
         // Apply sorting with validation (default by sortOrder)
-        const sort = query.sort || { sortOrder: 'asc', name: 'asc' };
+        const sort = query.sort || {
+          sortOrder: 'asc',
+          name: 'asc',
+        };
 
         // Apply pagination with improved validation
         const pagination = {
@@ -33,22 +140,28 @@ export default factories.createCoreController(
         };
 
         // Populate relations for hierarchy and products
-        const populate: any = {
+        const populate = {
           parent: true,
           children: true,
           seo: true,
           ...((query.populate as object) || {}),
         };
 
-        const { results, pagination: paginationInfo } =
-          await strapi.entityService.findPage('api::category.category', {
+        // Use Document Service API instead of Entity Service
+        const categories = await strapi
+          .documents('api::category.category')
+          .findMany({
             filters,
             sort,
             pagination,
             populate,
           });
 
-        return { data: results, meta: { pagination: paginationInfo } };
+        return {
+          data: Array.isArray(categories) ? categories : [],
+          meta:
+            (categories as any)?.meta || (categories as any)?.pagination || {},
+        };
       } catch (error) {
         strapi.log.error('Error in category find:', error);
         ctx.throw(500, 'Internal server error');
@@ -58,27 +171,27 @@ export default factories.createCoreController(
     /**
      * Find single category with full hierarchy context
      */
-    async findOne(ctx) {
+    async findOne(ctx: any) {
       try {
-        const { id } = ctx.params;
+        const { documentId } = ctx.params;
 
-        if (!id) {
-          return ctx.badRequest('Category ID is required');
+        if (!documentId) {
+          return ctx.badRequest('Category documentId is required');
         }
 
-        const populate: any = {
+        const populate = {
           parent: true,
           children: true,
           seo: true,
         };
 
-        const category = await strapi.entityService.findOne(
-          'api::category.category',
-          id,
-          {
+        // Use Document Service API with documentId
+        const category = await strapi
+          .documents('api::category.category')
+          .findOne({
+            documentId,
             populate,
-          }
-        );
+          });
 
         if (!category) {
           return ctx.notFound('Category not found');
@@ -87,7 +200,7 @@ export default factories.createCoreController(
         // Generate breadcrumbs for the category
         const breadcrumbs = await strapi
           .service('api::category.category')
-          .getBreadcrumbs(category.id);
+          .getBreadcrumbs(category.documentId);
 
         return {
           data: {
@@ -104,21 +217,22 @@ export default factories.createCoreController(
     /**
      * Create category with hierarchy validation
      */
-    async create(ctx) {
+    async create(ctx: any) {
       try {
         const { data } = ctx.request.body;
 
         // Validate required fields
-        if (!data.name) {
+        if (!data?.name) {
           return ctx.badRequest('Category name is required');
         }
 
         // Validate parent category if provided
         if (data.parent) {
-          const parentCategory = await strapi.entityService.findOne(
-            'api::category.category',
-            data.parent
-          );
+          const parentCategory = await strapi
+            .documents('api::category.category')
+            .findOne({
+              documentId: data.parent as string,
+            });
           if (!parentCategory) {
             return ctx.badRequest('Parent category not found');
           }
@@ -159,17 +273,17 @@ export default factories.createCoreController(
             .getNextSortOrder(data.parent);
         }
 
-        const category = await strapi.entityService.create(
-          'api::category.category',
-          {
-            data,
+        // Use Document Service API for creation
+        const category = await strapi
+          .documents('api::category.category')
+          .create({
+            data: data as any,
             populate: {
               parent: true,
               children: true,
               seo: true,
             },
-          }
-        );
+          });
 
         return { data: category };
       } catch (error) {
@@ -181,30 +295,33 @@ export default factories.createCoreController(
     /**
      * Update category with hierarchy validation
      */
-    async update(ctx) {
+    async update(ctx: any) {
       try {
-        const { id } = ctx.params;
+        const { documentId } = ctx.params;
         const { data } = ctx.request.body;
 
-        if (!id) {
-          return ctx.badRequest('Category ID is required');
+        if (!documentId) {
+          return ctx.badRequest('Category documentId is required');
         }
 
-        const existingCategory = await strapi.entityService.findOne(
-          'api::category.category',
-          id
-        );
+        // Use Document Service API to find existing category
+        const existingCategory = await strapi
+          .documents('api::category.category')
+          .findOne({
+            documentId,
+          });
         if (!existingCategory) {
           return ctx.notFound('Category not found');
         }
 
         // Validate parent category if being updated
-        if (data.parent !== undefined) {
+        if (data?.parent !== undefined) {
           if (data.parent) {
-            const parentCategory = await strapi.entityService.findOne(
-              'api::category.category',
-              data.parent
-            );
+            const parentCategory = await strapi
+              .documents('api::category.category')
+              .findOne({
+                documentId: data.parent as string,
+              });
             if (!parentCategory) {
               return ctx.badRequest('Parent category not found');
             }
@@ -212,7 +329,7 @@ export default factories.createCoreController(
             // Check for circular reference
             const wouldCreateCircle = await strapi
               .service('api::category.category')
-              .checkCircularReference(data.parent, id);
+              .checkCircularReference(data.parent, documentId);
             if (wouldCreateCircle) {
               return ctx.badRequest(
                 'Circular reference detected in category hierarchy'
@@ -223,7 +340,7 @@ export default factories.createCoreController(
           // Validate name uniqueness if name or parent is being updated
           if (
             data.name ||
-            data.parent !== (existingCategory as any).parent?.id
+            data.parent !== (existingCategory as any).parent?.documentId
           ) {
             const nameToCheck = data.name || existingCategory.name;
             const parentToCheck = data.parent;
@@ -233,7 +350,7 @@ export default factories.createCoreController(
               .findByNameAndParent(nameToCheck, parentToCheck);
             if (
               existingWithSameName &&
-              existingWithSameName.id !== parseInt(id)
+              existingWithSameName.documentId !== documentId
             ) {
               return ctx.badRequest(
                 'Category name must be unique within the same parent category'
@@ -242,18 +359,18 @@ export default factories.createCoreController(
           }
         }
 
-        const category = await strapi.entityService.update(
-          'api::category.category',
-          id,
-          {
+        // Use Document Service API for update
+        const category = await strapi
+          .documents('api::category.category')
+          .update({
+            documentId,
             data,
             populate: {
               parent: true,
               children: true,
               seo: true,
             },
-          }
-        );
+          });
 
         return { data: category };
       } catch (error) {
@@ -265,24 +382,24 @@ export default factories.createCoreController(
     /**
      * Delete category with children handling
      */
-    async delete(ctx) {
+    async delete(ctx: any) {
       try {
-        const { id } = ctx.params;
+        const { documentId } = ctx.params;
 
-        if (!id) {
-          return ctx.badRequest('Category ID is required');
+        if (!documentId) {
+          return ctx.badRequest('Category documentId is required');
         }
 
-        const category = await strapi.entityService.findOne(
-          'api::category.category',
-          id,
-          {
+        // Use Document Service API to find category with relations
+        const category = await strapi
+          .documents('api::category.category')
+          .findOne({
+            documentId,
             populate: {
               children: true,
               products: true,
             },
-          }
-        );
+          });
 
         if (!category) {
           return ctx.notFound('Category not found');
@@ -303,12 +420,14 @@ export default factories.createCoreController(
           );
         }
 
-        const deletedCategory = await strapi.entityService.delete(
-          'api::category.category',
-          id
-        );
+        // Use Document Service API for deletion
+        const deletedCategory = await strapi
+          .documents('api::category.category')
+          .delete({
+            documentId,
+          });
 
-        return { data: deletedCategory };
+        return { data: deletedCategory as any };
       } catch (error) {
         strapi.log.error('Error deleting category:', error);
         ctx.throw(500, 'Internal server error');
@@ -318,7 +437,7 @@ export default factories.createCoreController(
     /**
      * Get category tree structure
      */
-    async getTree(ctx) {
+    async getTree(ctx: any) {
       try {
         const tree = await strapi
           .service('api::category.category')
@@ -333,17 +452,17 @@ export default factories.createCoreController(
     /**
      * Get category breadcrumbs
      */
-    async getBreadcrumbs(ctx) {
+    async getBreadcrumbs(ctx: any) {
       try {
-        const { id } = ctx.params;
+        const { documentId } = ctx.params;
 
-        if (!id) {
-          return ctx.badRequest('Category ID is required');
+        if (!documentId) {
+          return ctx.badRequest('Category documentId is required');
         }
 
         const breadcrumbs = await strapi
           .service('api::category.category')
-          .getBreadcrumbs(id);
+          .getBreadcrumbs(documentId);
         return { data: breadcrumbs };
       } catch (error) {
         strapi.log.error('Error getting category breadcrumbs:', error);
@@ -354,19 +473,21 @@ export default factories.createCoreController(
     /**
      * Get products in a category
      */
-    async getProducts(ctx) {
+    async getProducts(ctx: any) {
       try {
-        const { id } = ctx.params;
+        const { documentId } = ctx.params;
         const { query } = ctx;
 
-        if (!id) {
-          return ctx.badRequest('Category ID is required');
+        if (!documentId) {
+          return ctx.badRequest('Category documentId is required');
         }
 
-        const category = await strapi.entityService.findOne(
-          'api::category.category',
-          id
-        );
+        // Use Document Service API to verify category exists
+        const category = await strapi
+          .documents('api::category.category')
+          .findOne({
+            documentId,
+          });
         if (!category) {
           return ctx.notFound('Category not found');
         }
@@ -380,16 +501,18 @@ export default factories.createCoreController(
           ),
         };
 
-        const filters: any = {
-          category: id,
-          publishedAt: { $notNull: true },
+        const filters = {
+          category: documentId,
+          publishedAt: { $notNull: true }, // Use publishedAt for Draft & Publish
           ...((query.filters as object) || {}),
         };
 
         const sort = query.sort || { createdAt: 'desc' };
 
-        const { results, pagination: paginationInfo } =
-          await strapi.entityService.findPage('api::product.product', {
+        // Use Document Service API for products
+        const products = await strapi
+          .documents('api::product.product')
+          .findMany({
             filters,
             sort,
             pagination,
@@ -400,7 +523,10 @@ export default factories.createCoreController(
             },
           });
 
-        return { data: results, meta: { pagination: paginationInfo } };
+        return {
+          data: Array.isArray(products) ? products : [],
+          meta: (products as any)?.meta || (products as any)?.pagination || {},
+        };
       } catch (error) {
         strapi.log.error('Error getting category products:', error);
         ctx.throw(500, 'Internal server error');
@@ -410,31 +536,34 @@ export default factories.createCoreController(
     /**
      * Assign products to category
      */
-    async assignProducts(ctx) {
+    async assignProducts(ctx: any): Promise<any> {
       try {
-        const { id } = ctx.params;
+        const { documentId } = ctx.params;
         const { productIds } = ctx.request.body;
 
-        if (!id) {
-          return ctx.badRequest('Category ID is required');
+        if (!documentId) {
+          return ctx.badRequest('Category documentId is required');
         }
 
         if (!productIds || !Array.isArray(productIds)) {
           return ctx.badRequest('Product IDs array is required');
         }
 
-        const category = await strapi.entityService.findOne(
-          'api::category.category',
-          id
-        );
+        // Use Document Service API to verify category exists
+        const category = await strapi
+          .documents('api::category.category')
+          .findOne({
+            documentId,
+          });
         if (!category) {
           return ctx.notFound('Category not found');
         }
 
-        // Update all specified products to assign them to this category
-        const updatePromises = productIds.map(productId =>
-          strapi.entityService.update('api::product.product', productId, {
-            data: { category: id },
+        // Update all specified products to assign them to this category using Document Service API
+        const updatePromises = productIds.map(productDocumentId =>
+          strapi.documents('api::product.product').update({
+            documentId: productDocumentId,
+            data: { category: documentId },
           })
         );
 
@@ -443,7 +572,7 @@ export default factories.createCoreController(
         return {
           data: {
             message: 'Products assigned successfully',
-            categoryId: id,
+            categoryId: documentId,
             productCount: productIds.length,
           },
         };
@@ -456,30 +585,33 @@ export default factories.createCoreController(
     /**
      * Remove products from category
      */
-    async removeProducts(ctx) {
+    async removeProducts(ctx: any): Promise<any> {
       try {
-        const { id } = ctx.params;
+        const { documentId } = ctx.params;
         const { productIds } = ctx.request.body;
 
-        if (!id) {
-          return ctx.badRequest('Category ID is required');
+        if (!documentId) {
+          return ctx.badRequest('Category documentId is required');
         }
 
         if (!productIds || !Array.isArray(productIds)) {
           return ctx.badRequest('Product IDs array is required');
         }
 
-        const category = await strapi.entityService.findOne(
-          'api::category.category',
-          id
-        );
+        // Use Document Service API to verify category exists
+        const category = await strapi
+          .documents('api::category.category')
+          .findOne({
+            documentId,
+          });
         if (!category) {
           return ctx.notFound('Category not found');
         }
 
-        // Update all specified products to remove them from this category
-        const updatePromises = productIds.map(productId =>
-          strapi.entityService.update('api::product.product', productId, {
+        // Update all specified products to remove them from this category using Document Service API
+        const updatePromises = productIds.map(productDocumentId =>
+          strapi.documents('api::product.product').update({
+            documentId: productDocumentId,
             data: { category: null },
           })
         );
@@ -489,7 +621,7 @@ export default factories.createCoreController(
         return {
           data: {
             message: 'Products removed successfully',
-            categoryId: id,
+            categoryId: documentId,
             productCount: productIds.length,
           },
         };
@@ -502,42 +634,46 @@ export default factories.createCoreController(
     /**
      * Move products to another category
      */
-    async moveProducts(ctx) {
+    async moveProducts(ctx: any): Promise<any> {
       try {
-        const { id } = ctx.params;
+        const { documentId } = ctx.params;
         const { targetCategoryId, productIds } = ctx.request.body;
 
-        if (!id) {
-          return ctx.badRequest('Source category ID is required');
+        if (!documentId) {
+          return ctx.badRequest('Source category documentId is required');
         }
 
         if (!targetCategoryId) {
-          return ctx.badRequest('Target category ID is required');
+          return ctx.badRequest('Target category documentId is required');
         }
 
         if (!productIds || !Array.isArray(productIds)) {
           return ctx.badRequest('Product IDs array is required');
         }
 
-        const sourceCategory = await strapi.entityService.findOne(
-          'api::category.category',
-          id
-        );
+        // Use Document Service API to verify both categories exist
+        const sourceCategory = await strapi
+          .documents('api::category.category')
+          .findOne({
+            documentId,
+          });
         if (!sourceCategory) {
           return ctx.notFound('Source category not found');
         }
 
-        const targetCategory = await strapi.entityService.findOne(
-          'api::category.category',
-          targetCategoryId
-        );
+        const targetCategory = await strapi
+          .documents('api::category.category')
+          .findOne({
+            documentId: targetCategoryId,
+          });
         if (!targetCategory) {
           return ctx.badRequest('Target category not found');
         }
 
-        // Update all specified products to move them to the target category
-        const updatePromises = productIds.map(productId =>
-          strapi.entityService.update('api::product.product', productId, {
+        // Update all specified products to move them to the target category using Document Service API
+        const updatePromises = productIds.map(productDocumentId =>
+          strapi.documents('api::product.product').update({
+            documentId: productDocumentId,
             data: { category: targetCategoryId },
           })
         );
@@ -547,7 +683,7 @@ export default factories.createCoreController(
         return {
           data: {
             message: 'Products moved successfully',
-            sourceCategoryId: id,
+            sourceCategoryId: documentId,
             targetCategoryId,
             productCount: productIds.length,
           },
@@ -561,18 +697,20 @@ export default factories.createCoreController(
     /**
      * Get category statistics
      */
-    async getStats(ctx) {
+    async getStats(ctx: any) {
       try {
-        const { id } = ctx.params;
+        const { documentId } = ctx.params;
 
-        if (!id) {
-          return ctx.badRequest('Category ID is required');
+        if (!documentId) {
+          return ctx.badRequest('Category documentId is required');
         }
 
-        const category = await strapi.entityService.findOne(
-          'api::category.category',
-          id
-        );
+        // Use Document Service API to verify category exists
+        const category = await strapi
+          .documents('api::category.category')
+          .findOne({
+            documentId,
+          });
         if (!category) {
           return ctx.notFound('Category not found');
         }
@@ -580,7 +718,7 @@ export default factories.createCoreController(
         // Get product counts and statistics
         const stats = await strapi
           .service('api::category.category')
-          .getCategoryStatistics(id);
+          .getCategoryStatistics(documentId);
 
         return { data: stats };
       } catch (error) {
@@ -592,7 +730,7 @@ export default factories.createCoreController(
     /**
      * Get navigation menu structure
      */
-    async getNavigation(ctx) {
+    async getNavigation(ctx: any) {
       try {
         const { query } = ctx;
         const maxDepth = parseInt(query.maxDepth as string) || 3;
@@ -611,17 +749,17 @@ export default factories.createCoreController(
     /**
      * Get sibling categories
      */
-    async getSiblings(ctx) {
+    async getSiblings(ctx: any) {
       try {
-        const { id } = ctx.params;
+        const { documentId } = ctx.params;
 
-        if (!id) {
-          return ctx.badRequest('Category ID is required');
+        if (!documentId) {
+          return ctx.badRequest('Category documentId is required');
         }
 
         const siblings = await strapi
           .service('api::category.category')
-          .getSiblingCategories(id);
+          .getSiblingCategories(documentId);
 
         return { data: siblings };
       } catch (error) {
@@ -633,7 +771,7 @@ export default factories.createCoreController(
     /**
      * Search categories
      */
-    async search(ctx) {
+    async search(ctx: any) {
       try {
         const { query } = ctx;
         const searchTerm = query.q as string;

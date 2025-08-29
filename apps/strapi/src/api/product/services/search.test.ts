@@ -1,23 +1,54 @@
 /**
  * Product search service tests
- * 
+ *
  * Tests for product search functionality including full-text search and relevance scoring
  */
 
-import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 
 // Mock filter service
 jest.mock('./filter', () => ({
   __esModule: true,
   default: {
-    buildFilters: jest.fn().mockImplementation((baseFilters: any, filterParams: any) => {
-      let filters = { ...baseFilters };
-      
+    buildFilters: jest
+      .fn()
+      .mockImplementation((baseFilters: any, filterParams: any) => {
+        const filters = { ...baseFilters };
+
+        // Apply category filtering
+        if (filterParams?.categoryId) {
+          filters.category = { id: filterParams.categoryId };
+        }
+
+        // Apply price filtering
+        if (filterParams?.priceRange) {
+          const { min, max } = filterParams.priceRange;
+          if (min !== undefined && max !== undefined) {
+            filters.price = { $gte: min, $lte: max };
+          } else if (min !== undefined) {
+            filters.price = { $gte: min };
+          } else if (max !== undefined) {
+            filters.price = { $lte: max };
+          }
+        }
+
+        return filters;
+      }),
+  },
+}));
+
+// Mock filter service instance
+const mockFilterServiceInstance = {
+  buildFilters: jest
+    .fn()
+    .mockImplementation((baseFilters: any, filterParams: any) => {
+      const filters = { ...baseFilters };
+
       // Apply category filtering
       if (filterParams?.categoryId) {
         filters.category = { id: filterParams.categoryId };
       }
-      
+
       // Apply price filtering
       if (filterParams?.priceRange) {
         const { min, max } = filterParams.priceRange;
@@ -29,46 +60,31 @@ jest.mock('./filter', () => ({
           filters.price = { $lte: max };
         }
       }
-      
+
       return filters;
     }),
-  },
-}));
-
-// Mock filter service instance
-const mockFilterServiceInstance = {
-  buildFilters: jest.fn().mockImplementation((baseFilters: any, filterParams: any) => {
-    let filters = { ...baseFilters };
-    
-    // Apply category filtering
-    if (filterParams?.categoryId) {
-      filters.category = { id: filterParams.categoryId };
-    }
-    
-    // Apply price filtering
-    if (filterParams?.priceRange) {
-      const { min, max } = filterParams.priceRange;
-      if (min !== undefined && max !== undefined) {
-        filters.price = { $gte: min, $lte: max };
-      } else if (min !== undefined) {
-        filters.price = { $gte: min };
-      } else if (max !== undefined) {
-        filters.price = { $lte: max };
-      }
-    }
-    
-    return filters;
-  }),
 };
 
-// Mock Strapi
+// Create persistent mock objects for documents API
+const mockDocumentsAPI = {
+  findOne: jest.fn() as jest.MockedFunction<any>,
+  findFirst: jest.fn() as jest.MockedFunction<any>,
+  findMany: jest.fn() as jest.MockedFunction<any>,
+  create: jest.fn() as jest.MockedFunction<any>,
+  update: jest.fn() as jest.MockedFunction<any>,
+  delete: jest.fn() as jest.MockedFunction<any>,
+  count: jest.fn() as jest.MockedFunction<any>,
+  publish: jest.fn() as jest.MockedFunction<any>,
+  unpublish: jest.fn() as jest.MockedFunction<any>,
+  discardDraft: jest.fn() as jest.MockedFunction<any>,
+};
+
+// Mock Strapi with Document Service API
 const mockStrapi = {
   contentType: jest.fn().mockReturnValue({
     kind: 'collectionType',
   }),
-  entityService: {
-    findMany: jest.fn() as jest.MockedFunction<any>,
-  },
+  documents: jest.fn(() => mockDocumentsAPI),
   service: jest.fn().mockReturnValue(mockFilterServiceInstance),
   log: {
     error: jest.fn(),
@@ -90,15 +106,15 @@ describe('Product Search Service', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Set up the factory mock
     const { factories } = require('@strapi/strapi');
-    (factories.createCoreService as jest.MockedFunction<any>).mockImplementation(
-      (serviceName, serviceFunction) => {
-        return serviceFunction({ strapi: mockStrapi });
-      }
-    );
-    
+    (
+      factories.createCoreService as jest.MockedFunction<any>
+    ).mockImplementation((serviceName, serviceFunction) => {
+      return serviceFunction({ strapi: mockStrapi });
+    });
+
     // Import the search service
     const searchServiceModule = require('./search').default;
     searchService = searchServiceModule;
@@ -139,17 +155,16 @@ describe('Product Search Service', () => {
         },
       };
 
-      mockStrapi.entityService.findMany.mockResolvedValue(mockProducts);
+      mockDocumentsAPI.findMany.mockResolvedValue(mockProducts);
 
       const result = await searchService.fullTextSearch('test');
 
       expect(result.data).toHaveLength(2);
-      expect(mockStrapi.entityService.findMany).toHaveBeenCalledWith(
-        'api::product.product',
+
+      expect(mockDocumentsAPI.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           filters: expect.objectContaining({
             publishedAt: { $notNull: true },
-            status: 'active',
             isActive: true,
             $or: [
               { title: { $containsi: 'test' } },
@@ -183,17 +198,16 @@ describe('Product Search Service', () => {
         },
       };
 
-      mockStrapi.entityService.findMany.mockResolvedValue(mockProducts);
+      mockDocumentsAPI.findMany.mockResolvedValue(mockProducts);
 
       const result = await searchService.fullTextSearch('');
 
       expect(result.data).toHaveLength(1);
-      expect(mockStrapi.entityService.findMany).toHaveBeenCalledWith(
-        'api::product.product',
+
+      expect(mockDocumentsAPI.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           filters: expect.objectContaining({
             publishedAt: { $notNull: true },
-            status: 'active',
             isActive: true,
           }),
         })
@@ -213,12 +227,11 @@ describe('Product Search Service', () => {
         },
       };
 
-      mockStrapi.entityService.findMany.mockResolvedValue(mockProducts);
+      mockDocumentsAPI.findMany.mockResolvedValue(mockProducts);
 
       await searchService.fullTextSearch('test', { categoryId: 1 });
 
-      expect(mockStrapi.entityService.findMany).toHaveBeenCalledWith(
-        'api::product.product',
+      expect(mockDocumentsAPI.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           filters: expect.objectContaining({
             $or: expect.any(Array),
@@ -241,14 +254,13 @@ describe('Product Search Service', () => {
         },
       };
 
-      mockStrapi.entityService.findMany.mockResolvedValue(mockProducts);
+      mockDocumentsAPI.findMany.mockResolvedValue(mockProducts);
 
       await searchService.fullTextSearch('test', {
         priceRange: { min: 10, max: 50 },
       });
 
-      expect(mockStrapi.entityService.findMany).toHaveBeenCalledWith(
-        'api::product.product',
+      expect(mockDocumentsAPI.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           filters: expect.objectContaining({
             $or: expect.any(Array),
@@ -271,12 +283,11 @@ describe('Product Search Service', () => {
         },
       };
 
-      mockStrapi.entityService.findMany.mockResolvedValue(mockProducts);
+      mockDocumentsAPI.findMany.mockResolvedValue(mockProducts);
 
       await searchService.fullTextSearch('test', { sortBy: 'price_asc' });
 
-      expect(mockStrapi.entityService.findMany).toHaveBeenCalledWith(
-        'api::product.product',
+      expect(mockDocumentsAPI.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           sort: { price: 'asc' },
         })
@@ -284,7 +295,7 @@ describe('Product Search Service', () => {
     });
 
     it('should handle service errors', async () => {
-      mockStrapi.entityService.findMany.mockRejectedValue(new Error('Database error'));
+      mockDocumentsAPI.findMany.mockRejectedValue(new Error('Database error'));
 
       await expect(searchService.fullTextSearch('test')).rejects.toThrow(
         'Failed to perform product search'
@@ -332,15 +343,19 @@ describe('Product Search Service', () => {
       const result = searchService.calculateRelevanceScores(products, 'test');
 
       expect(result).toHaveLength(3);
-      
+
       // Check that products are sorted by relevance score
-      expect(result[0]._relevanceScore).toBeGreaterThan(result[1]._relevanceScore);
-      expect(result[1]._relevanceScore).toBeGreaterThan(result[2]._relevanceScore);
+      expect(result[0]._relevanceScore).toBeGreaterThan(
+        result[1]._relevanceScore
+      );
+      expect(result[1]._relevanceScore).toBeGreaterThan(
+        result[2]._relevanceScore
+      );
 
       // Product with exact SKU match should score highest
       const exactMatch = result.find(p => p.sku === 'test');
       expect(exactMatch._relevanceScore).toBeGreaterThan(0);
-      
+
       // Featured products should get bonus points
       const featuredProduct = result.find(p => p.featured);
       expect(featuredProduct._relevanceScore).toBeGreaterThan(0);
@@ -362,7 +377,7 @@ describe('Product Search Service', () => {
         ],
       };
 
-      mockStrapi.entityService.findMany.mockResolvedValue(mockProducts);
+      mockDocumentsAPI.findMany.mockResolvedValue(mockProducts);
 
       const result = await searchService.getSearchSuggestions('test');
 
@@ -379,10 +394,10 @@ describe('Product Search Service', () => {
     });
 
     it('should handle service errors', async () => {
-      mockStrapi.entityService.findMany.mockRejectedValue(new Error('Database error'));
+      mockDocumentsAPI.findMany.mockRejectedValue(new Error('Database error'));
 
       const result = await searchService.getSearchSuggestions('test');
-      
+
       expect(result).toEqual([]);
       expect(mockStrapi.log.error).toHaveBeenCalledWith(
         'Error getting search suggestions:',

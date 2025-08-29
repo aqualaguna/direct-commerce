@@ -2,7 +2,7 @@
  * Bulk operations service tests
  */
 
-import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 
 // Mock all dependencies
 jest.mock('./product-validation', () => ({

@@ -41,8 +41,22 @@ global.testUtils = {
     ...overrides,
   }),
 
-  // Helper to create mock Strapi instance
+  // Helper to create mock Strapi instance with Document Service API
   createMockStrapi: (overrides = {}) => ({
+    // New Document Service API (Strapi 5+)
+    documents: jest.fn((contentType) => ({
+      findOne: jest.fn(),
+      findFirst: jest.fn(),
+      findMany: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+      count: jest.fn(),
+      publish: jest.fn(),
+      unpublish: jest.fn(),
+      discardDraft: jest.fn(),
+    })),
+    // Legacy Entity Service API (for backward compatibility during migration)
     entityService: {
       findMany: jest.fn(),
       findOne: jest.fn(),
@@ -50,6 +64,9 @@ global.testUtils = {
       update: jest.fn(),
       delete: jest.fn(),
     },
+    service: jest.fn().mockReturnValue({
+      // Mock service methods
+    }),
     plugin: jest.fn(() => ({
       service: jest.fn(),
     })),
@@ -59,6 +76,39 @@ global.testUtils = {
       info: jest.fn(),
       debug: jest.fn(),
     },
+    ...overrides,
+  }),
+
+  // Helper to create test product data
+  createTestProduct: (overrides = {}) => ({
+    documentId: 'test-doc-123',
+    title: 'Test Product',
+    description: 'Test description',
+    shortDescription: 'Test short desc',
+    price: 29.99,
+    sku: 'TEST-001',
+    inventory: 10,
+    status: 'draft',
+    publishedAt: null,
+    ...overrides,
+  }),
+
+  // Helper to create test user data
+  createTestUser: (overrides = {}) => ({
+    id: 1,
+    username: 'testuser',
+    email: 'test@example.com',
+    role: { type: 'authenticated' },
+    ...overrides,
+  }),
+
+  // Helper to create test category data
+  createTestCategory: (overrides = {}) => ({
+    documentId: 'test-cat-123',
+    name: 'Test Category',
+    slug: 'test-category',
+    description: 'Test category description',
+    status: 'published',
     ...overrides,
   }),
 };

@@ -11,7 +11,10 @@ import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 import { fileURLToPath } from 'url';
-import { createEnvFile, generateSecureValues } from '../src/utils/env-validator.js';
+import {
+  createEnvFile,
+  generateSecureValues,
+} from '../src/utils/env-validator.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -182,7 +185,12 @@ function showEnvironmentInfo() {
   console.log(`Current directory: ${process.cwd()}`);
   console.log(`NODE_ENV: ${process.env.NODE_ENV || 'not set'}`);
 
-  const envFiles = ['.env', '.env.local', '.env.development', '.env.production'];
+  const envFiles = [
+    '.env',
+    '.env.local',
+    '.env.development',
+    '.env.production',
+  ];
   console.log('\n📁 Environment files:');
   envFiles.forEach(file => {
     const exists = fs.existsSync(path.join(process.cwd(), file));
@@ -220,7 +228,9 @@ async function setup() {
       console.log('  node scripts/setup-env.js <command>');
       console.log('\nCommands:');
       console.log('  dev, development  - Set up development environment');
-      console.log('  prod, production  - Set up production environment template');
+      console.log(
+        '  prod, production  - Set up production environment template'
+      );
       console.log('  validate          - Validate current environment');
       console.log('  info              - Show environment information');
       console.log('\nExamples:');

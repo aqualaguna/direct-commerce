@@ -1,23 +1,58 @@
 /**
- * product service
+ * Product service - Migrated to new coding standards
+ *
+ * Implements product business logic following Strapi 5 Document Service API
+ * and TypeScript 5.9.2+ best practices
  */
 
+// Third-party imports
 import { factories } from '@strapi/strapi';
+
+// Local imports
 import productValidationService from './product-validation';
+
+// Type definitions - Updated for Strapi compatibility
+interface UpdateStatusParams {
+  documentId: string;
+  newStatus: string;
+}
+
+interface FindByStatusOptions {
+  filters?: any;
+  sort?: any;
+  pagination?: {
+    page?: number;
+    pageSize?: number;
+  };
+}
+
+interface StatusStatistics {
+  draft: number;
+  published: number;
+  total: number;
+  percentages: {
+    draft: number;
+    published: number;
+  };
+}
 
 export default factories.createCoreService(
   'api::product.product',
   ({ strapi }) => ({
     /**
-     * Update product status with validation
+     * Update product status with validation - Updated to Document Service API
      */
-    async updateStatus(productId: number, newStatus: string) {
+    async updateStatus(
+      documentId: string,
+      newStatus: string
+    ): Promise<unknown> {
       try {
-        // Get current product
-        const product = await strapi.entityService.findOne(
-          'api::product.product',
-          productId
-        );
+        // Get current product using Document Service API
+        const product = await strapi.documents('api::product.product').findOne({
+          documentId,
+          fields: ['id', 'status'],
+        });
+
         if (!product) {
           throw new Error('Product not found');
         }
@@ -26,22 +61,21 @@ export default factories.createCoreService(
         const validationResult =
           await productValidationService.validateStatusTransition(
             (product as any).status || 'draft',
-            newStatus
+            newStatus as any
           );
 
         if (!validationResult.isValid) {
           throw new Error(validationResult.errors.join(', '));
         }
 
-        // Update status
-        const updatedProduct = await strapi.entityService.update(
-          'api::product.product',
-          productId,
-          {
-            data: { status: newStatus } as any,
+        // Update status using Document Service API
+        const updatedProduct = await strapi
+          .documents('api::product.product')
+          .update({
+            documentId,
+            data: { status: newStatus as any },
             populate: ['images', 'category', 'seo'],
-          }
-        );
+          });
 
         return updatedProduct;
       } catch (error) {
@@ -51,18 +85,21 @@ export default factories.createCoreService(
     },
 
     /**
-     * Get products by status
+     * Get products by status - Updated to Document Service API
      */
-    async findByStatus(status: string, options: any = {}) {
+    async findByStatus(
+      status: string,
+      options: FindByStatusOptions = {}
+    ): Promise<unknown> {
       try {
         const filters = {
           ...options.filters,
-          status: status,
-        } as any;
+          status,
+        };
 
-        const products = await strapi.entityService.findMany(
-          'api::product.product',
-          {
+        const products = await strapi
+          .documents('api::product.product')
+          .findMany({
             filters,
             sort: options.sort || { createdAt: 'desc' },
             pagination: options.pagination || { page: 1, pageSize: 25 },
@@ -75,8 +112,7 @@ export default factories.createCoreService(
               },
               seo: true,
             },
-          }
-        );
+          });
 
         return products;
       } catch (error) {
@@ -86,18 +122,21 @@ export default factories.createCoreService(
     },
 
     /**
-     * Get products with status-based filtering
+     * Get products with status-based filtering - Updated to Document Service API
      */
-    async findWithStatusFilter(statusFilters: string[], options: any = {}) {
+    async findWithStatusFilter(
+      statusFilters: string[],
+      options: FindByStatusOptions = {}
+    ): Promise<unknown> {
       try {
         const filters = {
           ...options.filters,
           status: { $in: statusFilters },
-        } as any;
+        };
 
-        const products = await strapi.entityService.findMany(
-          'api::product.product',
-          {
+        const products = await strapi
+          .documents('api::product.product')
+          .findMany({
             filters,
             sort: options.sort || { createdAt: 'desc' },
             pagination: options.pagination || { page: 1, pageSize: 25 },
@@ -110,8 +149,7 @@ export default factories.createCoreService(
               },
               seo: true,
             },
-          }
-        );
+          });
 
         return products;
       } catch (error) {
@@ -121,20 +159,28 @@ export default factories.createCoreService(
     },
 
     /**
-     * Bulk status update
+     * Bulk status update - Updated to Document Service API
      */
-    async bulkUpdateStatus(productIds: number[], newStatus: string) {
+    async bulkUpdateStatus(
+      documentIds: string[],
+      newStatus: string
+    ): Promise<{
+      success: number;
+      failed: number;
+      results: unknown[];
+      errors: Array<{ documentId: string; error: string }>;
+    }> {
       try {
-        const results = [];
-        const errors = [];
+        const results: unknown[] = [];
+        const errors: Array<{ documentId: string; error: string }> = [];
 
-        for (const productId of productIds) {
+        for (const documentId of documentIds) {
           try {
-            const result = await this.updateStatus(productId, newStatus);
+            const result = await this.updateStatus(documentId, newStatus);
             results.push(result);
           } catch (error) {
             errors.push({
-              productId,
+              documentId,
               error: error instanceof Error ? error.message : 'Unknown error',
             });
           }
@@ -153,33 +199,28 @@ export default factories.createCoreService(
     },
 
     /**
-     * Get status statistics
+     * Get status statistics - Updated to Document Service API
      */
-    async getStatusStatistics() {
+    async getStatusStatistics(): Promise<StatusStatistics> {
       try {
-        const [draft, active, inactive] = await Promise.all([
-          strapi.entityService.count('api::product.product', {
-            filters: { status: 'draft' } as any,
+        const [draft, published] = await Promise.all([
+          strapi.documents('api::product.product').count({
+            status: 'draft',
           }),
-          strapi.entityService.count('api::product.product', {
-            filters: { status: 'active' } as any,
-          }),
-          strapi.entityService.count('api::product.product', {
-            filters: { status: 'inactive' } as any,
+          strapi.documents('api::product.product').count({
+            status: 'published',
           }),
         ]);
 
-        const total = draft + active + inactive;
+        const total = draft + published;
 
         return {
           draft,
-          active,
-          inactive,
+          published,
           total,
           percentages: {
             draft: total > 0 ? Math.round((draft / total) * 100) : 0,
-            active: total > 0 ? Math.round((active / total) * 100) : 0,
-            inactive: total > 0 ? Math.round((inactive / total) * 100) : 0,
+            published: total > 0 ? Math.round((published / total) * 100) : 0,
           },
         };
       } catch (error) {
@@ -189,11 +230,15 @@ export default factories.createCoreService(
     },
 
     /**
-     * Publish product (draft to active)
+     * Publish product using Document Service API Draft & Publish
      */
-    async publishProduct(productId: number) {
+    async publishProduct(documentId: string): Promise<unknown> {
       try {
-        return await this.updateStatus(productId, 'active');
+        // Use Document Service API publish method for Draft & Publish
+        const result = await strapi.documents('api::product.product').publish({
+          documentId,
+        });
+        return result;
       } catch (error) {
         strapi.log.error('Error publishing product:', error);
         throw error;
@@ -201,11 +246,17 @@ export default factories.createCoreService(
     },
 
     /**
-     * Unpublish product (active to inactive)
+     * Unpublish product using Document Service API Draft & Publish
      */
-    async unpublishProduct(productId: number) {
+    async unpublishProduct(documentId: string): Promise<unknown> {
       try {
-        return await this.updateStatus(productId, 'inactive');
+        // Use Document Service API unpublish method for Draft & Publish
+        const result = await strapi
+          .documents('api::product.product')
+          .unpublish({
+            documentId,
+          });
+        return result;
       } catch (error) {
         strapi.log.error('Error unpublishing product:', error);
         throw error;
@@ -213,11 +264,11 @@ export default factories.createCoreService(
     },
 
     /**
-     * Reactivate product (inactive to active)
+     * Reactivate product (legacy method - now uses publish)
      */
-    async reactivateProduct(productId: number) {
+    async reactivateProduct(documentId: string): Promise<unknown> {
       try {
-        return await this.updateStatus(productId, 'active');
+        return await this.publishProduct(documentId);
       } catch (error) {
         strapi.log.error('Error reactivating product:', error);
         throw error;
@@ -225,22 +276,24 @@ export default factories.createCoreService(
     },
 
     /**
-     * Get products ready for publication (draft products with complete data)
+     * Get products ready for publication - Updated to Document Service API
      */
-    async getProductsReadyForPublication(options: any = {}) {
+    async getProductsReadyForPublication(
+      options: FindByStatusOptions = {}
+    ): Promise<unknown> {
       try {
-        const filters = {
+        const filters: any = {
           status: 'draft',
           title: { $notNull: true },
           description: { $notNull: true },
           price: { $gt: 0 },
           sku: { $notNull: true },
           inventory: { $gte: 0 },
-        } as any;
+        };
 
-        const products = await strapi.entityService.findMany(
-          'api::product.product',
-          {
+        const products = await strapi
+          .documents('api::product.product')
+          .findMany({
             filters,
             sort: options.sort || { createdAt: 'desc' },
             pagination: options.pagination || { page: 1, pageSize: 25 },
@@ -253,8 +306,7 @@ export default factories.createCoreService(
               },
               seo: true,
             },
-          }
-        );
+          });
 
         return products;
       } catch (error) {

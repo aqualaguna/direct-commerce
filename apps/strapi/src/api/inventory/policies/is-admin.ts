@@ -11,7 +11,7 @@ export default (policyContext, config, { strapi }) => {
 
   // Check if user has admin role
   const adminRole = user.role?.type === 'admin' || user.role?.name === 'Admin';
-  
+
   if (!adminRole) {
     return false;
   }

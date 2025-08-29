@@ -19,12 +19,14 @@ export default async (
   const { query } = policyContext;
 
   // Add filter to only show published products for public access
-  if (!query.filters) {
+  if (query && !query.filters) {
     query.filters = {};
   }
 
   // Only show published products to public users
-  query.filters.publishedAt = { $notNull: true };
+  if (query) {
+    query.filters.publishedAt = { $notNull: true };
+  }
 
   return true;
 };

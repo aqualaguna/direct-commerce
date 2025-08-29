@@ -19,12 +19,13 @@ export default (config, { strapi }: { strapi: any }) => {
       // Use the proper ipKeyGenerator helper for IPv6 support
       keyGenerator: ipKeyGenerator,
       // Skip rate limiting for certain conditions
-      skip: (req) => {
+      skip: req => {
         // Skip if IP is undefined or unknown
-        const ip = req.ip || 
-                   req.connection?.remoteAddress || 
-                   req.socket?.remoteAddress || 
-                   req.connection?.socket?.remoteAddress;
+        const ip =
+          req.ip ||
+          req.connection?.remoteAddress ||
+          req.socket?.remoteAddress ||
+          req.connection?.socket?.remoteAddress;
         return !ip || ip === 'unknown';
       },
     });
