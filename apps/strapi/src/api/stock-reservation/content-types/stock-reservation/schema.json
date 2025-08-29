@@ -1,0 +1,57 @@
+
+{
+  "kind": "collectionType",
+  "collectionName": "stock_reservations",
+  "info": {
+    "singularName": "stock-reservation",
+    "pluralName": "stock-reservations",
+    "displayName": "Stock Reservation",
+    "description": "Stock reservations for pending orders"
+  },
+  "options": {
+    "draftAndPublish": false,
+    "comment": "Stock reservation system for pending orders"
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "product": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::product.product",
+      "required": true
+    },
+    "quantity": {
+      "type": "integer",
+      "required": true,
+      "min": 1
+    },
+    "orderId": {
+      "type": "string",
+      "required": true
+    },
+    "customerId": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": ["active", "completed", "expired", "cancelled"],
+      "required": true,
+      "default": "active"
+    },
+    "expiresAt": {
+      "type": "datetime",
+      "required": true
+    },
+    "completedAt": {
+      "type": "datetime"
+    },
+    "reason": {
+      "type": "string"
+    },
+    "metadata": {
+      "type": "json"
+    }
+  }
+}

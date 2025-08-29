@@ -91,6 +91,12 @@
       "type": "component",
       "component": "shared.seo",
       "required": false
+    },
+    "inventoryRecord": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::inventory.inventory",
+      "mappedBy": "product"
     }
   }
 }

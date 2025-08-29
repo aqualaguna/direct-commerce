@@ -9,12 +9,16 @@ export interface MockContext {
   query: Record<string, any>;
   request: { body: any };
   response: Record<string, any>;
+  body?: any;
   send: jest.Mock;
   badRequest: jest.Mock;
   unauthorized: jest.Mock;
   forbidden: jest.Mock;
   notFound: jest.Mock;
   internalServerError: jest.Mock;
+  conflict: jest.Mock;
+  throw: jest.Mock;
+  set: jest.Mock;
 }
 
 export interface MockStrapi {
@@ -26,6 +30,7 @@ export interface MockStrapi {
     delete: jest.Mock;
   };
   plugin: jest.Mock;
+  service: jest.Mock;
   log: {
     error: jest.Mock;
     warn: jest.Mock;
@@ -51,6 +56,9 @@ export const createMockContext = (
   forbidden: jest.fn(),
   notFound: jest.fn(),
   internalServerError: jest.fn(),
+  conflict: jest.fn(),
+  throw: jest.fn(),
+  set: jest.fn(),
   ...overrides,
 });
 
@@ -70,6 +78,7 @@ export const createMockStrapi = (
   plugin: jest.fn(() => ({
     service: jest.fn(),
   })),
+  service: jest.fn(),
   log: {
     error: jest.fn(),
     warn: jest.fn(),

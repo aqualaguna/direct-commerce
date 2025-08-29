@@ -1,0 +1,65 @@
+
+{
+  "kind": "collectionType",
+  "collectionName": "inventories",
+  "info": {
+    "singularName": "inventory",
+    "pluralName": "inventories",
+    "displayName": "Inventory",
+    "description": "Inventory tracking and management for products"
+  },
+  "options": {
+    "draftAndPublish": false,
+    "comment": "Inventory management system with tracking, alerts, and audit trail"
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "product": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::product.product",
+      "inversedBy": "inventoryRecord",
+      "required": true
+    },
+    "quantity": {
+      "type": "integer",
+      "required": true,
+      "min": 0,
+      "default": 0
+    },
+    "reserved": {
+      "type": "integer",
+      "required": true,
+      "min": 0,
+      "default": 0
+    },
+    "available": {
+      "type": "integer",
+      "required": true,
+      "min": 0,
+      "default": 0
+    },
+    "lowStockThreshold": {
+      "type": "integer",
+      "required": true,
+      "min": 0,
+      "default": 10
+    },
+    "isLowStock": {
+      "type": "boolean",
+      "default": false
+    },
+    "lastUpdated": {
+      "type": "datetime",
+      "required": true
+    },
+    "updatedBy": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    },
+    "notes": {
+      "type": "text"
+    }
+  }
+}
