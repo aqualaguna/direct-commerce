@@ -2,7 +2,11 @@
  * is-owner policy
  */
 
-export default async (policyContext: any, _config: any, { strapi: _strapi }: any) => {
+export default async (
+  policyContext: any,
+  _config: any,
+  { strapi: _strapi }: any
+) => {
   const { user } = policyContext.state;
   const { id: _id } = policyContext.params;
 

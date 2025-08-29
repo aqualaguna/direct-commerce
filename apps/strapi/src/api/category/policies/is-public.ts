@@ -2,7 +2,11 @@
  * is-public policy for categories
  */
 
-export default async (policyContext: any, _config: any, { strapi: _strapi }: any) => {
+export default async (
+  policyContext: any,
+  _config: any,
+  { strapi: _strapi }: any
+) => {
   const { user } = policyContext.state;
 
   // If user is authenticated, allow access

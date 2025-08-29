@@ -49,9 +49,11 @@ const mockStrapi: any = {
 // Mock the Strapi factories
 jest.mock('@strapi/strapi', () => ({
   factories: {
-    createCoreController: jest.fn((serviceName: string, controllerFunction: any) => {
-      return controllerFunction({ strapi: mockStrapi });
-    }),
+    createCoreController: jest.fn(
+      (serviceName: string, controllerFunction: any) => {
+        return controllerFunction({ strapi: mockStrapi });
+      }
+    ),
   },
 }));
 
@@ -60,7 +62,7 @@ describe('Product Controller', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Import the actual controller
     const productController = require('./product').default;
     controller = productController;
@@ -110,7 +112,12 @@ describe('Product Controller', () => {
 
   describe('findOne', () => {
     it('should return a single product by ID', async () => {
-      const mockProduct = { id: 1, title: 'Test Product', price: 29.99, publishedAt: new Date() };
+      const mockProduct = {
+        id: 1,
+        title: 'Test Product',
+        price: 29.99,
+        publishedAt: new Date(),
+      };
 
       mockStrapi.entityService.findOne.mockResolvedValue(mockProduct);
 
@@ -282,9 +289,7 @@ describe('Product Controller', () => {
 
   describe('search', () => {
     it('should search products by text', async () => {
-      const mockProducts = [
-        { id: 1, title: 'Apple iPhone', price: 999.99 },
-      ];
+      const mockProducts = [{ id: 1, title: 'Apple iPhone', price: 999.99 }];
 
       mockStrapi.entityService.findMany.mockResolvedValue(mockProducts);
 

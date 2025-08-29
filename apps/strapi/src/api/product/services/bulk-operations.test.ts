@@ -8,8 +8,12 @@ import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 jest.mock('./product-validation', () => ({
   __esModule: true,
   default: {
-    validateBusinessRules: jest.fn().mockResolvedValue({ isValid: true } as unknown as never),
-    validateBulkData: jest.fn().mockResolvedValue({ isValid: true } as unknown as never),
+    validateBusinessRules: jest
+      .fn()
+      .mockResolvedValue({ isValid: true } as unknown as never),
+    validateBulkData: jest
+      .fn()
+      .mockResolvedValue({ isValid: true } as unknown as never),
   },
 }));
 jest.mock('./product');
@@ -24,8 +28,12 @@ const mockStrapi: any = {
     count: jest.fn(),
   },
   service: jest.fn().mockReturnValue({
-    validateBusinessRules: jest.fn().mockResolvedValue({ isValid: true } as unknown as never),
-    validateStatusTransition: jest.fn().mockResolvedValue({ isValid: true } as unknown as never),
+    validateBusinessRules: jest
+      .fn()
+      .mockResolvedValue({ isValid: true } as unknown as never),
+    validateStatusTransition: jest
+      .fn()
+      .mockResolvedValue({ isValid: true } as unknown as never),
   }),
   log: {
     error: jest.fn(),
@@ -46,7 +54,7 @@ describe('Bulk Operations Service', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Import the actual service and create an instance
     const bulkOperationsService = require('./bulk-operations').default;
     service = bulkOperationsService({ strapi: mockStrapi });
@@ -94,9 +102,9 @@ describe('Bulk Operations Service', () => {
 
       // Mock validation to fail for this test
       const productValidationService = require('./product-validation').default;
-      productValidationService.validateBusinessRules.mockResolvedValueOnce({ 
-        isValid: false, 
-        errors: ['Price must be greater than 0'] 
+      productValidationService.validateBusinessRules.mockResolvedValueOnce({
+        isValid: false,
+        errors: ['Price must be greater than 0'],
       });
 
       const result = await service.importFromCSV(csvData);
@@ -111,7 +119,9 @@ describe('Bulk Operations Service', () => {
       const csvData = `title,description,shortDescription,price,sku,inventory,isActive,featured,status
 "Product 1","Description 1","Short 1",29.99,"SKU-001",10,true,false,draft`;
 
-      const result = await service.importFromCSV(csvData, { validateOnly: true });
+      const result = await service.importFromCSV(csvData, {
+        validateOnly: true,
+      });
 
       expect(result.success).toBe(1);
       expect(result.failed).toBe(0);
@@ -181,9 +191,9 @@ describe('Bulk Operations Service', () => {
 
       // Mock validation to fail for this test
       const productValidationService = require('./product-validation').default;
-      productValidationService.validateBusinessRules.mockResolvedValueOnce({ 
-        isValid: false, 
-        errors: ['Price must be greater than 0'] 
+      productValidationService.validateBusinessRules.mockResolvedValueOnce({
+        isValid: false,
+        errors: ['Price must be greater than 0'],
       });
 
       const result = await service.importFromJSON(jsonData);
@@ -228,7 +238,9 @@ describe('Bulk Operations Service', () => {
 
       const result = await service.exportToCSV();
 
-      expect(result).toContain('title,description,shortDescription,price,comparePrice,sku,inventory,isActive,featured,status,category,metaTitle,metaDescription,keywords');
+      expect(result).toContain(
+        'title,description,shortDescription,price,comparePrice,sku,inventory,isActive,featured,status,category,metaTitle,metaDescription,keywords'
+      );
       expect(result).toContain('Export Product 1');
       expect(result).toContain('Export Product 2');
       expect(mockStrapi.entityService.findMany).toHaveBeenCalled();
@@ -277,7 +289,8 @@ describe('Bulk Operations Service', () => {
 
       // Mock the product service updateStatus method
       mockStrapi.service.mockReturnValue({
-        updateStatus: jest.fn()
+        updateStatus: jest
+          .fn()
           .mockResolvedValueOnce(mockUpdatedProducts[0] as unknown as never)
           .mockResolvedValueOnce(mockUpdatedProducts[1] as unknown as never),
       });
@@ -316,8 +329,12 @@ describe('Bulk Operations Service', () => {
     it('should generate CSV template with headers', async () => {
       const template = service.generateCSVTemplate();
 
-      expect(template).toContain('title,description,shortDescription,price,comparePrice,sku,inventory,isActive,featured,status,category,metaTitle,metaDescription,keywords');
-      expect(template).toContain('Sample Product,This is a sample product description,Sample product short description,29.99,39.99,SAMPLE-001,10,true,false,draft,Electronics,Sample Product - Electronics,Sample product description for SEO,sample, product, electronics');
+      expect(template).toContain(
+        'title,description,shortDescription,price,comparePrice,sku,inventory,isActive,featured,status,category,metaTitle,metaDescription,keywords'
+      );
+      expect(template).toContain(
+        'Sample Product,This is a sample product description,Sample product short description,29.99,39.99,SAMPLE-001,10,true,false,draft,Electronics,Sample Product - Electronics,Sample product description for SEO,sample, product, electronics'
+      );
     });
   });
 });

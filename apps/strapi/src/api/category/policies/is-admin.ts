@@ -2,7 +2,11 @@
  * is-admin policy for categories
  */
 
-export default async (policyContext: any, _config: any, { strapi: _strapi }: any) => {
+export default async (
+  policyContext: any,
+  _config: any,
+  { strapi: _strapi }: any
+) => {
   const { user } = policyContext.state;
 
   if (!user) {

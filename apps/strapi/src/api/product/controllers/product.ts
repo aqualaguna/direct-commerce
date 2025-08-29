@@ -866,12 +866,12 @@ export default factories.createCoreController(
 
         // TODO: Implement wishlist functionality when wishlist content type is created
         // For now, return a placeholder response
-        return { 
-          data: { 
+        return {
+          data: {
             message: 'Wishlist functionality not yet implemented',
             productId,
-            userId: user.id 
-          } 
+            userId: user.id,
+          },
         };
       } catch (error) {
         strapi.log.error('Error adding product to wishlist:', error);
@@ -894,10 +894,10 @@ export default factories.createCoreController(
 
         // TODO: Implement wishlist functionality when wishlist content type is created
         // For now, return a placeholder response
-        return { 
+        return {
           message: 'Wishlist functionality not yet implemented',
           productId,
-          userId: user.id 
+          userId: user.id,
         };
       } catch (error) {
         strapi.log.error('Error removing product from wishlist:', error);

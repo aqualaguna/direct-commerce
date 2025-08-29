@@ -48,7 +48,6 @@ const stopWords = [
   'with',
 ];
 export default {
-
   /**
    * Generate SEO metadata for a product
    */
@@ -136,7 +135,7 @@ export default {
     const titleWords = product.title
       .toLowerCase()
       .split(' ')
-      .filter((word) => word.length > 2 && !stopWords.includes(word));
+      .filter(word => word.length > 2 && !stopWords.includes(word));
     keywords.push(...titleWords);
 
     // Add category name

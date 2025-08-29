@@ -63,6 +63,17 @@ export default [
     },
   },
   {
+    // Special rules for test files
+    files: ['**/*.test.ts', '**/*.test.js', '**/__tests__/**/*.ts', '**/__tests__/**/*.js'],
+    rules: {
+      '@typescript-eslint/no-require-imports': 'off',
+      '@typescript-eslint/no-var-requires': 'off',
+      '@typescript-eslint/no-explicit-any': 'warn',
+      'no-unused-vars': 'off',
+      '@typescript-eslint/no-unused-vars': 'off',
+    },
+  },
+  {
     files: ['**/*.js'],
     ignores: ['**/dist/**', '**/build/**', '**/*.example.*', '**/.strapi/**'],
     languageOptions: {

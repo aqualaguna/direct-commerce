@@ -44,14 +44,14 @@ describe('Product Service', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Reset the validation service mock to default valid state
     const productValidationService = require('./product-validation').default;
     productValidationService.validateStatusTransition.mockResolvedValue({
       isValid: true,
-      errors: []
+      errors: [],
     });
-    
+
     // Import the actual service - it's already instantiated by our mock
     const productService = require('./product').default;
     service = productService;
@@ -106,12 +106,12 @@ describe('Product Service', () => {
       };
 
       mockStrapi.entityService.findOne.mockResolvedValue(mockProduct);
-      
+
       // Mock the validation service to return invalid for this specific test
       const productValidationService = require('./product-validation').default;
       productValidationService.validateStatusTransition.mockResolvedValue({
         isValid: false,
-        errors: ['Invalid status transition from active to draft']
+        errors: ['Invalid status transition from active to draft'],
       });
 
       await expect(service.updateStatus(1, 'draft')).rejects.toThrow(
@@ -222,7 +222,7 @@ describe('Product Service', () => {
       const mockProduct2 = { id: 2, title: 'Product 2', status: 'draft' };
       const mockUpdatedProduct1 = { ...mockProduct1, status: 'active' };
       const mockUpdatedProduct2 = { ...mockProduct2, status: 'active' };
-      
+
       mockStrapi.entityService.findOne
         .mockResolvedValueOnce(mockProduct1)
         .mockResolvedValueOnce(mockProduct2);
