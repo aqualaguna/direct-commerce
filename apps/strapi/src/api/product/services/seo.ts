@@ -79,7 +79,7 @@ export default {
 
     // Use product images for meta image if not provided
     if (!customSEO?.metaImage && product.images && product.images.length > 0) {
-      seoData.metaImage = product.images[0];
+      [seoData.metaImage] = product.images;
     } else if (customSEO?.metaImage) {
       seoData.metaImage = customSEO.metaImage;
     }

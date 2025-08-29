@@ -1,0 +1,76 @@
+{
+  "kind": "collectionType",
+  "collectionName": "product_listing_variants",
+  "info": {
+    "singularName": "product-listing-variant",
+    "pluralName": "product-listing-variants",
+    "displayName": "Product Listing Variant",
+    "description": "Product variants with specific options, pricing, and inventory"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "sku": {
+      "type": "string",
+      "required": true,
+      "unique": true,
+      "maxLength": 100
+    },
+    "price": {
+      "type": "decimal",
+      "required": true,
+      "min": 0
+    },
+    "comparePrice": {
+      "type": "decimal",
+      "min": 0
+    },
+    "inventory": {
+      "type": "integer",
+      "required": true,
+      "min": 0,
+      "default": 0
+    },
+    "isActive": {
+      "type": "boolean",
+      "default": true
+    },
+    "weight": {
+      "type": "decimal",
+      "min": 0
+    },
+    "length": {
+      "type": "decimal",
+      "min": 0
+    },
+    "width": {
+      "type": "decimal",
+      "min": 0
+    },
+    "height": {
+      "type": "decimal",
+      "min": 0
+    },
+    "productListing": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::product-listing.product-listing",
+      "inversedBy": "variants",
+      "required": true
+    },
+    "optionValues": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::option-value.option-value",
+      "mappedBy": "variants"
+    },
+    "images": {
+      "type": "media",
+      "multiple": false,
+      "required": false,
+      "allowedTypes": ["images"]
+    }
+  }
+}

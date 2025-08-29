@@ -43,3 +43,4 @@ recommendations:
       refs: ["apps/strapi/src/api/**/*.ts"]
     - action: "Consider implementing stricter ESLint rules for production code"
       refs: ["apps/strapi/eslint.config.js"]
+

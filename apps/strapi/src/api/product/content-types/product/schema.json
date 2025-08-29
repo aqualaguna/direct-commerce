@@ -1,4 +1,3 @@
-
 {
   "kind": "collectionType",
   "collectionName": "products",
@@ -6,35 +5,20 @@
     "singularName": "product",
     "pluralName": "products",
     "displayName": "Product",
-    "description": "Ecommerce products with pricing, inventory, and media"
+    "description": "Base product entity - source of truth for product data"
   },
   "options": {
     "draftAndPublish": true,
-    "comment": "Product content type for ecommerce functionality"
+    "comment": "Base product entity - website-facing attributes moved to ProductListing"
   },
   "attributes": {
-    "title": {
+    "sku": {
       "type": "string",
       "required": true,
       "unique": true,
-      "minLength": 1,
-      "maxLength": 255
+      "maxLength": 100
     },
-    "slug": {
-      "type": "uid",
-      "targetField": "title",
-      "required": true
-    },
-    "description": {
-      "type": "richtext",
-      "required": true
-    },
-    "shortDescription": {
-      "type": "text",
-      "required": true,
-      "maxLength": 500
-    },
-    "price": {
+    "basePrice": {
       "type": "decimal",
       "required": true,
       "min": 0
@@ -42,12 +26,6 @@
     "comparePrice": {
       "type": "decimal",
       "min": 0
-    },
-    "sku": {
-      "type": "string",
-      "required": true,
-      "unique": true,
-      "maxLength": 100
     },
     "inventory": {
       "type": "integer",
@@ -59,21 +37,11 @@
       "type": "boolean",
       "default": true
     },
-    "featured": {
-      "type": "boolean",
-      "default": false
-    },
     "status": {
       "type": "enumeration",
       "enum": ["draft", "active", "inactive"],
       "default": "draft",
       "required": true
-    },
-    "images": {
-      "type": "media",
-      "multiple": true,
-      "required": false,
-      "allowedTypes": ["images"]
     },
     "category": {
       "type": "relation",
@@ -87,15 +55,16 @@
       "target": "plugin::users-permissions.user",
       "inversedBy": "wishlist"
     },
-    "seo": {
-      "type": "component",
-      "component": "shared.seo",
-      "required": false
-    },
     "inventoryRecord": {
       "type": "relation",
       "relation": "oneToOne",
       "target": "api::inventory.inventory",
+      "mappedBy": "product"
+    },
+    "productListings": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::product-listing.product-listing",
       "mappedBy": "product"
     }
   }

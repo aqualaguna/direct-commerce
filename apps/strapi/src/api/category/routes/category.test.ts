@@ -65,7 +65,8 @@ describe('Category Routes', () => {
     });
 
     it('should include custom hierarchy routes', () => {
-      const customRoutes = routes.routes.filter(
+      const allRoutes = routes.routes;
+      const customRoutes = allRoutes.filter(
         (route: any) => !Array.isArray(route) && route.method && route.path
       );
 
@@ -90,7 +91,8 @@ describe('Category Routes', () => {
     });
 
     it('should include product management routes', () => {
-      const customRoutes = routes.routes.filter(
+      const allRoutes = routes.routes;
+      const customRoutes = allRoutes.filter(
         (route: any) => !Array.isArray(route) && route.method && route.path
       );
 

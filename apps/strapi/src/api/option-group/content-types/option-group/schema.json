@@ -1,0 +1,59 @@
+{
+  "kind": "collectionType",
+  "collectionName": "option_groups",
+  "info": {
+    "singularName": "option-group",
+    "pluralName": "option-groups",
+    "displayName": "Option Group",
+    "description": "Option groups for product variants (e.g., Size, Color, Material)"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true,
+      "unique": true,
+      "minLength": 1,
+      "maxLength": 50
+    },
+    "displayName": {
+      "type": "string",
+      "required": true,
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "type": {
+      "type": "enumeration",
+      "enum": ["select", "radio", "checkbox"],
+      "required": true,
+      "default": "select"
+    },
+    "isRequired": {
+      "type": "boolean",
+      "default": false
+    },
+    "sortOrder": {
+      "type": "integer",
+      "default": 0
+    },
+    "isActive": {
+      "type": "boolean",
+      "default": true
+    },
+    "productListings": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::product-listing.product-listing",
+      "inversedBy": "optionGroups"
+    },
+    "optionValues": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::option-value.option-value",
+      "mappedBy": "optionGroup"
+    }
+  }
+}

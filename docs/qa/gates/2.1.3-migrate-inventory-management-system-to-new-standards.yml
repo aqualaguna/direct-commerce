@@ -41,3 +41,4 @@ recommendations:
       refs: ["apps/strapi/src/api/inventory/controllers/inventory.ts", "apps/strapi/src/api/inventory/services/inventory.ts"]
     - action: "Evaluate ESLint configuration to reduce warnings while maintaining Strapi compatibility"
       refs: ["eslint.config.js"]
+

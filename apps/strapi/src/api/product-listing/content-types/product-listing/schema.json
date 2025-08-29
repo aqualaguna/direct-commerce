@@ -1,0 +1,89 @@
+{
+  "kind": "collectionType",
+  "collectionName": "product_listings",
+  "info": {
+    "singularName": "product-listing",
+    "pluralName": "product-listings",
+    "displayName": "Product Listing",
+    "description": "Customer-facing product representations with variants support"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "title": {
+      "type": "string",
+      "required": true,
+      "maxLength": 255
+    },
+    "slug": {
+      "type": "uid",
+      "targetField": "title",
+      "required": true
+    },
+    "description": {
+      "type": "richtext",
+      "required": true
+    },
+    "shortDescription": {
+      "type": "text",
+      "maxLength": 500
+    },
+    "type": {
+      "type": "enumeration",
+      "enum": ["single", "variant"],
+      "required": true,
+      "default": "single"
+    },
+    "basePrice": {
+      "type": "decimal",
+      "min": 0
+    },
+    "comparePrice": {
+      "type": "decimal",
+      "min": 0
+    },
+    "isActive": {
+      "type": "boolean",
+      "default": true
+    },
+    "featured": {
+      "type": "boolean",
+      "default": false
+    },
+    "images": {
+      "type": "media",
+      "multiple": true,
+      "required": true,
+      "allowedTypes": ["images"],
+      "min": 1
+    },
+    "product": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::product.product",
+      "required": true
+    },
+    "category": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::category.category"
+    },
+    "variants": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::product-listing-variant.product-listing-variant",
+      "mappedBy": "productListing"
+    },
+    "optionGroups": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::option-group.option-group"
+    },
+    "seo": {
+      "type": "component",
+      "component": "shared.seo"
+    }
+  }
+}

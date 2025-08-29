@@ -1,0 +1,49 @@
+{
+  "kind": "collectionType",
+  "collectionName": "option_values",
+  "info": {
+    "singularName": "option-value",
+    "pluralName": "option-values",
+    "displayName": "Option Value",
+    "description": "Specific option values for product variants (e.g., Large, Red, Cotton)"
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "value": {
+      "type": "string",
+      "required": true,
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "displayName": {
+      "type": "string",
+      "required": true,
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "sortOrder": {
+      "type": "integer",
+      "default": 0
+    },
+    "isActive": {
+      "type": "boolean",
+      "default": true
+    },
+    "optionGroup": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::option-group.option-group",
+      "inversedBy": "optionValues",
+      "required": true
+    },
+    "variants": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::product-listing-variant.product-listing-variant",
+      "inversedBy": "optionValues"
+    }
+  }
+}
