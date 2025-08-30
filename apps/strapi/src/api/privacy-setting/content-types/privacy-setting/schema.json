@@ -1,0 +1,60 @@
+
+{
+  "kind": "collectionType",
+  "collectionName": "privacy_settings",
+  "info": {
+    "singularName": "privacy-setting",
+    "pluralName": "privacy-settings",
+    "displayName": "Privacy Setting",
+    "description": "User privacy settings and GDPR compliance"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "user": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "plugin::users-permissions.user",
+      "inversedBy": "privacySettings"
+    },
+    "profileVisibility": {
+      "type": "enumeration",
+      "enum": ["public", "private", "friends"],
+      "default": "private"
+    },
+    "showEmail": {
+      "type": "boolean",
+      "default": false
+    },
+    "showPhone": {
+      "type": "boolean",
+      "default": false
+    },
+    "showLocation": {
+      "type": "boolean",
+      "default": false
+    },
+    "allowAnalytics": {
+      "type": "boolean",
+      "default": true
+    },
+    "allowMarketing": {
+      "type": "boolean",
+      "default": false
+    },
+    "allowThirdParty": {
+      "type": "boolean",
+      "default": false
+    },
+    "dataRetentionConsent": {
+      "type": "boolean",
+      "default": false
+    },
+    "marketingConsent": {
+      "type": "boolean",
+      "default": false
+    }
+  }
+}

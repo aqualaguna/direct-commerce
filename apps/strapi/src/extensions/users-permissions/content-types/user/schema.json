@@ -12,6 +12,16 @@
     "draftAndPublish": false
   },
   "attributes": {
+    "username": {
+      "type": "string",
+      "unique": true,
+      "minLength": 3
+    },
+    "email": {
+      "type": "email",
+      "unique": true,
+      "minLength": 6
+    },
     "firstName": {
       "type": "string",
       "maxLength": 255
@@ -37,6 +47,46 @@
       "enum": ["customer", "admin"],
       "default": "customer"
     },
+    "profilePicture": {
+      "type": "media",
+      "multiple": false,
+      "required": false,
+      "allowedTypes": ["images"]
+    },
+    "dateOfBirth": {
+      "type": "date"
+    },
+    "gender": {
+      "type": "enumeration",
+      "enum": ["male", "female", "other", "prefer-not-to-say"]
+    },
+    "bio": {
+      "type": "text",
+      "maxLength": 500
+    },
+    "website": {
+      "type": "string",
+      "maxLength": 255
+    },
+    "location": {
+      "type": "string",
+      "maxLength": 255
+    },
+    "timezone": {
+      "type": "string",
+      "maxLength": 50,
+      "default": "UTC"
+    },
+    "language": {
+      "type": "string",
+      "maxLength": 10,
+      "default": "en"
+    },
+    "currency": {
+      "type": "string",
+      "maxLength": 3,
+      "default": "USD"
+    },
     "addresses": {
       "type": "relation",
       "relation": "oneToMany",
@@ -47,6 +97,18 @@
       "type": "relation",
       "relation": "manyToMany",
       "target": "api::product.product"
+    },
+    "preferences": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::user-preference.user-preference",
+      "mappedBy": "user"
+    },
+    "privacySettings": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::privacy-setting.privacy-setting",
+      "mappedBy": "user"
     }
   }
 }

@@ -1,0 +1,72 @@
+
+{
+  "kind": "collectionType",
+  "collectionName": "user_preferences",
+  "info": {
+    "singularName": "user-preference",
+    "pluralName": "user-preferences",
+    "displayName": "User Preference",
+    "description": "User account preferences and settings"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "user": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "plugin::users-permissions.user",
+      "inversedBy": "preferences"
+    },
+    "emailNotifications": {
+      "type": "boolean",
+      "default": true
+    },
+    "smsNotifications": {
+      "type": "boolean",
+      "default": false
+    },
+    "marketingEmails": {
+      "type": "boolean",
+      "default": false
+    },
+    "orderUpdates": {
+      "type": "boolean",
+      "default": true
+    },
+    "twoFactorEnabled": {
+      "type": "boolean",
+      "default": false
+    },
+    "loginNotifications": {
+      "type": "boolean",
+      "default": true
+    },
+    "theme": {
+      "type": "enumeration",
+      "enum": ["light", "dark", "auto"],
+      "default": "auto"
+    },
+    "language": {
+      "type": "string",
+      "maxLength": 10,
+      "default": "en"
+    },
+    "currency": {
+      "type": "string",
+      "maxLength": 3,
+      "default": "USD"
+    },
+    "timezone": {
+      "type": "string",
+      "maxLength": 50,
+      "default": "UTC"
+    },
+    "notificationFrequency": {
+      "type": "enumeration",
+      "enum": ["immediate", "daily", "weekly"],
+      "default": "immediate"
+    }
+  }
+}

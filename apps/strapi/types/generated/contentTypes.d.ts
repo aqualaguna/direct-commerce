@@ -766,6 +766,55 @@ export interface ApiOptionValueOptionValue extends Struct.CollectionTypeSchema {
   };
 }
 
+export interface ApiPrivacySettingPrivacySetting
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'privacy_settings';
+  info: {
+    description: 'User privacy settings and GDPR compliance';
+    displayName: 'Privacy Setting';
+    pluralName: 'privacy-settings';
+    singularName: 'privacy-setting';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    allowAnalytics: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
+    allowMarketing: Schema.Attribute.Boolean &
+      Schema.Attribute.DefaultTo<false>;
+    allowThirdParty: Schema.Attribute.Boolean &
+      Schema.Attribute.DefaultTo<false>;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    dataRetentionConsent: Schema.Attribute.Boolean &
+      Schema.Attribute.DefaultTo<false>;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::privacy-setting.privacy-setting'
+    > &
+      Schema.Attribute.Private;
+    marketingConsent: Schema.Attribute.Boolean &
+      Schema.Attribute.DefaultTo<false>;
+    profileVisibility: Schema.Attribute.Enumeration<
+      ['public', 'private', 'friends']
+    > &
+      Schema.Attribute.DefaultTo<'private'>;
+    publishedAt: Schema.Attribute.DateTime;
+    showEmail: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
+    showLocation: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
+    showPhone: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    user: Schema.Attribute.Relation<
+      'oneToOne',
+      'plugin::users-permissions.user'
+    >;
+  };
+}
+
 export interface ApiProductListingVariantProductListingVariant
   extends Struct.CollectionTypeSchema {
   collectionName: 'product_listing_variants';
@@ -1073,28 +1122,68 @@ export interface ApiStockReservationStockReservation
   };
 }
 
-export interface ApiTestTest extends Struct.CollectionTypeSchema {
-  collectionName: 'tests';
+export interface ApiUserPreferenceUserPreference
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'user_preferences';
   info: {
-    displayName: 'test';
-    pluralName: 'tests';
-    singularName: 'test';
+    description: 'User account preferences and settings';
+    displayName: 'User Preference';
+    pluralName: 'user-preferences';
+    singularName: 'user-preference';
   };
   options: {
-    comment: '';
     draftAndPublish: false;
   };
   attributes: {
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+    currency: Schema.Attribute.String &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 3;
+      }> &
+      Schema.Attribute.DefaultTo<'USD'>;
+    emailNotifications: Schema.Attribute.Boolean &
+      Schema.Attribute.DefaultTo<true>;
+    language: Schema.Attribute.String &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 10;
+      }> &
+      Schema.Attribute.DefaultTo<'en'>;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
-    localizations: Schema.Attribute.Relation<'oneToMany', 'api::test.test'> &
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::user-preference.user-preference'
+    > &
       Schema.Attribute.Private;
+    loginNotifications: Schema.Attribute.Boolean &
+      Schema.Attribute.DefaultTo<true>;
+    marketingEmails: Schema.Attribute.Boolean &
+      Schema.Attribute.DefaultTo<false>;
+    notificationFrequency: Schema.Attribute.Enumeration<
+      ['immediate', 'daily', 'weekly']
+    > &
+      Schema.Attribute.DefaultTo<'immediate'>;
+    orderUpdates: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
     publishedAt: Schema.Attribute.DateTime;
+    smsNotifications: Schema.Attribute.Boolean &
+      Schema.Attribute.DefaultTo<false>;
+    theme: Schema.Attribute.Enumeration<['light', 'dark', 'auto']> &
+      Schema.Attribute.DefaultTo<'auto'>;
+    timezone: Schema.Attribute.String &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 50;
+      }> &
+      Schema.Attribute.DefaultTo<'UTC'>;
+    twoFactorEnabled: Schema.Attribute.Boolean &
+      Schema.Attribute.DefaultTo<false>;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+    user: Schema.Attribute.Relation<
+      'oneToOne',
+      'plugin::users-permissions.user'
+    >;
   };
 }
 
@@ -1556,15 +1645,38 @@ export interface PluginUsersPermissionsUser
   };
   attributes: {
     addresses: Schema.Attribute.Relation<'oneToMany', 'api::address.address'>;
+    bio: Schema.Attribute.Text &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 500;
+      }>;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+    currency: Schema.Attribute.String &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 3;
+      }> &
+      Schema.Attribute.DefaultTo<'USD'>;
+    dateOfBirth: Schema.Attribute.Date;
+    email: Schema.Attribute.Email &
+      Schema.Attribute.Unique &
+      Schema.Attribute.SetMinMaxLength<{
+        minLength: 6;
+      }>;
     emailVerified: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
     firstName: Schema.Attribute.String &
       Schema.Attribute.SetMinMaxLength<{
         maxLength: 255;
       }>;
+    gender: Schema.Attribute.Enumeration<
+      ['male', 'female', 'other', 'prefer-not-to-say']
+    >;
     isActive: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
+    language: Schema.Attribute.String &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 10;
+      }> &
+      Schema.Attribute.DefaultTo<'en'>;
     lastName: Schema.Attribute.String &
       Schema.Attribute.SetMinMaxLength<{
         maxLength: 255;
@@ -1575,16 +1687,43 @@ export interface PluginUsersPermissionsUser
       'plugin::users-permissions.user'
     > &
       Schema.Attribute.Private;
+    location: Schema.Attribute.String &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 255;
+      }>;
     phone: Schema.Attribute.String &
       Schema.Attribute.SetMinMaxLength<{
         maxLength: 20;
       }>;
+    preferences: Schema.Attribute.Relation<
+      'oneToOne',
+      'api::user-preference.user-preference'
+    >;
+    privacySettings: Schema.Attribute.Relation<
+      'oneToOne',
+      'api::privacy-setting.privacy-setting'
+    >;
+    profilePicture: Schema.Attribute.Media<'images'>;
     publishedAt: Schema.Attribute.DateTime;
     role: Schema.Attribute.Enumeration<['customer', 'admin']> &
       Schema.Attribute.DefaultTo<'customer'>;
+    timezone: Schema.Attribute.String &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 50;
+      }> &
+      Schema.Attribute.DefaultTo<'UTC'>;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+    username: Schema.Attribute.String &
+      Schema.Attribute.Unique &
+      Schema.Attribute.SetMinMaxLength<{
+        minLength: 3;
+      }>;
+    website: Schema.Attribute.String &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 255;
+      }>;
     wishlist: Schema.Attribute.Relation<'manyToMany', 'api::product.product'>;
   };
 }
@@ -1605,11 +1744,12 @@ declare module '@strapi/strapi' {
       'api::inventory.inventory': ApiInventoryInventory;
       'api::option-group.option-group': ApiOptionGroupOptionGroup;
       'api::option-value.option-value': ApiOptionValueOptionValue;
+      'api::privacy-setting.privacy-setting': ApiPrivacySettingPrivacySetting;
       'api::product-listing-variant.product-listing-variant': ApiProductListingVariantProductListingVariant;
       'api::product-listing.product-listing': ApiProductListingProductListing;
       'api::product.product': ApiProductProduct;
       'api::stock-reservation.stock-reservation': ApiStockReservationStockReservation;
-      'api::test.test': ApiTestTest;
+      'api::user-preference.user-preference': ApiUserPreferenceUserPreference;
       'plugin::content-releases.release': PluginContentReleasesRelease;
       'plugin::content-releases.release-action': PluginContentReleasesReleaseAction;
       'plugin::i18n.locale': PluginI18NLocale;
