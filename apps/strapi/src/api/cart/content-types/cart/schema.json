@@ -1,0 +1,107 @@
+
+{
+  "kind": "collectionType",
+  "collectionName": "carts",
+  "info": {
+    "singularName": "cart",
+    "pluralName": "carts",
+    "displayName": "Cart",
+    "description": "Shopping cart for ecommerce platform"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "sessionId": {
+      "type": "string",
+      "required": true,
+      "unique": true,
+      "description": "Session ID for guest carts"
+    },
+    "user": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user",
+      "inversedBy": "carts",
+      "description": "User who owns this cart (null for guest carts)"
+    },
+    "items": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::cart-item.cart-item",
+      "mappedBy": "cart",
+      "description": "Cart items in this cart"
+    },
+    "subtotal": {
+      "type": "decimal",
+      "required": true,
+      "default": 0,
+      "min": 0,
+      "description": "Cart subtotal in cents"
+    },
+    "tax": {
+      "type": "decimal",
+      "required": true,
+      "default": 0,
+      "min": 0,
+      "description": "Tax amount in cents"
+    },
+    "shipping": {
+      "type": "decimal",
+      "required": true,
+      "default": 0,
+      "min": 0,
+      "description": "Shipping cost in cents"
+    },
+    "total": {
+      "type": "decimal",
+      "required": true,
+      "default": 0,
+      "min": 0,
+      "description": "Total amount in cents"
+    },
+    "currency": {
+      "type": "string",
+      "required": true,
+      "default": "USD",
+      "maxLength": 3,
+      "description": "Currency code (ISO 4217)"
+    },
+    "expiresAt": {
+      "type": "datetime",
+      "required": true,
+      "description": "Cart expiration date"
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": [
+        "active",
+        "expired",
+        "converted"
+      ],
+      "default": "active",
+      "required": true,
+      "description": "Cart status"
+    },
+    "shippingAddress": {
+      "type": "component",
+      "component": "shared.address",
+      "description": "Shipping address for cart calculations"
+    },
+    "shippingMethod": {
+      "type": "string",
+      "description": "Selected shipping method"
+    },
+    "discountCode": {
+      "type": "string",
+      "description": "Applied discount code"
+    },
+    "discountAmount": {
+      "type": "decimal",
+      "default": 0,
+      "min": 0,
+      "description": "Discount amount in cents"
+    }
+  }
+}

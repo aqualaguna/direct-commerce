@@ -1,0 +1,82 @@
+
+{
+  "kind": "collectionType",
+  "collectionName": "cart_items",
+  "info": {
+    "singularName": "cart-item",
+    "pluralName": "cart-items",
+    "displayName": "Cart Item",
+    "description": "Individual items in shopping cart"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "cart": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::cart.cart",
+      "inversedBy": "items",
+      "required": true,
+      "description": "Cart this item belongs to"
+    },
+    "product": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::product.product",
+      "required": true,
+      "description": "Product in cart"
+    },
+    "productListing": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::product-listing.product-listing",
+      "description": "Product listing (customer-facing product)"
+    },
+    "variant": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::product-listing-variant.product-listing-variant",
+      "description": "Product variant if applicable"
+    },
+    "quantity": {
+      "type": "integer",
+      "required": true,
+      "default": 1,
+      "min": 1,
+      "max": 999,
+      "description": "Quantity of product in cart"
+    },
+    "price": {
+      "type": "decimal",
+      "required": true,
+      "min": 0,
+      "description": "Price per unit in cents (price at time of addition)"
+    },
+    "total": {
+      "type": "decimal",
+      "required": true,
+      "min": 0,
+      "description": "Total price for this item in cents (quantity * price)"
+    },
+    "addedAt": {
+      "type": "datetime",
+      "required": true,
+      "description": "When item was added to cart"
+    },
+    "updatedAt": {
+      "type": "datetime",
+      "required": true,
+      "description": "When item was last updated"
+    },
+    "notes": {
+      "type": "text",
+      "description": "Customer notes for this item"
+    },
+    "selectedOptions": {
+      "type": "json",
+      "description": "Selected product options/variants"
+    }
+  }
+}

@@ -127,6 +127,13 @@
       "relation": "oneToMany",
       "target": "plugin::users-permissions.user",
       "mappedBy": "roleAssignedBy"
+    },
+    "carts": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::cart.cart",
+      "mappedBy": "user",
+      "description": "User's shopping carts"
     }
   }
 }
