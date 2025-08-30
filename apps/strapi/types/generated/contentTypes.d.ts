@@ -770,7 +770,7 @@ export interface ApiPrivacySettingPrivacySetting
   extends Struct.CollectionTypeSchema {
   collectionName: 'privacy_settings';
   info: {
-    description: 'User privacy settings and GDPR compliance';
+    description: 'User privacy settings, data preferences, and GDPR compliance with consent tracking';
     displayName: 'Privacy Setting';
     pluralName: 'privacy-settings';
     singularName: 'privacy-setting';
@@ -779,16 +779,46 @@ export interface ApiPrivacySettingPrivacySetting
     draftAndPublish: false;
   };
   attributes: {
-    allowAnalytics: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
-    allowMarketing: Schema.Attribute.Boolean &
-      Schema.Attribute.DefaultTo<false>;
-    allowThirdParty: Schema.Attribute.Boolean &
-      Schema.Attribute.DefaultTo<false>;
+    analyticsConsent: Schema.Attribute.Boolean &
+      Schema.Attribute.DefaultTo<true>;
+    consentSource: Schema.Attribute.Enumeration<
+      [
+        'registration',
+        'profile-update',
+        'admin-update',
+        'api',
+        'consent-update',
+      ]
+    > &
+      Schema.Attribute.DefaultTo<'registration'>;
+    consentVersion: Schema.Attribute.String &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 50;
+      }> &
+      Schema.Attribute.DefaultTo<'1.0'>;
+    cookieConsent: Schema.Attribute.Enumeration<
+      ['necessary', 'analytics', 'marketing', 'all']
+    > &
+      Schema.Attribute.DefaultTo<'necessary'>;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+    dataExportRequested: Schema.Attribute.Boolean &
+      Schema.Attribute.DefaultTo<false>;
+    dataProcessingConsent: Schema.Attribute.Boolean &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<true>;
     dataRetentionConsent: Schema.Attribute.Boolean &
       Schema.Attribute.DefaultTo<false>;
+    dataSharing: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
+    gdprConsent: Schema.Attribute.Boolean &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<false>;
+    ipAddressAtConsent: Schema.Attribute.String &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 45;
+      }>;
+    lastConsentUpdate: Schema.Attribute.DateTime;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
@@ -802,9 +832,13 @@ export interface ApiPrivacySettingPrivacySetting
     > &
       Schema.Attribute.DefaultTo<'private'>;
     publishedAt: Schema.Attribute.DateTime;
+    rightToBeForgetRequested: Schema.Attribute.Boolean &
+      Schema.Attribute.DefaultTo<false>;
     showEmail: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
     showLocation: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
     showPhone: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
+    thirdPartySharing: Schema.Attribute.Boolean &
+      Schema.Attribute.DefaultTo<false>;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -812,6 +846,7 @@ export interface ApiPrivacySettingPrivacySetting
       'oneToOne',
       'plugin::users-permissions.user'
     >;
+    userAgentAtConsent: Schema.Attribute.Text;
   };
 }
 
@@ -1126,7 +1161,7 @@ export interface ApiUserPreferenceUserPreference
   extends Struct.CollectionTypeSchema {
   collectionName: 'user_preferences';
   info: {
-    description: 'User account preferences and settings';
+    description: 'User account preferences and settings including communication, notifications, security, and localization';
     displayName: 'User Preference';
     pluralName: 'user-preferences';
     singularName: 'user-preference';
@@ -1135,6 +1170,7 @@ export interface ApiUserPreferenceUserPreference
     draftAndPublish: false;
   };
   attributes: {
+    communicationConsentDate: Schema.Attribute.DateTime;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -1143,6 +1179,13 @@ export interface ApiUserPreferenceUserPreference
         maxLength: 3;
       }> &
       Schema.Attribute.DefaultTo<'USD'>;
+    dateFormat: Schema.Attribute.Enumeration<
+      ['MM_DD_YYYY', 'DD_MM_YYYY', 'YYYY_MM_DD', 'DD_DOT_MM_DOT_YYYY']
+    > &
+      Schema.Attribute.DefaultTo<'MM_DD_YYYY'>;
+    deviceTracking: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
+    emailMarketing: Schema.Attribute.Boolean &
+      Schema.Attribute.DefaultTo<false>;
     emailNotifications: Schema.Attribute.Boolean &
       Schema.Attribute.DefaultTo<true>;
     language: Schema.Attribute.String &
@@ -1150,6 +1193,7 @@ export interface ApiUserPreferenceUserPreference
         maxLength: 10;
       }> &
       Schema.Attribute.DefaultTo<'en'>;
+    lastPasswordChange: Schema.Attribute.DateTime;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
@@ -1158,21 +1202,42 @@ export interface ApiUserPreferenceUserPreference
       Schema.Attribute.Private;
     loginNotifications: Schema.Attribute.Boolean &
       Schema.Attribute.DefaultTo<true>;
-    marketingEmails: Schema.Attribute.Boolean &
-      Schema.Attribute.DefaultTo<false>;
     notificationFrequency: Schema.Attribute.Enumeration<
-      ['immediate', 'daily', 'weekly']
+      ['immediate', 'daily', 'weekly', 'disabled']
     > &
       Schema.Attribute.DefaultTo<'immediate'>;
+    numberFormat: Schema.Attribute.Enumeration<
+      ['COMMA_DOT', 'DOT_COMMA', 'SPACE_COMMA', 'SPACE_DOT']
+    > &
+      Schema.Attribute.DefaultTo<'COMMA_DOT'>;
+    orderStatusNotifications: Schema.Attribute.Boolean &
+      Schema.Attribute.DefaultTo<true>;
     orderUpdates: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
+    promotionalEmails: Schema.Attribute.Boolean &
+      Schema.Attribute.DefaultTo<false>;
+    promotionalNotifications: Schema.Attribute.Boolean &
+      Schema.Attribute.DefaultTo<false>;
     publishedAt: Schema.Attribute.DateTime;
+    securityNotifications: Schema.Attribute.Boolean &
+      Schema.Attribute.DefaultTo<true>;
+    sessionTimeout: Schema.Attribute.Integer &
+      Schema.Attribute.SetMinMax<
+        {
+          max: 86400;
+          min: 300;
+        },
+        number
+      > &
+      Schema.Attribute.DefaultTo<3600>;
+    smsNotificationEnabled: Schema.Attribute.Boolean &
+      Schema.Attribute.DefaultTo<false>;
     smsNotifications: Schema.Attribute.Boolean &
       Schema.Attribute.DefaultTo<false>;
     theme: Schema.Attribute.Enumeration<['light', 'dark', 'auto']> &
       Schema.Attribute.DefaultTo<'auto'>;
     timezone: Schema.Attribute.String &
       Schema.Attribute.SetMinMaxLength<{
-        maxLength: 50;
+        maxLength: 100;
       }> &
       Schema.Attribute.DefaultTo<'UTC'>;
     twoFactorEnabled: Schema.Attribute.Boolean &
@@ -1705,8 +1770,20 @@ export interface PluginUsersPermissionsUser
     >;
     profilePicture: Schema.Attribute.Media<'images'>;
     publishedAt: Schema.Attribute.DateTime;
-    role: Schema.Attribute.Enumeration<['customer', 'admin']> &
+    role: Schema.Attribute.Enumeration<
+      ['customer', 'admin', 'manager', 'support', 'moderator']
+    > &
       Schema.Attribute.DefaultTo<'customer'>;
+    roleAssignedAt: Schema.Attribute.DateTime;
+    roleAssignedBy: Schema.Attribute.Relation<
+      'manyToOne',
+      'plugin::users-permissions.user'
+    >;
+    roleAssignments: Schema.Attribute.Relation<
+      'oneToMany',
+      'plugin::users-permissions.user'
+    >;
+    roleExpiresAt: Schema.Attribute.DateTime;
     timezone: Schema.Attribute.String &
       Schema.Attribute.SetMinMaxLength<{
         maxLength: 50;

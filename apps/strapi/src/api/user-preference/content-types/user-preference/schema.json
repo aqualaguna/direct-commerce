@@ -6,7 +6,7 @@
     "singularName": "user-preference",
     "pluralName": "user-preferences",
     "displayName": "User Preference",
-    "description": "User account preferences and settings"
+    "description": "User account preferences and settings including communication, notifications, security, and localization"
   },
   "options": {
     "draftAndPublish": false
@@ -19,54 +19,122 @@
       "target": "plugin::users-permissions.user",
       "inversedBy": "preferences"
     },
-    "emailNotifications": {
+    "emailMarketing": {
       "type": "boolean",
-      "default": true
+      "default": false,
+      "description": "Consent for marketing emails"
     },
     "smsNotifications": {
       "type": "boolean",
-      "default": false
-    },
-    "marketingEmails": {
-      "type": "boolean",
-      "default": false
+      "default": false,
+      "description": "Consent for SMS notifications"
     },
     "orderUpdates": {
       "type": "boolean",
-      "default": true
+      "default": true,
+      "description": "Receive order status updates"
+    },
+    "promotionalEmails": {
+      "type": "boolean",
+      "default": false,
+      "description": "Receive promotional emails"
+    },
+    "communicationConsentDate": {
+      "type": "datetime",
+      "description": "Date when communication preferences were last updated"
+    },
+    "orderStatusNotifications": {
+      "type": "boolean",
+      "default": true,
+      "description": "Notifications for order status changes"
+    },
+    "promotionalNotifications": {
+      "type": "boolean",
+      "default": false,
+      "description": "Promotional and marketing notifications"
+    },
+    "securityNotifications": {
+      "type": "boolean",
+      "default": true,
+      "description": "Security-related notifications"
+    },
+    "emailNotifications": {
+      "type": "boolean",
+      "default": true,
+      "description": "Enable email notifications"
+    },
+    "smsNotificationEnabled": {
+      "type": "boolean",
+      "default": false,
+      "description": "Enable SMS notifications"
+    },
+    "notificationFrequency": {
+      "type": "enumeration",
+      "enum": ["immediate", "daily", "weekly", "disabled"],
+      "default": "immediate",
+      "description": "Frequency for non-critical notifications"
     },
     "twoFactorEnabled": {
       "type": "boolean",
-      "default": false
+      "default": false,
+      "description": "Two-factor authentication enabled"
+    },
+    "sessionTimeout": {
+      "type": "integer",
+      "default": 3600,
+      "min": 300,
+      "max": 86400,
+      "description": "Session timeout in seconds (5min to 24hrs)"
+    },
+    "deviceTracking": {
+      "type": "boolean",
+      "default": true,
+      "description": "Track login devices for security"
+    },
+    "lastPasswordChange": {
+      "type": "datetime",
+      "description": "Date of last password change"
     },
     "loginNotifications": {
       "type": "boolean",
-      "default": true
-    },
-    "theme": {
-      "type": "enumeration",
-      "enum": ["light", "dark", "auto"],
-      "default": "auto"
+      "default": true,
+      "description": "Notify on new login sessions"
     },
     "language": {
       "type": "string",
       "maxLength": 10,
-      "default": "en"
+      "default": "en",
+      "description": "Preferred language code"
     },
     "currency": {
       "type": "string",
       "maxLength": 3,
-      "default": "USD"
+      "default": "USD",
+      "description": "Preferred currency code"
     },
     "timezone": {
       "type": "string",
-      "maxLength": 50,
-      "default": "UTC"
+      "maxLength": 100,
+      "default": "UTC",
+      "description": "Preferred timezone"
     },
-    "notificationFrequency": {
+    "dateFormat": {
       "type": "enumeration",
-      "enum": ["immediate", "daily", "weekly"],
-      "default": "immediate"
+      "enum": ["MM_DD_YYYY", "DD_MM_YYYY", "YYYY_MM_DD", "DD_DOT_MM_DOT_YYYY"],
+      "default": "MM_DD_YYYY",
+      "description": "Preferred date format"
+    },
+    "numberFormat": {
+      "type": "enumeration",
+      "enum": ["COMMA_DOT", "DOT_COMMA", "SPACE_COMMA", "SPACE_DOT"],
+      "default": "COMMA_DOT",
+      "description": "Preferred number format (COMMA_DOT=1,234.56, DOT_COMMA=1.234,56, SPACE_COMMA=1 234,56, SPACE_DOT=1 234.56)"
+    },
+    "theme": {
+      "type": "enumeration",
+      "enum": ["light", "dark", "auto"],
+      "default": "auto",
+      "description": "UI theme preference"
     }
   }
 }

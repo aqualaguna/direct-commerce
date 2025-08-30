@@ -6,7 +6,7 @@
     "singularName": "privacy-setting",
     "pluralName": "privacy-settings",
     "displayName": "Privacy Setting",
-    "description": "User privacy settings and GDPR compliance"
+    "description": "User privacy settings, data preferences, and GDPR compliance with consent tracking"
   },
   "options": {
     "draftAndPublish": false
@@ -22,39 +22,101 @@
     "profileVisibility": {
       "type": "enumeration",
       "enum": ["public", "private", "friends"],
-      "default": "private"
+      "default": "private",
+      "description": "Profile visibility level"
     },
     "showEmail": {
       "type": "boolean",
-      "default": false
+      "default": false,
+      "description": "Show email address in profile"
     },
     "showPhone": {
       "type": "boolean",
-      "default": false
+      "default": false,
+      "description": "Show phone number in profile"
     },
     "showLocation": {
       "type": "boolean",
-      "default": false
+      "default": false,
+      "description": "Show location in profile"
     },
-    "allowAnalytics": {
+    "dataSharing": {
       "type": "boolean",
-      "default": true
+      "default": false,
+      "description": "Allow data sharing with partners"
     },
-    "allowMarketing": {
+    "analyticsConsent": {
       "type": "boolean",
-      "default": false
-    },
-    "allowThirdParty": {
-      "type": "boolean",
-      "default": false
-    },
-    "dataRetentionConsent": {
-      "type": "boolean",
-      "default": false
+      "default": true,
+      "description": "Consent for analytics tracking"
     },
     "marketingConsent": {
       "type": "boolean",
-      "default": false
+      "default": false,
+      "description": "Consent for marketing activities"
+    },
+    "thirdPartySharing": {
+      "type": "boolean",
+      "default": false,
+      "description": "Allow sharing data with third parties"
+    },
+    "gdprConsent": {
+      "type": "boolean",
+      "default": false,
+      "required": true,
+      "description": "GDPR compliance consent"
+    },
+    "lastConsentUpdate": {
+      "type": "datetime",
+      "description": "Date when consent was last updated"
+    },
+    "consentVersion": {
+      "type": "string",
+      "maxLength": 50,
+      "default": "1.0",
+      "description": "Version of consent terms accepted"
+    },
+    "dataRetentionConsent": {
+      "type": "boolean",
+      "default": false,
+      "description": "Consent for data retention beyond legal requirements"
+    },
+    "dataProcessingConsent": {
+      "type": "boolean",
+      "default": true,
+      "required": true,
+      "description": "Consent for necessary data processing"
+    },
+    "cookieConsent": {
+      "type": "enumeration",
+      "enum": ["necessary", "analytics", "marketing", "all"],
+      "default": "necessary",
+      "description": "Cookie consent level"
+    },
+    "rightToBeForgetRequested": {
+      "type": "boolean",
+      "default": false,
+      "description": "User has requested data deletion"
+    },
+    "dataExportRequested": {
+      "type": "boolean",
+      "default": false,
+      "description": "User has requested data export"
+    },
+    "consentSource": {
+      "type": "enumeration",
+      "enum": ["registration", "profile-update", "admin-update", "api", "consent-update"],
+      "default": "registration",
+      "description": "Source where consent was given"
+    },
+    "ipAddressAtConsent": {
+      "type": "string",
+      "maxLength": 45,
+      "description": "IP address when consent was given"
+    },
+    "userAgentAtConsent": {
+      "type": "text",
+      "description": "User agent when consent was given"
     }
   }
 }

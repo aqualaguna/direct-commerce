@@ -5,6 +5,6 @@ export default async (policyContext, config, { strapi }) => {
     return false;
   }
 
-  // Check if user has admin role
-  return user.role === 'admin';
+  // Check if user has manager or admin role
+  return ['admin', 'manager'].includes(user.role);
 };

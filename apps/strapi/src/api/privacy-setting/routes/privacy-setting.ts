@@ -1,5 +1,6 @@
 /**
  * Privacy setting routes
+ * Enhanced GDPR compliance routes including consent management and data rights
  */
 
 export default {
@@ -26,11 +27,41 @@ export default {
       handler: 'privacy-setting.updateMyPrivacySettings',
       config: {
         policies: ['global::is-authenticated'],
-        description: 'Update current user privacy settings',
+        description: 'Update current user privacy settings with consent tracking',
         tag: {
           plugin: 'privacy-setting',
           name: 'Privacy Settings',
           actionType: 'update'
+        }
+      }
+    },
+    // Update consent preferences
+    {
+      method: 'PATCH',
+      path: '/privacy-settings/me/consent',
+      handler: 'privacy-setting.updateMyConsent',
+      config: {
+        policies: ['global::is-authenticated'],
+        description: 'Update GDPR consent preferences',
+        tag: {
+          plugin: 'privacy-setting',
+          name: 'Privacy Settings',
+          actionType: 'update'
+        }
+      }
+    },
+    // Get consent history
+    {
+      method: 'GET',
+      path: '/privacy-settings/me/consent-history',
+      handler: 'privacy-setting.getMyConsentHistory',
+      config: {
+        policies: ['global::is-authenticated'],
+        description: 'Get consent history and metadata (GDPR compliance)',
+        tag: {
+          plugin: 'privacy-setting',
+          name: 'Privacy Settings',
+          actionType: 'read'
         }
       }
     },
@@ -56,7 +87,7 @@ export default {
       handler: 'privacy-setting.exportMyData',
       config: {
         policies: ['global::is-authenticated'],
-        description: 'Export user data for GDPR compliance',
+        description: 'Export comprehensive user data for GDPR compliance',
         tag: {
           plugin: 'privacy-setting',
           name: 'Privacy Settings',
@@ -64,14 +95,29 @@ export default {
         }
       }
     },
-    // Delete user data (Right to be forgotten - GDPR compliance)
+    // Request data deletion (Right to be forgotten)
+    {
+      method: 'POST',
+      path: '/privacy-settings/me/request-deletion',
+      handler: 'privacy-setting.requestDataDeletion',
+      config: {
+        policies: ['global::is-authenticated'],
+        description: 'Request data deletion under GDPR right to be forgotten',
+        tag: {
+          plugin: 'privacy-setting',
+          name: 'Privacy Settings',
+          actionType: 'update'
+        }
+      }
+    },
+    // Delete user data (Administrative - GDPR compliance)
     {
       method: 'DELETE',
       path: '/privacy-settings/me/data',
       handler: 'privacy-setting.deleteMyData',
       config: {
         policies: ['global::is-authenticated'],
-        description: 'Delete user data (Right to be forgotten)',
+        description: 'Delete user data (Right to be forgotten implementation)',
         tag: {
           plugin: 'privacy-setting',
           name: 'Privacy Settings',

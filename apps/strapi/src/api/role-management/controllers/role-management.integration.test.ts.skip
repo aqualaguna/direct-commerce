@@ -1,0 +1,332 @@
+import { describe, it, expect, beforeAll, afterAll, beforeEach } from '@jest/globals';
+import request from 'supertest';
+
+describe('Role Management API Integration Tests', () => {
+  let strapi: any;
+  let adminToken: string;
+  let managerToken: string;
+  let customerToken: string;
+  let testUserId: number;
+
+  beforeAll(async () => {
+    // Initialize Strapi for testing
+    strapi = await require('@strapi/strapi').createStrapiInstance();
+    
+    // Create test users
+    const adminUser = await strapi.query('plugin::users-permissions.user').create({
+      data: {
+        username: 'testadmin',
+        email: 'admin@test.com',
+        password: 'TestPassword123!',
+        role: 'admin',
+        confirmed: true,
+      },
+    });
+
+    const managerUser = await strapi.query('plugin::users-permissions.user').create({
+      data: {
+        username: 'testmanager',
+        email: 'manager@test.com',
+        password: 'TestPassword123!',
+        role: 'manager',
+        confirmed: true,
+      },
+    });
+
+    const customerUser = await strapi.query('plugin::users-permissions.user').create({
+      data: {
+        username: 'testcustomer',
+        email: 'customer@test.com',
+        password: 'TestPassword123!',
+        role: 'customer',
+        confirmed: true,
+      },
+    });
+
+    testUserId = customerUser.id;
+
+    // Get authentication tokens
+    const adminResponse = await request(strapi.server)
+      .post('/api/auth/local')
+      .send({
+        identifier: 'admin@test.com',
+        password: 'TestPassword123!',
+      });
+    adminToken = adminResponse.body.jwt;
+
+    const managerResponse = await request(strapi.server)
+      .post('/api/auth/local')
+      .send({
+        identifier: 'manager@test.com',
+        password: 'TestPassword123!',
+      });
+    managerToken = managerResponse.body.jwt;
+
+    const customerResponse = await request(strapi.server)
+      .post('/api/auth/local')
+      .send({
+        identifier: 'customer@test.com',
+        password: 'TestPassword123!',
+      });
+    customerToken = customerResponse.body.jwt;
+  });
+
+  afterAll(async () => {
+    await strapi.destroy();
+  });
+
+  beforeEach(async () => {
+    // Reset test user role to customer before each test
+    await strapi.query('plugin::users-permissions.user').update({
+      where: { id: testUserId },
+      data: { role: 'customer' },
+    });
+  });
+
+  describe('POST /api/role-management/assign', () => {
+    it('should allow admin to assign manager role', async () => {
+      const response = await request(strapi.server)
+        .post('/api/role-management/assign')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          userId: testUserId,
+          role: 'manager',
+        });
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.user.role).toBe('manager');
+    });
+
+    it('should allow admin to assign support role', async () => {
+      const response = await request(strapi.server)
+        .post('/api/role-management/assign')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          userId: testUserId,
+          role: 'support',
+        });
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.user.role).toBe('support');
+    });
+
+    it('should allow manager to assign support role', async () => {
+      const response = await request(strapi.server)
+        .post('/api/role-management/assign')
+        .set('Authorization', `Bearer ${managerToken}`)
+        .send({
+          userId: testUserId,
+          role: 'support',
+        });
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.user.role).toBe('support');
+    });
+
+    it('should reject manager assigning admin role', async () => {
+      const response = await request(strapi.server)
+        .post('/api/role-management/assign')
+        .set('Authorization', `Bearer ${managerToken}`)
+        .send({
+          userId: testUserId,
+          role: 'admin',
+        });
+
+      expect(response.status).toBe(400);
+      expect(response.body.message).toContain('Role assignment validation failed');
+    });
+
+    it('should reject customer assigning any role', async () => {
+      const response = await request(strapi.server)
+        .post('/api/role-management/assign')
+        .set('Authorization', `Bearer ${customerToken}`)
+        .send({
+          userId: testUserId,
+          role: 'support',
+        });
+
+      expect(response.status).toBe(403);
+    });
+
+    it('should reject invalid role', async () => {
+      const response = await request(strapi.server)
+        .post('/api/role-management/assign')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          userId: testUserId,
+          role: 'invalid-role',
+        });
+
+      expect(response.status).toBe(400);
+      expect(response.body.message).toBe('Invalid role');
+    });
+
+    it('should reject missing userId', async () => {
+      const response = await request(strapi.server)
+        .post('/api/role-management/assign')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          role: 'manager',
+        });
+
+      expect(response.status).toBe(400);
+      expect(response.body.message).toBe('User ID and role are required');
+    });
+  });
+
+  describe('POST /api/role-management/revoke', () => {
+    beforeEach(async () => {
+      // Set test user to manager role
+      await strapi.query('plugin::users-permissions.user').update({
+        where: { id: testUserId },
+        data: { role: 'manager' },
+      });
+    });
+
+    it('should allow admin to revoke role', async () => {
+      const response = await request(strapi.server)
+        .post('/api/role-management/revoke')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          userId: testUserId,
+        });
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.user.role).toBe('customer');
+    });
+
+    it('should reject manager revoking role', async () => {
+      const response = await request(strapi.server)
+        .post('/api/role-management/revoke')
+        .set('Authorization', `Bearer ${managerToken}`)
+        .send({
+          userId: testUserId,
+        });
+
+      expect(response.status).toBe(400);
+      expect(response.body.message).toContain('Insufficient permissions to revoke roles');
+    });
+
+    it('should reject customer revoking role', async () => {
+      const response = await request(strapi.server)
+        .post('/api/role-management/revoke')
+        .set('Authorization', `Bearer ${customerToken}`)
+        .send({
+          userId: testUserId,
+        });
+
+      expect(response.status).toBe(403);
+    });
+  });
+
+  describe('GET /api/role-management/hierarchy', () => {
+    it('should return role hierarchy for authenticated user', async () => {
+      const response = await request(strapi.server)
+        .get('/api/role-management/hierarchy')
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.hierarchy).toHaveProperty('admin');
+      expect(response.body.hierarchy).toHaveProperty('manager');
+      expect(response.body.hierarchy).toHaveProperty('support');
+      expect(response.body.hierarchy).toHaveProperty('customer');
+    });
+
+    it('should reject unauthenticated access', async () => {
+      const response = await request(strapi.server)
+        .get('/api/role-management/hierarchy');
+
+      expect(response.status).toBe(401);
+    });
+  });
+
+  describe('POST /api/role-management/check-permission', () => {
+    it('should check admin permission correctly', async () => {
+      const response = await request(strapi.server)
+        .post('/api/role-management/check-permission')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          permission: 'product.create',
+        });
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.hasPermission).toBe(true);
+      expect(response.body.userRole).toBe('admin');
+    });
+
+    it('should check customer permission correctly', async () => {
+      const response = await request(strapi.server)
+        .post('/api/role-management/check-permission')
+        .set('Authorization', `Bearer ${customerToken}`)
+        .send({
+          permission: 'product.read',
+        });
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.hasPermission).toBe(true);
+      expect(response.body.userRole).toBe('customer');
+    });
+
+    it('should reject customer accessing admin permission', async () => {
+      const response = await request(strapi.server)
+        .post('/api/role-management/check-permission')
+        .set('Authorization', `Bearer ${customerToken}`)
+        .send({
+          permission: 'product.create',
+        });
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.hasPermission).toBe(false);
+    });
+  });
+
+  describe('GET /api/role-management/permissions', () => {
+    it('should return admin permissions', async () => {
+      const response = await request(strapi.server)
+        .get('/api/role-management/permissions')
+        .set('Authorization', `Bearer ${adminToken}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.userRole).toBe('admin');
+      expect(response.body.permissions).toContain('product.create');
+      expect(response.body.permissions).toContain('user.delete');
+      expect(response.body.permissions).toContain('role.assign');
+    });
+
+    it('should return customer permissions', async () => {
+      const response = await request(strapi.server)
+        .get('/api/role-management/permissions')
+        .set('Authorization', `Bearer ${customerToken}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.userRole).toBe('customer');
+      expect(response.body.permissions).toContain('product.read');
+      expect(response.body.permissions).toContain('order.create');
+      expect(response.body.permissions).not.toContain('product.create');
+      expect(response.body.permissions).not.toContain('user.delete');
+    });
+
+    it('should return manager permissions', async () => {
+      const response = await request(strapi.server)
+        .get('/api/role-management/permissions')
+        .set('Authorization', `Bearer ${managerToken}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.userRole).toBe('manager');
+      expect(response.body.permissions).toContain('product.create');
+      expect(response.body.permissions).toContain('product.update');
+      expect(response.body.permissions).toContain('order.read');
+    });
+  });
+});

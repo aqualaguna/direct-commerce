@@ -44,8 +44,20 @@
     },
     "role": {
       "type": "enumeration",
-      "enum": ["customer", "admin"],
+      "enum": ["customer", "admin", "manager", "support", "moderator"],
       "default": "customer"
+    },
+    "roleAssignedBy": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user",
+      "inversedBy": "roleAssignments"
+    },
+    "roleAssignedAt": {
+      "type": "datetime"
+    },
+    "roleExpiresAt": {
+      "type": "datetime"
     },
     "profilePicture": {
       "type": "media",
@@ -109,6 +121,12 @@
       "relation": "oneToOne",
       "target": "api::privacy-setting.privacy-setting",
       "mappedBy": "user"
+    },
+    "roleAssignments": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "plugin::users-permissions.user",
+      "mappedBy": "roleAssignedBy"
     }
   }
 }

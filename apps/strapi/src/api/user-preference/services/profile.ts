@@ -235,15 +235,21 @@ export default {
       const privacySettings = await strapi.documents('api::privacy-setting.privacy-setting').create({
         data: {
           user: userId,
-          profileVisibility: 'private',
+          profileVisibility: 'private' as const,
           showEmail: false,
           showPhone: false,
           showLocation: false,
-          allowAnalytics: true,
-          allowMarketing: false,
-          allowThirdParty: false,
+          dataSharing: false,
+          analyticsConsent: true,
+          marketingConsent: false,
+          thirdPartySharing: false,
+          gdprConsent: false,
           dataRetentionConsent: false,
-          marketingConsent: false
+          dataProcessingConsent: true,
+          cookieConsent: 'necessary' as const,
+          consentSource: 'registration' as const,
+          rightToBeForgetRequested: false,
+          dataExportRequested: false
         }
       });
 

@@ -24,42 +24,42 @@ describe('Authentication Policies', () => {
   describe('is-admin policy', () => {
     const isAdmin = require('./is-admin.ts').default;
 
-    it('should return true for admin users', () => {
+    it('should return true for admin users', async () => {
       const policyContext = {
         state: {
           user: {
             id: 1,
             username: 'admin',
-            role: { type: 'admin' },
+            role: 'admin',
           },
         },
       };
 
-      const result = isAdmin(policyContext, {}, {});
+      const result = await isAdmin(policyContext, {}, {});
       expect(result).toBe(true);
     });
 
-    it('should return false for non-admin users', () => {
+    it('should return false for non-admin users', async () => {
       const policyContext = {
         state: {
           user: {
             id: 2,
             username: 'user',
-            role: { type: 'authenticated' },
+            role: 'authenticated',
           },
         },
       };
 
-      const result = isAdmin(policyContext, {}, {});
+      const result = await isAdmin(policyContext, {}, {});
       expect(result).toBe(false);
     });
 
-    it('should return false for unauthenticated users', () => {
+    it('should return false for unauthenticated users', async () => {
       const policyContext = {
         state: { user: null },
       };
 
-      const result = isAdmin(policyContext, {}, {});
+      const result = await isAdmin(policyContext, {}, {});
       expect(result).toBe(false);
     });
   });
