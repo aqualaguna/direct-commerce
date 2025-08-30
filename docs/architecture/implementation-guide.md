@@ -279,37 +279,45 @@ pnpm add -D eslint @typescript-eslint/parser @typescript-eslint/eslint-plugin
 
 ## Phase 5: Core Features Implementation (Weeks 5-8)
 
-### Week 5: Product Management
+### Week 5: Product Management & Variants
 
-1. **Create Product Components**
-   - ProductCard.astro
-   - ProductGrid.astro
-   - ProductDetail.astro
+1. **Create ProductListing Components**
+   - ProductListingCard.astro
+   - ProductListingGrid.astro
+   - ProductListingDetail.astro
+   - ProductVariantSelector.astro
 
-2. **Implement Product API Service**
-   - productService.ts
-   - Product API endpoints
+2. **Implement ProductListing API Service**
+   - productListingService.ts
+   - ProductListing API endpoints
+   - Variant management endpoints
 
-3. **Create Product Pages**
-   - Product catalog page
-   - Product detail page
-   - Category pages
+3. **Create ProductListing Pages**
+   - Product catalog page (ProductListings)
+   - Product detail page with variant selection
+   - Category pages with ProductListings
 
-### Week 6: Shopping Cart
+4. **Implement Variant Management**
+   - OptionGroup and OptionValue management
+   - Variant selection and validation
+   - Variant-specific pricing and inventory
 
-1. **Create Cart Store**
+### Week 6: Shopping Cart with Variants
+
+1. **Create Cart Store with Variant Support**
    - cartStore.ts (Zustand)
-   - Cart state management
+   - Cart state management with ProductListingVariants
 
 2. **Create Cart Components**
-   - CartItem.astro
+   - CartItem.astro (with variant display)
    - CartSummary.astro
    - CartDrawer.astro
 
 3. **Implement Cart Functionality**
-   - Add to cart
+   - Add to cart with variant selection
    - Remove from cart
    - Update quantities
+   - Variant availability checking
 
 ### Week 7: User Authentication
 
@@ -326,16 +334,17 @@ pnpm add -D eslint @typescript-eslint/parser @typescript-eslint/eslint-plugin
    - Account pages
    - Order history
 
-### Week 8: Checkout Process
+### Week 8: Checkout Process with Variants
 
 1. **Create Checkout Components**
    - CheckoutForm.astro
    - PaymentForm.astro
-   - OrderSummary.astro
+   - OrderSummary.astro (with variant details)
 
-2. **Implement Order API**
-   - Order creation
+2. **Implement Order API with Variant Support**
+   - Order creation with ProductListingVariants
    - Order management
+   - Variant-specific order tracking
 
 3. **Integrate Payment APIs**
    - Payment processing

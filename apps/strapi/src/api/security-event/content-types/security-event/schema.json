@@ -1,0 +1,103 @@
+{
+  "kind": "collectionType",
+  "collectionName": "security_events",
+  "info": {
+    "singularName": "security-event",
+    "pluralName": "security-events",
+    "displayName": "Security Event",
+    "description": "Track security events and incidents for monitoring and alerting"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {
+    "i18n": {
+      "localized": false
+    }
+  },
+  "attributes": {
+    "user": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user",
+      "inversedBy": "security_events"
+    },
+    "eventType": {
+      "type": "enumeration",
+      "enum": [
+        "failed_login",
+        "suspicious_activity",
+        "password_change",
+        "account_lockout",
+        "admin_action",
+        "data_access",
+        "permission_change",
+        "api_abuse",
+        "brute_force_attempt",
+        "unusual_location",
+        "multiple_sessions",
+        "account_deletion"
+      ],
+      "required": true
+    },
+    "eventData": {
+      "type": "json",
+      "required": false
+    },
+    "ipAddress": {
+      "type": "string",
+      "required": true,
+      "maxLength": 45
+    },
+    "userAgent": {
+      "type": "text",
+      "maxLength": 1000
+    },
+    "location": {
+      "type": "string",
+      "maxLength": 100
+    },
+    "attemptCount": {
+      "type": "integer",
+      "min": 0
+    },
+    "reason": {
+      "type": "text",
+      "maxLength": 500
+    },
+    "severity": {
+      "type": "enumeration",
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ],
+      "required": true,
+      "default": "low"
+    },
+    "timestamp": {
+      "type": "datetime",
+      "required": true
+    },
+    "resolved": {
+      "type": "boolean",
+      "default": false
+    },
+    "resolutionNotes": {
+      "type": "text",
+      "maxLength": 1000
+    },
+    "resolvedBy": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    },
+    "resolvedAt": {
+      "type": "datetime"
+    },
+    "metadata": {
+      "type": "json"
+    }
+  }
+}

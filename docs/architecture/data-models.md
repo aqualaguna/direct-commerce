@@ -4,27 +4,22 @@
 
 This document defines the core data models/entities that will be shared between Strapi backend and Astro frontend. These models support all ecommerce functionality outlined in the PRD.
 
-## Product Model
+## Product Model (Base Entity)
 
-**Purpose:** Core product information including details, pricing, inventory, and media
+**Purpose:** Base product entity - source of truth for core product data
 
 **Key Attributes:**
 - `id`: string - Unique product identifier
-- `title`: string - Product name and title
-- `slug`: string - URL-friendly product identifier
-- `description`: text - Detailed product description
-- `shortDescription`: text - Brief product summary
-- `price`: decimal - Product price in cents
-- `comparePrice`: decimal - Original/compare price for discounts
 - `sku`: string - Stock keeping unit
+- `basePrice`: decimal - Base product price in cents
+- `comparePrice`: decimal - Original/compare price for discounts
 - `inventory`: integer - Available quantity
 - `isActive`: boolean - Whether product is available for purchase
-- `featured`: boolean - Whether product is featured
-- `images`: media[] - Product images and media
+- `status`: enum - Product status (draft, active, inactive)
 - `category`: relation - Product category
-- `tags`: relation[] - Product tags for search
-- `variants`: relation[] - Product variants (size, color, etc.)
-- `seo`: component - SEO metadata
+- `wishlistedBy`: relation[] - Users who have this product in wishlist
+- `inventoryRecord`: relation - Inventory tracking record
+- `productListings`: relation[] - Customer-facing product listings
 - `createdAt`: datetime - Creation timestamp
 - `updatedAt`: datetime - Last update timestamp
 
@@ -32,21 +27,16 @@ This document defines the core data models/entities that will be shared between 
 ```typescript
 interface Product {
   id: string;
-  title: string;
-  slug: string;
-  description: string;
-  shortDescription: string;
-  price: number; // in cents
-  comparePrice?: number;
   sku: string;
+  basePrice: number; // in cents
+  comparePrice?: number;
   inventory: number;
   isActive: boolean;
-  featured: boolean;
-  images: Media[];
-  category: Category;
-  tags: Tag[];
-  variants: ProductVariant[];
-  seo: SEOComponent;
+  status: 'draft' | 'active' | 'inactive';
+  category?: Category;
+  wishlistedBy: User[];
+  inventoryRecord?: Inventory;
+  productListings: ProductListing[];
   createdAt: string;
   updatedAt: string;
 }
@@ -54,10 +44,182 @@ interface Product {
 
 **Relationships:**
 - Belongs to one Category
-- Has many Tags
-- Has many ProductVariants
+- Has many ProductListings (customer-facing representations)
+- Has many Users (wishlist)
+- Has one Inventory record
+
+## ProductListing Model (Customer-Facing Entity)
+
+**Purpose:** Customer-facing product representations with variants support
+
+**Key Attributes:**
+- `id`: string - Unique product listing identifier
+- `title`: string - Product name and title
+- `slug`: string - URL-friendly product identifier
+- `description`: richtext - Detailed product description
+- `shortDescription`: text - Brief product summary
+- `type`: enum - Product type (single, variant)
+- `basePrice`: decimal - Base price in cents
+- `comparePrice`: decimal - Original/compare price for discounts
+- `isActive`: boolean - Whether product listing is visible
+- `featured`: boolean - Whether product is featured
+- `images`: media[] - Product images and media
+- `product`: relation - Base product entity
+- `category`: relation - Product category
+- `variants`: relation[] - Product variants (for variant type)
+- `optionGroups`: relation[] - Option groups for variants
+- `seo`: component - SEO metadata
+- `createdAt`: datetime - Creation timestamp
+- `updatedAt`: datetime - Last update timestamp
+
+**TypeScript Interface:**
+```typescript
+interface ProductListing {
+  id: string;
+  title: string;
+  slug: string;
+  description: string;
+  shortDescription?: string;
+  type: 'single' | 'variant';
+  basePrice?: number; // in cents
+  comparePrice?: number;
+  isActive: boolean;
+  featured: boolean;
+  images: Media[];
+  product: Product;
+  category?: Category;
+  variants: ProductListingVariant[];
+  optionGroups: OptionGroup[];
+  seo?: SEOComponent;
+  createdAt: string;
+  updatedAt: string;
+}
+```
+
+**Relationships:**
+- Belongs to one Product (base entity)
+- Belongs to one Category
+- Has many ProductListingVariants (for variant type)
+- Has many OptionGroups (for variant type)
 - Has many Media (images)
-- Has one SEO component
+
+## ProductListingVariant Model
+
+**Purpose:** Product variants with specific options, pricing, and inventory
+
+**Key Attributes:**
+- `id`: string - Unique variant identifier
+- `sku`: string - Variant-specific SKU
+- `price`: decimal - Variant price in cents (overrides base price)
+- `comparePrice`: decimal - Variant compare price
+- `inventory`: integer - Variant-specific inventory
+- `isActive`: boolean - Whether variant is available
+- `weight`: decimal - Variant-specific weight
+- `length`: decimal - Variant length
+- `width`: decimal - Variant width
+- `height`: decimal - Variant height
+- `productListing`: relation - Parent product listing
+- `optionValues`: relation[] - Option values for this variant
+- `images`: media - Variant-specific images
+- `createdAt`: datetime - Creation timestamp
+- `updatedAt`: datetime - Last update timestamp
+
+**TypeScript Interface:**
+```typescript
+interface ProductListingVariant {
+  id: string;
+  sku: string;
+  price: number; // in cents
+  comparePrice?: number;
+  inventory: number;
+  isActive: boolean;
+  weight?: number;
+  length?: number;
+  width?: number;
+  height?: number;
+  productListing: ProductListing;
+  optionValues: OptionValue[];
+  images?: Media;
+  createdAt: string;
+  updatedAt: string;
+}
+```
+
+**Relationships:**
+- Belongs to one ProductListing
+- Has many OptionValues (combination of options)
+
+## OptionGroup Model
+
+**Purpose:** Option groups for product variants (e.g., Size, Color, Material)
+
+**Key Attributes:**
+- `id`: string - Unique option group identifier
+- `name`: string - Option group name (e.g., "Size", "Color")
+- `displayName`: string - Display name for UI
+- `type`: enum - Input type (select, radio, checkbox)
+- `isRequired`: boolean - Whether option is required
+- `sortOrder`: integer - Display order
+- `isActive`: boolean - Whether option group is active
+- `productListings`: relation[] - Product listings using this option group
+- `optionValues`: relation[] - Available option values
+- `createdAt`: datetime - Creation timestamp
+- `updatedAt`: datetime - Last update timestamp
+
+**TypeScript Interface:**
+```typescript
+interface OptionGroup {
+  id: string;
+  name: string;
+  displayName: string;
+  type: 'select' | 'radio' | 'checkbox';
+  isRequired: boolean;
+  sortOrder: number;
+  isActive: boolean;
+  productListings: ProductListing[];
+  optionValues: OptionValue[];
+  createdAt: string;
+  updatedAt: string;
+}
+```
+
+**Relationships:**
+- Has many OptionValues
+- Has many ProductListings
+
+## OptionValue Model
+
+**Purpose:** Specific option values for product variants (e.g., Large, Red, Cotton)
+
+**Key Attributes:**
+- `id`: string - Unique option value identifier
+- `value`: string - Option value (e.g., "L", "Red", "Cotton")
+- `displayName`: string - Display name for UI
+- `sortOrder`: integer - Display order
+- `isActive`: boolean - Whether option value is active
+- `optionGroup`: relation - Parent option group
+- `variants`: relation[] - Variants using this option value
+- `createdAt`: datetime - Creation timestamp
+- `updatedAt`: datetime - Last update timestamp
+
+**TypeScript Interface:**
+```typescript
+interface OptionValue {
+  id: string;
+  value: string;
+  displayName: string;
+  sortOrder: number;
+  isActive: boolean;
+  optionGroup: OptionGroup;
+  variants: ProductListingVariant[];
+  createdAt: string;
+  updatedAt: string;
+}
+```
+
+**Relationships:**
+- Belongs to one OptionGroup
+- Has many ProductListingVariants
 
 ## Category Model
 
@@ -72,6 +234,7 @@ interface Product {
 - `parent`: relation - Parent category for hierarchy
 - `children`: relation[] - Child categories
 - `products`: relation[] - Products in this category
+- `productListings`: relation[] - Product listings in this category
 - `isActive`: boolean - Whether category is visible
 - `sortOrder`: integer - Display order
 - `seo`: component - SEO metadata
@@ -87,6 +250,7 @@ interface Category {
   parent?: Category;
   children: Category[];
   products: Product[];
+  productListings: ProductListing[];
   isActive: boolean;
   sortOrder: number;
   seo: SEOComponent;
@@ -95,6 +259,7 @@ interface Category {
 
 **Relationships:**
 - Has many Products
+- Has many ProductListings
 - Belongs to one parent Category
 - Has many child Categories
 
@@ -114,7 +279,7 @@ interface Category {
 - `role`: enum - User role (customer, admin)
 - `addresses`: relation[] - User's saved addresses
 - `orders`: relation[] - User's order history
-- `wishlist`: relation[] - User's wishlist items
+- `wishlist`: relation[] - User's wishlist items (Products)
 - `createdAt`: datetime - Account creation date
 
 **TypeScript Interface:**
@@ -200,8 +365,8 @@ interface Order {
 **Key Attributes:**
 - `id`: string - Unique order item identifier
 - `order`: relation - Parent order
-- `product`: relation - Product ordered
-- `variant`: relation - Product variant (if applicable)
+- `productListing`: relation - Product listing ordered
+- `productListingVariant`: relation - Product variant (if applicable)
 - `quantity`: integer - Quantity ordered
 - `price`: decimal - Price per unit in cents
 - `total`: decimal - Total price for this item in cents
@@ -211,8 +376,8 @@ interface Order {
 interface OrderItem {
   id: string;
   order: Order;
-  product: Product;
-  variant?: ProductVariant;
+  productListing: ProductListing;
+  productListingVariant?: ProductListingVariant;
   quantity: number;
   price: number; // in cents
   total: number; // in cents
@@ -221,8 +386,8 @@ interface OrderItem {
 
 **Relationships:**
 - Belongs to one Order
-- Belongs to one Product
-- Belongs to one ProductVariant (optional)
+- Belongs to one ProductListing
+- Belongs to one ProductListingVariant (optional)
 
 ## Address Model
 
@@ -311,17 +476,31 @@ interface AddressComponent {
 
 ## Design Decisions
 
+### ProductListing Architecture
+- **Separation of Concerns:** Product (base entity) vs ProductListing (customer-facing)
+- **Variant Support:** ProductListing supports both single and variant product types
+- **Flexible Options:** OptionGroup and OptionValue system for unlimited variant combinations
+- **Pricing Override:** Variant-specific pricing can override base product pricing
+
 ### Price Storage
 - **Price in cents:** Avoids floating-point precision issues in financial calculations
 - **Consistent currency:** All monetary values stored in cents as integers
+- **Variant pricing:** Variants can have their own pricing independent of base product
 
 ### Relationships
 - **Flexible address system:** Supports both shipping and billing addresses
 - **Order status tracking:** Comprehensive order lifecycle management
 - **SEO components:** Built-in SEO support for products and categories
 - **Media relationships:** Proper image and media management
+- **Variant relationships:** Complex many-to-many relationships between variants and option values
 
 ### Extensibility
 - **Product variants:** Support for size, color, and other product variations
 - **Category hierarchy:** Nested category structure for complex product organization
 - **User roles:** Extensible role system for future admin features
+- **Option system:** Reusable option groups and values across multiple products
+
+### Inventory Management
+- **Dual inventory:** Both Product (base) and ProductListingVariant (specific) inventory tracking
+- **Variant-specific stock:** Each variant maintains its own inventory count
+- **Availability checking:** Comprehensive availability validation for variants

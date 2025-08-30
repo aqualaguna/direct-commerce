@@ -1,0 +1,81 @@
+{
+  "kind": "collectionType",
+  "collectionName": "engagement_metrics",
+  "info": {
+    "singularName": "engagement-metric",
+    "pluralName": "engagement-metrics",
+    "displayName": "Engagement Metrics",
+    "description": "Track user engagement metrics and retention rates"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {
+    "i18n": {
+      "localized": false
+    }
+  },
+  "attributes": {
+    "user": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user",
+      "inversedBy": "engagement_metrics"
+    },
+    "metricType": {
+      "type": "enumeration",
+      "enum": [
+        "daily_active",
+        "weekly_active",
+        "monthly_active",
+        "retention",
+        "engagement_score",
+        "session_duration",
+        "page_views",
+        "bounce_rate",
+        "conversion_rate",
+        "time_on_site"
+      ],
+      "required": true
+    },
+    "metricValue": {
+      "type": "decimal",
+      "required": true,
+      "min": 0
+    },
+    "calculationDate": {
+      "type": "datetime",
+      "required": true
+    },
+    "periodStart": {
+      "type": "datetime",
+      "required": true
+    },
+    "periodEnd": {
+      "type": "datetime",
+      "required": true
+    },
+    "metadata": {
+      "type": "json"
+    },
+    "source": {
+      "type": "enumeration",
+      "enum": [
+        "user_activity",
+        "user_behavior",
+        "calculated",
+        "imported"
+      ],
+      "default": "calculated"
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": [
+        "active",
+        "archived",
+        "invalid"
+      ],
+      "default": "active"
+    }
+  }
+}

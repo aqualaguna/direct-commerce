@@ -112,18 +112,62 @@ export { CartDrawer } from './cart/CartDrawer'
 // ✅ Good - Explicit interfaces (TypeScript 5.9.2+)
 interface Product {
   id: string
-  name: string
+  sku: string
+  basePrice: number
+  comparePrice?: number
+  inventory: number
+  isActive: boolean
+  status: 'draft' | 'active' | 'inactive'
+  category?: Category
+  wishlistedBy: User[]
+  inventoryRecord?: Inventory
+  productListings: ProductListing[]
+  createdAt: Date
+  updatedAt: Date
+}
+
+interface ProductListing {
+  id: string
+  title: string
+  slug: string
   description: string
+  shortDescription?: string
+  type: 'single' | 'variant'
+  basePrice?: number
+  comparePrice?: number
+  isActive: boolean
+  featured: boolean
+  images: Media[]
+  product: Product
+  category?: Category
+  variants: ProductListingVariant[]
+  optionGroups: OptionGroup[]
+  seo?: SEOComponent
+  createdAt: Date
+  updatedAt: Date
+}
+
+interface ProductListingVariant {
+  id: string
+  sku: string
   price: number
-  images: ProductImage[]
-  category: Category
-  inStock: boolean
+  comparePrice?: number
+  inventory: number
+  isActive: boolean
+  weight?: number
+  length?: number
+  width?: number
+  height?: number
+  productListing: ProductListing
+  optionValues: OptionValue[]
+  images?: Media
   createdAt: Date
   updatedAt: Date
 }
 
 // ✅ Good - Union types for variants
-type ProductStatus = 'draft' | 'published' | 'archived'
+type ProductStatus = 'draft' | 'active' | 'inactive'
+type ProductListingType = 'single' | 'variant'
 type SortOrder = 'asc' | 'desc'
 
 // ✅ Good - Generic types with improved inference
@@ -140,19 +184,21 @@ interface ApiResponse<T> {
 }
 
 // ✅ Good - Utility types (TypeScript 5.9.2+ features)
-type ProductPreview = Pick<Product, 'id' | 'name' | 'price' | 'images'>
-type ProductFormData = Omit<Product, 'id' | 'createdAt' | 'updatedAt'>
+type ProductListingPreview = Pick<ProductListing, 'id' | 'title' | 'basePrice' | 'images'>
+type ProductListingFormData = Omit<ProductListing, 'id' | 'createdAt' | 'updatedAt'>
+type VariantPreview = Pick<ProductListingVariant, 'id' | 'sku' | 'price' | 'inventory'>
 
 // ✅ Good - Template literal types for better type safety
 type ApiEndpoint = `/api/${string}`
-type ProductEndpoint = `/api/products/${string}`
+type ProductListingEndpoint = `/api/product-listings/${string}`
+type VariantEndpoint = `/api/product-listing-variants/${string}`
 
 // ✅ Good - Satisfies operator for runtime validation
-const productConfig = {
+const productListingConfig = {
   maxPrice: 10000,
   minPrice: 0,
   currency: 'USD'
-} satisfies ProductConfig
+} satisfies ProductListingConfig
 ```
 
 ### 2. Function Signatures
@@ -167,16 +213,23 @@ export const formatPrice = (price: number, currency: string = 'USD'): string => 
 }
 
 // ✅ Good - Async functions with proper typing
-export const fetchProducts = async (
-  params: ProductQueryParams
-): Promise<ApiResponse<Product[]>> => {
-  const response = await apiClient.get('/products', { params })
+export const fetchProductListings = async (
+  params: ProductListingQueryParams
+): Promise<ApiResponse<ProductListing[]>> => {
+  const response = await apiClient.get('/product-listings', { params })
+  return response.data
+}
+
+export const fetchVariants = async (
+  productListingId: string
+): Promise<ApiResponse<ProductListingVariant[]>> => {
+  const response = await apiClient.get(`/product-listing-variants/product-listing/${productListingId}`)
   return response.data
 }
 
 // ✅ Good - Event handlers
-const handleAddToCart = (product: Product, quantity: number = 1): void => {
-  cartStore.addItem(product, quantity)
+const handleAddToCart = (productListing: ProductListing, variant?: ProductListingVariant, quantity: number = 1): void => {
+  cartStore.addItem(productListing, variant, quantity)
 }
 ```
 
@@ -184,20 +237,20 @@ const handleAddToCart = (product: Product, quantity: number = 1): void => {
 
 ```typescript
 // ✅ Good - Props interface
-interface ProductCardProps {
-  product: Product
-  onAddToCart?: (product: Product) => void
+interface ProductListingCardProps {
+  productListing: ProductListing
+  onAddToCart?: (productListing: ProductListing, variant?: ProductListingVariant) => void
   variant?: 'default' | 'compact'
   className?: string
 }
 
 // ✅ Good - Default props
-export const ProductCard = ({
-  product,
+export const ProductListingCard = ({
+  productListing,
   onAddToCart,
   variant = 'default',
   className = '',
-}: ProductCardProps) => {
+}: ProductListingCardProps) => {
   // Component implementation
 }
 ```
@@ -213,19 +266,20 @@ export const ProductCard = ({
 import React, { useState, useEffect, useTransition } from 'react'
 import { motion } from 'framer-motion'
 
-interface ProductDetailProps {
-  product: Product
+interface ProductListingDetailProps {
+  productListing: ProductListing
 }
 
-export const ProductDetail: React.FC<ProductDetailProps> = ({ product }) => {
+export const ProductListingDetail: React.FC<ProductListingDetailProps> = ({ productListing }) => {
   const [selectedImage, setSelectedImage] = useState(0)
+  const [selectedVariant, setSelectedVariant] = useState<ProductListingVariant | null>(null)
   const [quantity, setQuantity] = useState(1)
   const [isPending, startTransition] = useTransition()
   const { addToCart } = useCart()
 
   const handleAddToCart = () => {
     startTransition(() => {
-      addToCart(product, quantity)
+      addToCart(productListing, selectedVariant, quantity)
     })
   }
 
@@ -233,7 +287,7 @@ export const ProductDetail: React.FC<ProductDetailProps> = ({ product }) => {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="product-detail"
+      className="product-listing-detail"
     >
       {/* Component JSX */}
       {isPending && <div className="loading-indicator">Adding to cart...</div>}
@@ -246,28 +300,27 @@ export const ProductDetail: React.FC<ProductDetailProps> = ({ product }) => {
 
 ```typescript
 // ✅ Good - Custom hooks
-export const useProduct = (productId: string) => {
-  const [product, setProduct] = useState<Product | null>(null)
+export const useProductListing = (productListingId: string) => {
+  const [productListing, setProductListing] = useState<ProductListing | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    const fetchProduct = async () => {
+    const fetchProductListing = async () => {
       try {
-        setLoading(true)
-        const data = await apiClient.get(`/products/${productId}`)
-        setProduct(data.data)
+        const data = await apiClient.get(`/product-listings/${productListingId}`)
+        setProductListing(data.data)
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to fetch product')
+        setError(err instanceof Error ? err.message : 'Failed to fetch product listing')
       } finally {
         setLoading(false)
       }
     }
 
-    fetchProduct()
-  }, [productId])
+    fetchProductListing()
+  }, [productListingId])
 
-  return { product, loading, error }
+  return { productListing, loading, error }
 }
 
 // ✅ Good - Hook dependencies

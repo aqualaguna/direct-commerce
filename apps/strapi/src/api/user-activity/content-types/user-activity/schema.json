@@ -1,0 +1,103 @@
+{
+  "kind": "collectionType",
+  "collectionName": "user_activities",
+  "info": {
+    "singularName": "user-activity",
+    "pluralName": "user-activities",
+    "displayName": "User Activity",
+    "description": "Tracks user activities including login, logout, profile updates, and other interactions"
+  },
+  "options": {
+    "draftAndPublish": false,
+    "comment": "User activity tracking for analytics and security monitoring"
+  },
+  "pluginOptions": {
+    "content-manager": {
+      "visible": true
+    },
+    "content-type-builder": {
+      "visible": true
+    }
+  },
+  "attributes": {
+    "user": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user",
+      "inversedBy": "activities",
+      "required": false,
+      "configurable": false
+    },
+    "activityType": {
+      "type": "enumeration",
+      "enum": [
+        "login",
+        "logout",
+        "profile_update",
+        "preference_change",
+        "page_view",
+        "product_interaction",
+        "account_created",
+        "password_change",
+        "session_expired"
+      ],
+      "required": true,
+      "configurable": false
+    },
+    "activityData": {
+      "type": "json",
+      "required": false,
+      "configurable": false
+    },
+    "ipAddress": {
+      "type": "string",
+      "maxLength": 45,
+      "required": false,
+      "configurable": false
+    },
+    "userAgent": {
+      "type": "text",
+      "required": false,
+      "configurable": false
+    },
+    "location": {
+      "type": "string",
+      "maxLength": 255,
+      "required": false,
+      "configurable": false
+    },
+    "deviceInfo": {
+      "type": "json",
+      "required": false,
+      "configurable": false
+    },
+    "sessionId": {
+      "type": "string",
+      "maxLength": 255,
+      "required": false,
+      "configurable": false
+    },
+    "sessionDuration": {
+      "type": "integer",
+      "min": 0,
+      "required": false,
+      "configurable": false
+    },
+    "success": {
+      "type": "boolean",
+      "default": true,
+      "required": true,
+      "configurable": false
+    },
+    "errorMessage": {
+      "type": "text",
+      "required": false,
+      "configurable": false
+    },
+    "metadata": {
+      "type": "json",
+      "required": false,
+      "configurable": false
+    }
+  }
+}

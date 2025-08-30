@@ -172,7 +172,7 @@ apps/web/
 apps/strapi/
 ├── src/
 │   ├── api/                   # API definitions
-│   │   ├── product/           # Product API
+│   │   ├── product/           # Product API (Base Entity)
 │   │   │   ├── content-types/
 │   │   │   │   └── product/
 │   │   │   │       └── schema.json
@@ -182,6 +182,48 @@ apps/strapi/
 │   │   │   │   └── product.js
 │   │   │   └── services/
 │   │   │       └── product.js
+│   │   ├── product-listing/   # ProductListing API (Customer-Facing)
+│   │   │   ├── content-types/
+│   │   │   │   └── product-listing/
+│   │   │   │       └── schema.json
+│   │   │   ├── controllers/
+│   │   │   │   └── product-listing.js
+│   │   │   ├── routes/
+│   │   │   │   └── product-listing.js
+│   │   │   └── services/
+│   │   │       └── product-listing.js
+│   │   ├── product-listing-variant/ # ProductListingVariant API
+│   │   │   ├── content-types/
+│   │   │   │   └── product-listing-variant/
+│   │   │   │       └── schema.json
+│   │   │   ├── controllers/
+│   │   │   │   └── product-listing-variant.js
+│   │   │   ├── routes/
+│   │   │   │   └── product-listing-variant.js
+│   │   │   └── services/
+│   │   │       ├── product-listing-variant-validation.js
+│   │   │       ├── variant-pricing-inventory.js
+│   │   │       └── variant-selection-validation.js
+│   │   ├── option-group/      # OptionGroup API
+│   │   │   ├── content-types/
+│   │   │   │   └── option-group/
+│   │   │   │       └── schema.json
+│   │   │   ├── controllers/
+│   │   │   │   └── option-group.js
+│   │   │   ├── routes/
+│   │   │   │   └── option-group.js
+│   │   │   └── services/
+│   │   │       └── option-group-management.js
+│   │   ├── option-value/      # OptionValue API
+│   │   │   ├── content-types/
+│   │   │   │   └── option-value/
+│   │   │   │       └── schema.json
+│   │   │   ├── controllers/
+│   │   │   │   └── option-value.js
+│   │   │   ├── routes/
+│   │   │   │   └── option-value.js
+│   │   │   └── services/
+│   │   │       └── option-value-management.js
 │   │   ├── category/          # Category API
 │   │   │   ├── content-types/
 │   │   │   ├── controllers/

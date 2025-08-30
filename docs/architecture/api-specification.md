@@ -32,13 +32,84 @@ components:
       bearerFormat: JWT
 ```
 
-## Product Endpoints
+## Product Endpoints (Base Entity)
 
 ### Get Products
 ```yaml
 /api/products:
   get:
-    summary: Get products
+    summary: Get base products (admin only)
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+      - name: pageSize
+        in: query
+        schema:
+          type: integer
+          default: 25
+      - name: category
+        in: query
+        schema:
+          type: string
+      - name: search
+        in: query
+        schema:
+          type: string
+      - name: status
+        in: query
+        schema:
+          type: string
+          enum: [draft, active, inactive]
+      - name: sort
+        in: query
+        schema:
+          type: string
+          enum: [price_asc, price_desc, name_asc, name_desc, created_desc]
+    responses:
+      '200':
+        description: List of base products
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductList'
+```
+
+### Get Product by ID
+```yaml
+/api/products/{id}:
+  get:
+    summary: Get base product by ID (admin only)
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        description: Base product details
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Product'
+      '404':
+        description: Product not found
+```
+
+## ProductListing Endpoints (Customer-Facing)
+
+### Get Product Listings
+```yaml
+/api/product-listings:
+  get:
+    summary: Get customer-facing product listings
     parameters:
       - name: page
         in: query
@@ -62,6 +133,11 @@ components:
         in: query
         schema:
           type: boolean
+      - name: type
+        in: query
+        schema:
+          type: string
+          enum: [single, variant]
       - name: sort
         in: query
         schema:
@@ -69,18 +145,18 @@ components:
           enum: [price_asc, price_desc, name_asc, name_desc, created_desc]
     responses:
       '200':
-        description: List of products
+        description: List of product listings
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ProductList'
+              $ref: '#/components/schemas/ProductListingList'
 ```
 
-### Get Product by ID
+### Get Product Listing by ID
 ```yaml
-/api/products/{id}:
+/api/product-listings/{id}:
   get:
-    summary: Get product by ID
+    summary: Get product listing by ID
     parameters:
       - name: id
         in: path
@@ -89,76 +165,525 @@ components:
           type: string
     responses:
       '200':
-        description: Product details
+        description: Product listing details
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Product'
+              $ref: '#/components/schemas/ProductListing'
       '404':
-        description: Product not found
+        description: Product listing not found
 ```
 
-### Create Product (Admin Only)
+### Get Product Listings by Type
 ```yaml
-/api/products:
-  post:
-    summary: Create product
+/api/product-listings/type/{type}:
+  get:
+    summary: Get product listings by type (single/variant)
+    parameters:
+      - name: type
+        in: path
+        required: true
+        schema:
+          type: string
+          enum: [single, variant]
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+      - name: pageSize
+        in: query
+        schema:
+          type: integer
+          default: 25
+    responses:
+      '200':
+        description: List of product listings by type
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductListingList'
+```
+
+### Get Product Listing with Variants
+```yaml
+/api/product-listings/{id}/with-variants:
+  get:
+    summary: Get product listing with full variant details
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        description: Product listing with variants
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductListingWithVariants'
+      '404':
+        description: Product listing not found
+```
+
+## ProductListingVariant Endpoints
+
+### Get Product Listing Variants
+```yaml
+/api/product-listing-variants:
+  get:
+    summary: List all product listing variants
     security:
       - bearerAuth: []
+    parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+      - name: pageSize
+        in: query
+        schema:
+          type: integer
+          default: 25
+      - name: productListing
+        in: query
+        schema:
+          type: string
+      - name: isActive
+        in: query
+        schema:
+          type: boolean
+    responses:
+      '200':
+        description: List of product listing variants
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductListingVariantList'
+```
+
+### Get Product Listing Variant by ID
+```yaml
+/api/product-listing-variants/{id}:
+  get:
+    summary: Get specific product listing variant
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        description: Product listing variant details
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductListingVariant'
+      '404':
+        description: Variant not found
+```
+
+### Get Variants by Product Listing
+```yaml
+/api/product-listing-variants/product-listing/{productListingId}:
+  get:
+    summary: Get all variants for a specific product listing
+    parameters:
+      - name: productListingId
+        in: path
+        required: true
+        schema:
+          type: string
+      - name: isActive
+        in: query
+        schema:
+          type: boolean
+    responses:
+      '200':
+        description: List of variants for product listing
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductListingVariantList'
+```
+
+### Find Variant by Options
+```yaml
+/api/product-listing-variants/product-listing/{productListingId}/find-by-options:
+  post:
+    summary: Find variant by option combination
+    parameters:
+      - name: productListingId
+        in: path
+        required: true
+        schema:
+          type: string
     requestBody:
       required: true
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ProductInput'
-    responses:
-      '201':
-        description: Product created
-      '401':
-        description: Unauthorized
-      '400':
-        description: Validation error
-```
-
-## Category Endpoints
-
-### Get Categories
-```yaml
-/api/categories:
-  get:
-    summary: Get categories
-    parameters:
-      - name: parent
-        in: query
-        schema:
-          type: string
+            type: object
+            properties:
+              optionValues:
+                type: array
+                items:
+                  type: string
+                description: Array of option value IDs
     responses:
       '200':
-        description: List of categories
+        description: Matching variant found
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CategoryList'
+              $ref: '#/components/schemas/ProductListingVariant'
+      '404':
+        description: No matching variant found
 ```
 
-### Get Category by ID
+### Update Variant Inventory
 ```yaml
-/api/categories/{id}:
-  get:
-    summary: Get category by ID
+/api/product-listing-variants/{id}/inventory:
+  put:
+    summary: Update variant inventory
+    security:
+      - bearerAuth: []
     parameters:
       - name: id
         in: path
         required: true
         schema:
           type: string
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              inventory:
+                type: integer
+                minimum: 0
     responses:
       '200':
-        description: Category details
+        description: Inventory updated successfully
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Category'
+              $ref: '#/components/schemas/ProductListingVariant'
+```
+
+### Check Variant Availability
+```yaml
+/api/product-listing-variants/{id}/check-availability:
+  post:
+    summary: Check variant availability
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              quantity:
+                type: integer
+                minimum: 1
+    responses:
+      '200':
+        description: Availability check result
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                available:
+                  type: boolean
+                availableQuantity:
+                  type: integer
+                message:
+                  type: string
+```
+
+### Get Low Stock Variants
+```yaml
+/api/product-listing-variants/low-stock:
+  get:
+    summary: Get variants with low stock
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: threshold
+        in: query
+        schema:
+          type: integer
+          default: 10
+    responses:
+      '200':
+        description: List of low stock variants
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductListingVariantList'
+```
+
+### Get Out of Stock Variants
+```yaml
+/api/product-listing-variants/out-of-stock:
+  get:
+    summary: Get out of stock variants
+    security:
+      - bearerAuth: []
+    responses:
+      '200':
+        description: List of out of stock variants
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductListingVariantList'
+```
+
+### Validate Variant Selection
+```yaml
+/api/product-listing-variants/product-listing/{productListingId}/validate-selection:
+  post:
+    summary: Validate variant selection
+    parameters:
+      - name: productListingId
+        in: path
+        required: true
+        schema:
+          type: string
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              optionValues:
+                type: array
+                items:
+                  type: string
+              quantity:
+                type: integer
+                minimum: 1
+    responses:
+      '200':
+        description: Validation result
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                valid:
+                  type: boolean
+                variant:
+                  $ref: '#/components/schemas/ProductListingVariant'
+                message:
+                  type: string
+```
+
+### Get Variant Options
+```yaml
+/api/product-listing-variants/product-listing/{productListingId}/options:
+  get:
+    summary: Get available options for product listing
+    parameters:
+      - name: productListingId
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        description: Available options for product listing
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductListingOptions'
+```
+
+### Get Availability Matrix
+```yaml
+/api/product-listing-variants/product-listing/{productListingId}/availability-matrix:
+  get:
+    summary: Get variant availability matrix
+    parameters:
+      - name: productListingId
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        description: Availability matrix for product listing
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AvailabilityMatrix'
+```
+
+## OptionGroup Endpoints
+
+### Get Option Groups
+```yaml
+/api/option-groups:
+  get:
+    summary: List all option groups
+    parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+      - name: pageSize
+        in: query
+        schema:
+          type: integer
+          default: 25
+      - name: isActive
+        in: query
+        schema:
+          type: boolean
+    responses:
+      '200':
+        description: List of option groups
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OptionGroupList'
+```
+
+### Get Option Groups by Product Listing
+```yaml
+/api/option-groups/product-listing/{productListingId}:
+  get:
+    summary: Get option groups for a specific product listing
+    parameters:
+      - name: productListingId
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        description: Option groups for product listing
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OptionGroupList'
+```
+
+### Get Active Option Groups
+```yaml
+/api/option-groups/active:
+  get:
+    summary: Get active option groups
+    responses:
+      '200':
+        description: List of active option groups
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OptionGroupList'
+```
+
+## OptionValue Endpoints
+
+### Get Option Values
+```yaml
+/api/option-values:
+  get:
+    summary: List all option values
+    parameters:
+      - name: page
+        in: query
+        schema:
+          type: integer
+          default: 1
+      - name: pageSize
+        in: query
+        schema:
+          type: integer
+          default: 25
+      - name: optionGroup
+        in: query
+        schema:
+          type: string
+      - name: isActive
+        in: query
+        schema:
+          type: boolean
+    responses:
+      '200':
+        description: List of option values
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OptionValueList'
+```
+
+### Get Option Values by Option Group
+```yaml
+/api/option-values/option-group/{optionGroupId}:
+  get:
+    summary: Get option values for a specific option group
+    parameters:
+      - name: optionGroupId
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        description: Option values for option group
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OptionValueList'
+```
+
+### Get Active Option Values
+```yaml
+/api/option-values/active:
+  get:
+    summary: Get active option values
+    responses:
+      '200':
+        description: List of active option values
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OptionValueList'
+```
+
+### Get Option Values by Product Listing
+```yaml
+/api/option-values/product-listing/{productListingId}:
+  get:
+    summary: Get option values for a specific product listing
+    parameters:
+      - name: productListingId
+        in: path
+        required: true
+        schema:
+          type: string
+    responses:
+      '200':
+        description: Option values for product listing
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OptionValueList'
 ```
 
 ## Authentication Endpoints

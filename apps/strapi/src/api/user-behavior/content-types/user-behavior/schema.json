@@ -1,0 +1,106 @@
+{
+  "kind": "collectionType",
+  "collectionName": "user_behaviors",
+  "info": {
+    "singularName": "user-behavior",
+    "pluralName": "user-behaviors",
+    "displayName": "User Behavior",
+    "description": "Track user behavior and interaction patterns for analytics"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {
+    "i18n": {
+      "localized": false
+    }
+  },
+  "attributes": {
+    "user": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user",
+      "inversedBy": "user_behaviors"
+    },
+    "behaviorType": {
+      "type": "enumeration",
+      "enum": [
+        "page_view",
+        "product_view",
+        "search",
+        "cart_add",
+        "purchase",
+        "wishlist_add",
+        "category_browse",
+        "filter_apply",
+        "sort_change",
+        "review_submit",
+        "rating_give"
+      ],
+      "required": true
+    },
+    "behaviorData": {
+      "type": "json",
+      "required": false
+    },
+    "pageUrl": {
+      "type": "string",
+      "maxLength": 500
+    },
+    "productId": {
+      "type": "string",
+      "maxLength": 100
+    },
+    "searchQuery": {
+      "type": "text",
+      "maxLength": 1000
+    },
+    "categoryId": {
+      "type": "string",
+      "maxLength": 100
+    },
+    "timeSpent": {
+      "type": "integer",
+      "min": 0
+    },
+    "scrollDepth": {
+      "type": "integer",
+      "min": 0,
+      "max": 100
+    },
+    "interactions": {
+      "type": "json"
+    },
+    "sessionId": {
+      "type": "string",
+      "required": true,
+      "maxLength": 100
+    },
+    "referrer": {
+      "type": "string",
+      "maxLength": 500
+    },
+    "userAgent": {
+      "type": "text",
+      "maxLength": 1000
+    },
+    "ipAddress": {
+      "type": "string",
+      "maxLength": 45
+    },
+    "deviceInfo": {
+      "type": "json"
+    },
+    "location": {
+      "type": "string",
+      "maxLength": 100
+    },
+    "timestamp": {
+      "type": "datetime",
+      "required": true
+    },
+    "metadata": {
+      "type": "json"
+    }
+  }
+}

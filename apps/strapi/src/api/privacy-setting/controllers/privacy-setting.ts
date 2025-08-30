@@ -560,6 +560,31 @@ export default {
    */
   async logPrivacyChange(userId, changes, ipAddress, userAgent) {
     try {
+      // Track in user activity system
+      await strapi.documents('api::user-activity.user-activity').create({
+        data: {
+          user: userId,
+          activityType: 'preference_change',
+          activityData: {
+            changes: changes,
+            endpoint: '/api/privacy-settings',
+            method: 'PUT',
+            timestamp: new Date().toISOString(),
+            changeType: 'privacy_settings'
+          },
+          ipAddress: this.anonymizeIP(ipAddress),
+          userAgent,
+          sessionId: require('crypto').randomUUID(),
+          success: true,
+          metadata: {
+            privacyChangeLog: true,
+            timestamp: new Date().toISOString(),
+            changeCount: Object.keys(changes).length,
+            gdprRelevant: this.requiresGdprConsent(changes)
+          }
+        }
+      });
+
       const logEntry = {
         userId,
         changeType: 'privacy-settings',
@@ -570,10 +595,34 @@ export default {
       };
 
       strapi.log.info('Privacy setting change logged:', logEntry);
-      // Additional audit logging can be implemented here
     } catch (error) {
       strapi.log.error('Error logging privacy change:', error);
     }
+  },
+
+  /**
+   * Anonymize IP address for privacy compliance
+   */
+  anonymizeIP(ipAddress) {
+    if (!ipAddress) return null;
+    
+    // IPv4 - remove last octet
+    if (ipAddress.includes('.')) {
+      const parts = ipAddress.split('.');
+      if (parts.length === 4) {
+        return `${parts[0]}.${parts[1]}.${parts[2]}.0`;
+      }
+    }
+    
+    // IPv6 - remove last 64 bits
+    if (ipAddress.includes(':')) {
+      const parts = ipAddress.split(':');
+      if (parts.length >= 4) {
+        return `${parts.slice(0, 4).join(':')}::`;
+      }
+    }
+    
+    return ipAddress;
   },
 
   /**

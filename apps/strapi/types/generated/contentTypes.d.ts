@@ -501,6 +501,77 @@ export interface ApiCategoryCategory extends Struct.CollectionTypeSchema {
   };
 }
 
+export interface ApiEngagementMetricsEngagementMetric
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'engagement_metrics';
+  info: {
+    description: 'Track user engagement metrics and retention rates';
+    displayName: 'Engagement Metrics';
+    pluralName: 'engagement-metrics';
+    singularName: 'engagement-metric';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  pluginOptions: {
+    i18n: {
+      localized: false;
+    };
+  };
+  attributes: {
+    calculationDate: Schema.Attribute.DateTime & Schema.Attribute.Required;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::engagement-metrics.engagement-metric'
+    > &
+      Schema.Attribute.Private;
+    metadata: Schema.Attribute.JSON;
+    metricType: Schema.Attribute.Enumeration<
+      [
+        'daily_active',
+        'weekly_active',
+        'monthly_active',
+        'retention',
+        'engagement_score',
+        'session_duration',
+        'page_views',
+        'bounce_rate',
+        'conversion_rate',
+        'time_on_site',
+      ]
+    > &
+      Schema.Attribute.Required;
+    metricValue: Schema.Attribute.Decimal &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 0;
+        },
+        number
+      >;
+    periodEnd: Schema.Attribute.DateTime & Schema.Attribute.Required;
+    periodStart: Schema.Attribute.DateTime & Schema.Attribute.Required;
+    publishedAt: Schema.Attribute.DateTime;
+    source: Schema.Attribute.Enumeration<
+      ['user_activity', 'user_behavior', 'calculated', 'imported']
+    > &
+      Schema.Attribute.DefaultTo<'calculated'>;
+    status: Schema.Attribute.Enumeration<['active', 'archived', 'invalid']> &
+      Schema.Attribute.DefaultTo<'active'>;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    user: Schema.Attribute.Relation<
+      'manyToOne',
+      'plugin::users-permissions.user'
+    >;
+  };
+}
+
 export interface ApiInventoryHistoryInventoryHistory
   extends Struct.CollectionTypeSchema {
   collectionName: 'inventory_histories';
@@ -1103,6 +1174,103 @@ export interface ApiProductProduct extends Struct.CollectionTypeSchema {
   };
 }
 
+export interface ApiSecurityEventSecurityEvent
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'security_events';
+  info: {
+    description: 'Track security events and incidents for monitoring and alerting';
+    displayName: 'Security Event';
+    pluralName: 'security-events';
+    singularName: 'security-event';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  pluginOptions: {
+    i18n: {
+      localized: false;
+    };
+  };
+  attributes: {
+    attemptCount: Schema.Attribute.Integer &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 0;
+        },
+        number
+      >;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    eventData: Schema.Attribute.JSON;
+    eventType: Schema.Attribute.Enumeration<
+      [
+        'failed_login',
+        'suspicious_activity',
+        'password_change',
+        'account_lockout',
+        'admin_action',
+        'data_access',
+        'permission_change',
+        'api_abuse',
+        'brute_force_attempt',
+        'unusual_location',
+        'multiple_sessions',
+        'account_deletion',
+      ]
+    > &
+      Schema.Attribute.Required;
+    ipAddress: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 45;
+      }>;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::security-event.security-event'
+    > &
+      Schema.Attribute.Private;
+    location: Schema.Attribute.String &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 100;
+      }>;
+    metadata: Schema.Attribute.JSON;
+    publishedAt: Schema.Attribute.DateTime;
+    reason: Schema.Attribute.Text &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 500;
+      }>;
+    resolutionNotes: Schema.Attribute.Text &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 1000;
+      }>;
+    resolved: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
+    resolvedAt: Schema.Attribute.DateTime;
+    resolvedBy: Schema.Attribute.Relation<
+      'manyToOne',
+      'plugin::users-permissions.user'
+    >;
+    severity: Schema.Attribute.Enumeration<
+      ['low', 'medium', 'high', 'critical']
+    > &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'low'>;
+    timestamp: Schema.Attribute.DateTime & Schema.Attribute.Required;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    user: Schema.Attribute.Relation<
+      'manyToOne',
+      'plugin::users-permissions.user'
+    >;
+    userAgent: Schema.Attribute.Text &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 1000;
+      }>;
+  };
+}
+
 export interface ApiStockReservationStockReservation
   extends Struct.CollectionTypeSchema {
   collectionName: 'stock_reservations';
@@ -1154,6 +1322,200 @@ export interface ApiStockReservationStockReservation
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+  };
+}
+
+export interface ApiUserActivityUserActivity
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'user_activities';
+  info: {
+    description: 'Tracks user activities including login, logout, profile updates, and other interactions';
+    displayName: 'User Activity';
+    pluralName: 'user-activities';
+    singularName: 'user-activity';
+  };
+  options: {
+    comment: 'User activity tracking for analytics and security monitoring';
+    draftAndPublish: false;
+  };
+  pluginOptions: {
+    'content-manager': {
+      visible: true;
+    };
+    'content-type-builder': {
+      visible: true;
+    };
+  };
+  attributes: {
+    activityData: Schema.Attribute.JSON;
+    activityType: Schema.Attribute.Enumeration<
+      [
+        'login',
+        'logout',
+        'profile_update',
+        'preference_change',
+        'page_view',
+        'product_interaction',
+        'account_created',
+        'password_change',
+        'session_expired',
+      ]
+    > &
+      Schema.Attribute.Required;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    deviceInfo: Schema.Attribute.JSON;
+    errorMessage: Schema.Attribute.Text;
+    ipAddress: Schema.Attribute.String &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 45;
+      }>;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::user-activity.user-activity'
+    > &
+      Schema.Attribute.Private;
+    location: Schema.Attribute.String &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 255;
+      }>;
+    metadata: Schema.Attribute.JSON;
+    publishedAt: Schema.Attribute.DateTime;
+    sessionDuration: Schema.Attribute.Integer &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 0;
+        },
+        number
+      >;
+    sessionId: Schema.Attribute.String &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 255;
+      }>;
+    success: Schema.Attribute.Boolean &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<true>;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    user: Schema.Attribute.Relation<
+      'manyToOne',
+      'plugin::users-permissions.user'
+    >;
+    userAgent: Schema.Attribute.Text;
+  };
+}
+
+export interface ApiUserBehaviorUserBehavior
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'user_behaviors';
+  info: {
+    description: 'Track user behavior and interaction patterns for analytics';
+    displayName: 'User Behavior';
+    pluralName: 'user-behaviors';
+    singularName: 'user-behavior';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  pluginOptions: {
+    i18n: {
+      localized: false;
+    };
+  };
+  attributes: {
+    behaviorData: Schema.Attribute.JSON;
+    behaviorType: Schema.Attribute.Enumeration<
+      [
+        'page_view',
+        'product_view',
+        'search',
+        'cart_add',
+        'purchase',
+        'wishlist_add',
+        'category_browse',
+        'filter_apply',
+        'sort_change',
+        'review_submit',
+        'rating_give',
+      ]
+    > &
+      Schema.Attribute.Required;
+    categoryId: Schema.Attribute.String &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 100;
+      }>;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    deviceInfo: Schema.Attribute.JSON;
+    interactions: Schema.Attribute.JSON;
+    ipAddress: Schema.Attribute.String &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 45;
+      }>;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::user-behavior.user-behavior'
+    > &
+      Schema.Attribute.Private;
+    location: Schema.Attribute.String &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 100;
+      }>;
+    metadata: Schema.Attribute.JSON;
+    pageUrl: Schema.Attribute.String &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 500;
+      }>;
+    productId: Schema.Attribute.String &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 100;
+      }>;
+    publishedAt: Schema.Attribute.DateTime;
+    referrer: Schema.Attribute.String &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 500;
+      }>;
+    scrollDepth: Schema.Attribute.Integer &
+      Schema.Attribute.SetMinMax<
+        {
+          max: 100;
+          min: 0;
+        },
+        number
+      >;
+    searchQuery: Schema.Attribute.Text &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 1000;
+      }>;
+    sessionId: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 100;
+      }>;
+    timeSpent: Schema.Attribute.Integer &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 0;
+        },
+        number
+      >;
+    timestamp: Schema.Attribute.DateTime & Schema.Attribute.Required;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    user: Schema.Attribute.Relation<
+      'manyToOne',
+      'plugin::users-permissions.user'
+    >;
+    userAgent: Schema.Attribute.Text &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 1000;
+      }>;
   };
 }
 
@@ -1817,6 +2179,7 @@ declare module '@strapi/strapi' {
       'admin::user': AdminUser;
       'api::address.address': ApiAddressAddress;
       'api::category.category': ApiCategoryCategory;
+      'api::engagement-metrics.engagement-metric': ApiEngagementMetricsEngagementMetric;
       'api::inventory-history.inventory-history': ApiInventoryHistoryInventoryHistory;
       'api::inventory.inventory': ApiInventoryInventory;
       'api::option-group.option-group': ApiOptionGroupOptionGroup;
@@ -1825,7 +2188,10 @@ declare module '@strapi/strapi' {
       'api::product-listing-variant.product-listing-variant': ApiProductListingVariantProductListingVariant;
       'api::product-listing.product-listing': ApiProductListingProductListing;
       'api::product.product': ApiProductProduct;
+      'api::security-event.security-event': ApiSecurityEventSecurityEvent;
       'api::stock-reservation.stock-reservation': ApiStockReservationStockReservation;
+      'api::user-activity.user-activity': ApiUserActivityUserActivity;
+      'api::user-behavior.user-behavior': ApiUserBehaviorUserBehavior;
       'api::user-preference.user-preference': ApiUserPreferenceUserPreference;
       'plugin::content-releases.release': PluginContentReleasesRelease;
       'plugin::content-releases.release-action': PluginContentReleasesReleaseAction;
