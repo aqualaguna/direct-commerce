@@ -2,6 +2,44 @@
 
 import { factories } from '@strapi/strapi'
 
+// Helper functions
+const calculateSeverity = (eventType: string, attemptCount?: number): 'low' | 'medium' | 'high' | 'critical' => {
+  switch (eventType) {
+    case 'failed_login':
+      return attemptCount && attemptCount > 10 ? 'high' : 'medium'
+    case 'brute_force_attempt':
+      return 'critical'
+    case 'account_lockout':
+      return 'high'
+    case 'suspicious_activity':
+      return 'medium'
+    case 'admin_action':
+      return 'low'
+    case 'password_change':
+      return 'low'
+    default:
+      return 'low'
+  }
+}
+
+const triggerSecurityAlert = async (event: any) => {
+  try {
+    // In production, this would trigger notifications to security team
+    console.warn('SECURITY ALERT:', {
+      eventType: event.eventType,
+      severity: event.severity,
+      ipAddress: event.ipAddress,
+      userId: event.user,
+      timestamp: event.timestamp
+    })
+
+    // Could also send email/SMS alerts here
+    // await strapi.service('notification').sendSecurityAlert(event)
+  } catch (error) {
+    console.error('Error triggering security alert:', error)
+  }
+}
+
 export default factories.createCoreController(
   'api::security-event.security-event',
   ({ strapi }) => ({
@@ -15,28 +53,27 @@ export default factories.createCoreController(
         }
 
         // Calculate severity based on event type
-        const severity = this.calculateSeverity(data.eventType, data.attemptCount)
+        const severity = calculateSeverity(data.eventType, data.attemptCount)
 
         // Create security event
         const securityEvent = await strapi.documents('api::security-event.security-event').create({
           data: {
             user: data.userId || null,
             eventType: data.eventType,
-            eventData: {
-              ipAddress: data.ipAddress,
-              userAgent: data.userAgent || '',
-              location: data.location || 'unknown',
-              attemptCount: data.attemptCount || 1,
-              reason: data.reason || '',
-              severity: severity
-            },
+            ipAddress: data.ipAddress,
+            userAgent: data.userAgent || '',
+            location: data.location || 'unknown',
+            attemptCount: data.attemptCount || 1,
+            reason: data.reason || '',
+            severity: severity,
+            timestamp: new Date(),
             resolved: false
           }
         })
 
         // Trigger security alert for high/critical events
         if (severity === 'high' || severity === 'critical') {
-          await this.triggerSecurityAlert(securityEvent)
+          await triggerSecurityAlert(securityEvent)
         }
 
         return securityEvent
@@ -213,60 +250,6 @@ export default factories.createCoreController(
       } catch (error) {
         strapi.log.error('Error resolving security event:', error)
         ctx.throw(500, 'Failed to resolve security event')
-      }
-    },
-
-    // Helper methods
-    calculateSeverity(eventType: string, attemptCount?: number): string {
-      switch (eventType) {
-        case 'failed_login':
-          return attemptCount && attemptCount > 10 ? 'high' : 'medium'
-        case 'brute_force_attempt':
-          return 'critical'
-        case 'account_lockout':
-          return 'high'
-        case 'suspicious_activity':
-          return 'medium'
-        case 'admin_action':
-          return 'low'
-        case 'password_change':
-          return 'low'
-        default:
-          return 'low'
-      }
-    },
-
-    async getLocationFromIP(ip: string) {
-      try {
-        // Basic IP anonymization - only store country/region level
-        if (!ip || ip === '::1' || ip.startsWith('127.')) {
-          return 'local'
-        }
-
-        // In production, you might use a service like MaxMind GeoIP
-        // For now, return a placeholder
-        return 'unknown'
-      } catch (error) {
-        strapi.log.warn('Error getting location from IP:', error)
-        return 'unknown'
-      }
-    },
-
-    async triggerSecurityAlert(event: any) {
-      try {
-        // In production, this would trigger notifications to security team
-        strapi.log.warn('SECURITY ALERT:', {
-          eventType: event.eventType,
-          severity: event.severity,
-          ipAddress: event.ipAddress,
-          userId: event.user,
-          timestamp: event.timestamp
-        })
-
-        // Could also send email/SMS alerts here
-        // await strapi.service('notification').sendSecurityAlert(event)
-      } catch (error) {
-        strapi.log.error('Error triggering security alert:', error)
       }
     }
   }))

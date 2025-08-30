@@ -2,6 +2,37 @@
 
 import { factories } from '@strapi/strapi'
 
+// Helper functions
+const extractDeviceInfo = (userAgent: string) => {
+  if (!userAgent) return null
+
+  // Basic device detection
+  const isMobile = /Mobile|Android|iPhone|iPad/.test(userAgent)
+  const isTablet = /iPad|Android(?=.*\bMobile\b)(?=.*\bSafari\b)/.test(userAgent)
+  const isDesktop = !isMobile && !isTablet
+
+  return {
+    type: isMobile ? 'mobile' : isTablet ? 'tablet' : 'desktop',
+    userAgent: userAgent.substring(0, 200) // Truncate for privacy
+  }
+}
+
+const getLocationFromIP = async (ip: string) => {
+  try {
+    // Basic IP anonymization - only store country/region level
+    if (!ip || ip === '::1' || ip.startsWith('127.')) {
+      return 'local'
+    }
+
+    // In production, you might use a service like MaxMind GeoIP
+    // For now, return a placeholder
+    return 'unknown'
+  } catch (error) {
+    console.warn('Error getting location from IP:', error)
+    return 'unknown'
+  }
+}
+
 export default factories.createCoreController(
   'api::user-behavior.user-behavior',
   ({ strapi }) => ({
@@ -21,8 +52,8 @@ export default factories.createCoreController(
         timestamp: new Date(),
         ipAddress: ctx.request.ip,
         userAgent: ctx.request.headers['user-agent'],
-        deviceInfo: this.extractDeviceInfo(ctx.request.headers['user-agent']),
-        location: await this.getLocationFromIP(ctx.request.ip)
+        deviceInfo: extractDeviceInfo(ctx.request.headers['user-agent']),
+        location: await getLocationFromIP(ctx.request.ip)
       }
 
       // Use Document Service API for creation
@@ -60,17 +91,17 @@ export default factories.createCoreController(
       if (query.startDate || query.endDate) {
         filters.timestamp = {}
         if (query.startDate) {
-          filters.timestamp.$gte = new Date(query.startDate)
+          filters.timestamp.$gte = new Date(String(query.startDate))
         }
         if (query.endDate) {
-          filters.timestamp.$lte = new Date(query.endDate)
+          filters.timestamp.$lte = new Date(String(query.endDate))
         }
       }
 
       // Apply pagination
       const pagination = {
-        page: Math.max(1, parseInt(query.page) || 1),
-        pageSize: Math.min(Math.max(1, parseInt(query.pageSize) || 25), 100)
+        page: Math.max(1, parseInt(String(query.page)) || 1),
+        pageSize: Math.min(Math.max(1, parseInt(String(query.pageSize)) || 25), 100)
       }
 
       // Use Document Service API
@@ -154,36 +185,5 @@ export default factories.createCoreController(
       strapi.log.error('Error getting behavior analytics:', error)
       ctx.throw(500, 'Failed to retrieve behavior analytics')
     }
-  },
-
-  // Helper methods
-  extractDeviceInfo(userAgent: string) {
-    if (!userAgent) return null
-
-    // Basic device detection
-    const isMobile = /Mobile|Android|iPhone|iPad/.test(userAgent)
-    const isTablet = /iPad|Android(?=.*\bMobile\b)(?=.*\bSafari\b)/.test(userAgent)
-    const isDesktop = !isMobile && !isTablet
-
-    return {
-      type: isMobile ? 'mobile' : isTablet ? 'tablet' : 'desktop',
-      userAgent: userAgent.substring(0, 200) // Truncate for privacy
-    }
-  },
-
-  async getLocationFromIP(ip: string) {
-    try {
-      // Basic IP anonymization - only store country/region level
-      if (!ip || ip === '::1' || ip.startsWith('127.')) {
-        return 'local'
       }
-
-      // In production, you might use a service like MaxMind GeoIP
-      // For now, return a placeholder
-      return 'unknown'
-    } catch (error) {
-      strapi.log.warn('Error getting location from IP:', error)
-      return 'unknown'
-    }
-  }
-})
+  }))

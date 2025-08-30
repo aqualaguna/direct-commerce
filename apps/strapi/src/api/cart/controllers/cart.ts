@@ -12,6 +12,10 @@
 
 import { factories } from '@strapi/strapi'
 
+// Import global services directly
+const cartPersistenceService = require('../../../services/cart-persistence');
+const cartCalculationService = require('../../../services/cart-calculation');
+
 export default factories.createCoreController('api::cart.cart', ({ strapi }) => ({
   /**
    * Get current user cart
@@ -25,10 +29,10 @@ export default factories.createCoreController('api::cart.cart', ({ strapi }) => 
 
       if (user) {
         // Get cart for authenticated user
-        cart = await strapi.service('cart-persistence').getCartByUserId(user.id);
+        cart = await cartPersistenceService({ strapi }).getCartByUserId(user.id);
       } else if (sessionId) {
         // Get cart for guest user
-        cart = await strapi.service('cart-persistence').getCartBySessionId(sessionId);
+        cart = await cartPersistenceService({ strapi }).getCartBySessionId(sessionId);
       }
 
       if (!cart) {
@@ -36,7 +40,7 @@ export default factories.createCoreController('api::cart.cart', ({ strapi }) => 
       }
 
       // Calculate totals
-      const calculation = await strapi.service('cart-calculation').calculateCartTotals(cart);
+      const calculation = await cartCalculationService({ strapi }).calculateCartTotals(cart);
 
       return {
         data: {
@@ -67,14 +71,14 @@ export default factories.createCoreController('api::cart.cart', ({ strapi }) => 
       // Get or create cart
       let cart = null;
       if (user) {
-        cart = await strapi.service('cart-persistence').getCartByUserId(user.id);
+        cart = await cartPersistenceService({ strapi }).getCartByUserId(user.id);
         if (!cart) {
-          cart = await strapi.service('cart-persistence').createUserCart(user.id);
+          cart = await cartPersistenceService({ strapi }).createUserCart(user.id);
         }
       } else if (sessionId) {
-        cart = await strapi.service('cart-persistence').getCartBySessionId(sessionId);
+        cart = await cartPersistenceService({ strapi }).getCartBySessionId(sessionId);
         if (!cart) {
-          cart = await strapi.service('cart-persistence').createGuestCart(sessionId);
+          cart = await cartPersistenceService({ strapi }).createGuestCart(sessionId);
         }
       } else {
         return ctx.badRequest('Session ID required for guest users');
@@ -95,7 +99,6 @@ export default factories.createCoreController('api::cart.cart', ({ strapi }) => 
       if (productListingId) {
         productListing = await strapi.documents('api::product-listing.product-listing').findOne({
           documentId: productListingId,
-          filters: { status: 'published' }
         });
       }
 
@@ -165,7 +168,7 @@ export default factories.createCoreController('api::cart.cart', ({ strapi }) => 
         }
       });
 
-      const calculation = await strapi.service('cart-calculation').calculateCartTotals(updatedCart);
+      const calculation = await cartCalculationService({ strapi }).calculateCartTotals(updatedCart);
 
       // Update cart totals
       await strapi.documents('api::cart.cart').update({
@@ -243,7 +246,7 @@ export default factories.createCoreController('api::cart.cart', ({ strapi }) => 
         }
       });
 
-      const calculation = await strapi.service('cart-calculation').calculateCartTotals(cart);
+      const calculation = await cartCalculationService({ strapi }).calculateCartTotals(cart);
 
       // Update cart totals
       await strapi.documents('api::cart.cart').update({
@@ -306,7 +309,7 @@ export default factories.createCoreController('api::cart.cart', ({ strapi }) => 
         }
       });
 
-      const calculation = await strapi.service('cart-calculation').calculateCartTotals(cart);
+      const calculation = await cartCalculationService({ strapi }).calculateCartTotals(cart);
 
       // Update cart totals
       await strapi.documents('api::cart.cart').update({
@@ -342,9 +345,9 @@ export default factories.createCoreController('api::cart.cart', ({ strapi }) => 
       let cart = null;
 
       if (user) {
-        cart = await strapi.service('cart-persistence').getCartByUserId(user.id);
+        cart = await cartPersistenceService({ strapi }).getCartByUserId(user.id);
       } else if (sessionId) {
-        cart = await strapi.service('cart-persistence').getCartBySessionId(sessionId);
+        cart = await cartPersistenceService({ strapi }).getCartBySessionId(sessionId);
       }
 
       if (!cart) {
@@ -398,9 +401,9 @@ export default factories.createCoreController('api::cart.cart', ({ strapi }) => 
       let cart = null;
 
       if (user) {
-        cart = await strapi.service('cart-persistence').getCartByUserId(user.id);
+        cart = await cartPersistenceService({ strapi }).getCartByUserId(user.id);
       } else if (sessionId) {
-        cart = await strapi.service('cart-persistence').getCartBySessionId(sessionId);
+        cart = await cartPersistenceService({ strapi }).getCartBySessionId(sessionId);
       }
 
       if (!cart) {
@@ -408,7 +411,7 @@ export default factories.createCoreController('api::cart.cart', ({ strapi }) => 
       }
 
       // Calculate totals with options
-      const calculation = await strapi.service('cart-calculation').calculateCartTotals(cart, {
+      const calculation = await cartCalculationService({ strapi }).calculateCartTotals(cart, {
         shippingAddress,
         shippingMethod,
         discountCode
@@ -454,7 +457,7 @@ export default factories.createCoreController('api::cart.cart', ({ strapi }) => 
         return ctx.badRequest('Session ID is required');
       }
 
-      const migratedCart = await strapi.service('cart-persistence').migrateGuestToUserCart(sessionId, user.id);
+      const migratedCart = await cartPersistenceService({ strapi }).migrateGuestToUserCart(sessionId, user.id);
 
       if (!migratedCart) {
         return {

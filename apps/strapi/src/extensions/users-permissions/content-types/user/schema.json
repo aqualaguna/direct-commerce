@@ -134,6 +134,34 @@
       "target": "api::cart.cart",
       "mappedBy": "user",
       "description": "User's shopping carts"
+    },
+    "engagement_metrics": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::engagement-metrics.engagement-metric",
+      "mappedBy": "user",
+      "description": "User's engagement metrics"
+    },
+    "security_events": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::security-event.security-event",
+      "mappedBy": "user",
+      "description": "User's security events"
+    },
+    "activities": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::user-activity.user-activity",
+      "mappedBy": "user",
+      "description": "User's activity history"
+    },
+    "user_behaviors": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::user-behavior.user-behavior",
+      "mappedBy": "user",
+      "description": "User's behavior patterns"
     }
   }
 }

@@ -2230,6 +2230,10 @@ export interface PluginUsersPermissionsUser
     draftAndPublish: false;
   };
   attributes: {
+    activities: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::user-activity.user-activity'
+    >;
     addresses: Schema.Attribute.Relation<'oneToMany', 'api::address.address'>;
     bio: Schema.Attribute.Text &
       Schema.Attribute.SetMinMaxLength<{
@@ -2251,6 +2255,10 @@ export interface PluginUsersPermissionsUser
         minLength: 6;
       }>;
     emailVerified: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
+    engagement_metrics: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::engagement-metrics.engagement-metric'
+    >;
     firstName: Schema.Attribute.String &
       Schema.Attribute.SetMinMaxLength<{
         maxLength: 255;
@@ -2306,6 +2314,10 @@ export interface PluginUsersPermissionsUser
       'plugin::users-permissions.user'
     >;
     roleExpiresAt: Schema.Attribute.DateTime;
+    security_events: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::security-event.security-event'
+    >;
     timezone: Schema.Attribute.String &
       Schema.Attribute.SetMinMaxLength<{
         maxLength: 50;
@@ -2314,6 +2326,10 @@ export interface PluginUsersPermissionsUser
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+    user_behaviors: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::user-behavior.user-behavior'
+    >;
     username: Schema.Attribute.String &
       Schema.Attribute.Unique &
       Schema.Attribute.SetMinMaxLength<{
