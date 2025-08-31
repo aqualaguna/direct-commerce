@@ -1,0 +1,69 @@
+{
+  "kind": "collectionType",
+  "collectionName": "checkout_forms",
+  "info": {
+    "singularName": "checkout-form",
+    "pluralName": "checkout-forms",
+    "displayName": "Checkout Form",
+    "description": "Checkout form data and validation state"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "checkoutSession": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::checkout-session.checkout-session",
+      "inversedBy": "checkoutForms"
+    },
+    "step": {
+      "type": "enumeration",
+      "enum": [
+        "cart",
+        "shipping",
+        "billing",
+        "payment",
+        "review",
+        "confirmation"
+      ],
+      "required": true
+    },
+    "formData": {
+      "type": "json",
+      "required": true
+    },
+    "validationErrors": {
+      "type": "json",
+      "default": {}
+    },
+    "isValid": {
+      "type": "boolean",
+      "default": false
+    },
+    "submitted": {
+      "type": "boolean",
+      "default": false
+    },
+    "submittedAt": {
+      "type": "datetime"
+    },
+    "validationRules": {
+      "type": "json",
+      "default": {}
+    },
+    "errorMessages": {
+      "type": "json",
+      "default": {}
+    },
+    "accessibilityFeatures": {
+      "type": "json",
+      "default": {}
+    },
+    "usabilityFeatures": {
+      "type": "json",
+      "default": {}
+    }
+  }
+}

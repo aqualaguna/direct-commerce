@@ -660,6 +660,193 @@ export interface ApiCategoryCategory extends Struct.CollectionTypeSchema {
   };
 }
 
+export interface ApiCheckoutFormCheckoutForm
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'checkout_forms';
+  info: {
+    description: 'Checkout form data and validation state';
+    displayName: 'Checkout Form';
+    pluralName: 'checkout-forms';
+    singularName: 'checkout-form';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    accessibilityFeatures: Schema.Attribute.JSON &
+      Schema.Attribute.DefaultTo<{}>;
+    checkoutSession: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::checkout-session.checkout-session'
+    >;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    errorMessages: Schema.Attribute.JSON & Schema.Attribute.DefaultTo<{}>;
+    formData: Schema.Attribute.JSON & Schema.Attribute.Required;
+    isValid: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::checkout-form.checkout-form'
+    > &
+      Schema.Attribute.Private;
+    publishedAt: Schema.Attribute.DateTime;
+    step: Schema.Attribute.Enumeration<
+      ['cart', 'shipping', 'billing', 'payment', 'review', 'confirmation']
+    > &
+      Schema.Attribute.Required;
+    submitted: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
+    submittedAt: Schema.Attribute.DateTime;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    usabilityFeatures: Schema.Attribute.JSON & Schema.Attribute.DefaultTo<{}>;
+    validationErrors: Schema.Attribute.JSON & Schema.Attribute.DefaultTo<{}>;
+    validationRules: Schema.Attribute.JSON & Schema.Attribute.DefaultTo<{}>;
+  };
+}
+
+export interface ApiCheckoutStepCheckoutStep
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'checkout_steps';
+  info: {
+    description: 'Checkout step management and progression tracking';
+    displayName: 'Checkout Step';
+    pluralName: 'checkout-steps';
+    singularName: 'checkout-step';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    analytics: Schema.Attribute.JSON & Schema.Attribute.DefaultTo<{}>;
+    attempts: Schema.Attribute.Integer &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 0;
+        },
+        number
+      > &
+      Schema.Attribute.DefaultTo<0>;
+    checkoutSession: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::checkout-session.checkout-session'
+    >;
+    completedAt: Schema.Attribute.DateTime;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    errorMessages: Schema.Attribute.JSON & Schema.Attribute.DefaultTo<{}>;
+    isActive: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
+    isCompleted: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
+    isRequired: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
+    lastAttemptAt: Schema.Attribute.DateTime;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::checkout-step.checkout-step'
+    > &
+      Schema.Attribute.Private;
+    navigationHistory: Schema.Attribute.JSON & Schema.Attribute.DefaultTo<[]>;
+    publishedAt: Schema.Attribute.DateTime;
+    startedAt: Schema.Attribute.DateTime;
+    stepData: Schema.Attribute.JSON & Schema.Attribute.DefaultTo<{}>;
+    stepName: Schema.Attribute.Enumeration<
+      ['cart', 'shipping', 'billing', 'payment', 'review', 'confirmation']
+    > &
+      Schema.Attribute.Required;
+    stepOrder: Schema.Attribute.Integer &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMax<
+        {
+          max: 10;
+          min: 1;
+        },
+        number
+      >;
+    timeSpent: Schema.Attribute.Integer &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 0;
+        },
+        number
+      > &
+      Schema.Attribute.DefaultTo<0>;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    validationErrors: Schema.Attribute.JSON & Schema.Attribute.DefaultTo<{}>;
+    validationRules: Schema.Attribute.JSON & Schema.Attribute.DefaultTo<{}>;
+  };
+}
+
+export interface ApiCheckoutCheckoutSession
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'checkout_sessions';
+  info: {
+    description: 'Multi-step checkout session management for guest and registered users';
+    displayName: 'Checkout Session';
+    pluralName: 'checkout-sessions';
+    singularName: 'checkout-session';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    abandonedAt: Schema.Attribute.DateTime;
+    billingAddress: Schema.Attribute.Component<'shared.address', false>;
+    cart: Schema.Attribute.Relation<'oneToOne', 'api::cart.cart'>;
+    completedAt: Schema.Attribute.DateTime;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    expiresAt: Schema.Attribute.DateTime & Schema.Attribute.Required;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::checkout.checkout-session'
+    > &
+      Schema.Attribute.Private;
+    metadata: Schema.Attribute.JSON;
+    order: Schema.Attribute.Relation<'oneToOne', 'api::order.order'>;
+    paymentMethod: Schema.Attribute.String &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 100;
+      }>;
+    publishedAt: Schema.Attribute.DateTime;
+    sessionId: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.Unique &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 64;
+        minLength: 32;
+      }>;
+    shippingAddress: Schema.Attribute.Component<'shared.address', false>;
+    shippingMethod: Schema.Attribute.String &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 100;
+      }>;
+    status: Schema.Attribute.Enumeration<
+      ['active', 'completed', 'abandoned', 'expired']
+    > &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'active'>;
+    step: Schema.Attribute.Enumeration<
+      ['cart', 'shipping', 'billing', 'payment', 'review', 'confirmation']
+    > &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'cart'>;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    user: Schema.Attribute.Relation<
+      'manyToOne',
+      'plugin::users-permissions.user'
+    >;
+  };
+}
+
 export interface ApiEngagementMetricsEngagementMetric
   extends Struct.CollectionTypeSchema {
   collectionName: 'engagement_metrics';
@@ -728,6 +915,85 @@ export interface ApiEngagementMetricsEngagementMetric
       'manyToOne',
       'plugin::users-permissions.user'
     >;
+  };
+}
+
+export interface ApiGuestCheckoutGuestCheckout
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'guest_checkouts';
+  info: {
+    description: 'Guest checkout data for non-registered users';
+    displayName: 'Guest Checkout';
+    pluralName: 'guest-checkouts';
+    singularName: 'guest-checkout';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    abandonedAt: Schema.Attribute.DateTime;
+    billingAddress: Schema.Attribute.Component<'shared.address', false> &
+      Schema.Attribute.Required;
+    cart: Schema.Attribute.Relation<'oneToOne', 'api::cart.cart'>;
+    checkoutSession: Schema.Attribute.Relation<
+      'oneToOne',
+      'api::checkout-session.checkout-session'
+    >;
+    completedAt: Schema.Attribute.DateTime;
+    convertedAt: Schema.Attribute.DateTime;
+    convertedToUser: Schema.Attribute.Relation<
+      'oneToOne',
+      'plugin::users-permissions.user'
+    >;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    email: Schema.Attribute.Email &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 255;
+      }>;
+    expiresAt: Schema.Attribute.DateTime & Schema.Attribute.Required;
+    firstName: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 100;
+      }>;
+    lastName: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 100;
+      }>;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::guest-checkout.guest-checkout'
+    > &
+      Schema.Attribute.Private;
+    metadata: Schema.Attribute.JSON;
+    order: Schema.Attribute.Relation<'oneToOne', 'api::order.order'>;
+    phone: Schema.Attribute.String &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 20;
+      }>;
+    publishedAt: Schema.Attribute.DateTime;
+    sessionId: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.Unique &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 64;
+        minLength: 32;
+      }>;
+    shippingAddress: Schema.Attribute.Component<'shared.address', false> &
+      Schema.Attribute.Required;
+    status: Schema.Attribute.Enumeration<
+      ['active', 'completed', 'converted', 'abandoned', 'expired']
+    > &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'active'>;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
   };
 }
 
@@ -2357,7 +2623,11 @@ declare module '@strapi/strapi' {
       'api::cart-item.cart-item': ApiCartItemCartItem;
       'api::cart.cart': ApiCartCart;
       'api::category.category': ApiCategoryCategory;
+      'api::checkout-form.checkout-form': ApiCheckoutFormCheckoutForm;
+      'api::checkout-step.checkout-step': ApiCheckoutStepCheckoutStep;
+      'api::checkout.checkout-session': ApiCheckoutCheckoutSession;
       'api::engagement-metrics.engagement-metric': ApiEngagementMetricsEngagementMetric;
+      'api::guest-checkout.guest-checkout': ApiGuestCheckoutGuestCheckout;
       'api::inventory-history.inventory-history': ApiInventoryHistoryInventoryHistory;
       'api::inventory.inventory': ApiInventoryInventory;
       'api::option-group.option-group': ApiOptionGroupOptionGroup;

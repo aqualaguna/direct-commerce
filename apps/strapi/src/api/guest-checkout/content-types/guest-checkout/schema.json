@@ -1,0 +1,109 @@
+{
+  "kind": "collectionType",
+  "collectionName": "guest_checkouts",
+  "info": {
+    "singularName": "guest-checkout",
+    "pluralName": "guest-checkouts",
+    "displayName": "Guest Checkout",
+    "description": "Guest checkout data for non-registered users"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "sessionId": {
+      "type": "string",
+      "required": true,
+      "unique": true,
+      "minLength": 32,
+      "maxLength": 64
+    },
+    "email": {
+      "type": "email",
+      "required": true,
+      "maxLength": 255
+    },
+    "firstName": {
+      "type": "string",
+      "required": true,
+      "maxLength": 100
+    },
+    "lastName": {
+      "type": "string",
+      "required": true,
+      "maxLength": 100
+    },
+    "phone": {
+      "type": "string",
+      "required": false,
+      "maxLength": 20
+    },
+    "shippingAddress": {
+      "type": "component",
+      "component": "shared.address",
+      "required": true
+    },
+    "billingAddress": {
+      "type": "component",
+      "component": "shared.address",
+      "required": true
+    },
+    "cart": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::cart.cart",
+      "mappedBy": "guestCheckout"
+    },
+    "checkoutSession": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::checkout-session.checkout-session",
+      "mappedBy": "guestCheckout"
+    },
+    "convertedToUser": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "plugin::users-permissions.user",
+      "mappedBy": "guestCheckout"
+    },
+    "convertedAt": {
+      "type": "datetime",
+      "required": false
+    },
+    "order": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::order.order",
+      "mappedBy": "guestCheckout"
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": [
+        "active",
+        "completed",
+        "converted",
+        "abandoned",
+        "expired"
+      ],
+      "default": "active",
+      "required": true
+    },
+    "metadata": {
+      "type": "json",
+      "required": false
+    },
+    "expiresAt": {
+      "type": "datetime",
+      "required": true
+    },
+    "abandonedAt": {
+      "type": "datetime",
+      "required": false
+    },
+    "completedAt": {
+      "type": "datetime",
+      "required": false
+    }
+  }
+}
