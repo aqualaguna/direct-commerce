@@ -1,0 +1,58 @@
+{
+  "kind": "collectionType",
+  "collectionName": "payment_notes",
+  "info": {
+    "singularName": "payment-comment",
+    "pluralName": "payment-comments",
+    "displayName": "Payment Note",
+    "description": "Notes and comments for manual payments"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "manualPayment": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::manual-payment.manual-payment",
+      "inversedBy": "paymentComments"
+    },
+    "author": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    },
+    "noteType": {
+      "type": "enumeration",
+      "enum": [
+        "customer",
+        "admin",
+        "system",
+        "gateway"
+      ],
+      "required": true,
+      "default": "admin"
+    },
+    "content": {
+      "type": "text",
+      "required": true,
+      "maxLength": 2000
+    },
+    "isInternal": {
+      "type": "boolean",
+      "default": false,
+      "description": "Admin-only notes not visible to customers"
+    },
+    "metadata": {
+      "type": "json",
+      "description": "Additional metadata for the note"
+    },
+    "createdAt": {
+      "type": "datetime"
+    },
+    "updatedAt": {
+      "type": "datetime"
+    }
+  }
+}

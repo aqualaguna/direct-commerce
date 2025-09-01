@@ -1,0 +1,110 @@
+{
+  "kind": "collectionType",
+  "collectionName": "manual_payments",
+  "info": {
+    "singularName": "manual-payment",
+    "pluralName": "manual-payments",
+    "displayName": "Manual Payment",
+    "description": "Manual payment records for order processing"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "orderId": {
+      "type": "string",
+      "description": "Order ID reference (will be replaced with relation when order API is implemented in Story 4.4)"
+    },
+    "user": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user",
+      "required": true
+    },
+    "paymentMethod": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::basic-payment-method.basic-payment-method",
+      "inversedBy": "manualPayments",
+      "required": true
+    },
+    "amount": {
+      "type": "decimal",
+      "required": true,
+      "min": 0,
+      "description": "Payment amount in cents"
+    },
+    "currency": {
+      "type": "string",
+      "required": true,
+      "default": "USD",
+      "maxLength": 3
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": [
+        "pending",
+        "confirmed",
+        "paid",
+        "rejected",
+        "cancelled"
+      ],
+      "required": true,
+      "default": "pending"
+    },
+    "paymentType": {
+      "type": "enumeration",
+      "enum": [
+        "manual",
+        "automated"
+      ],
+      "required": true,
+      "default": "manual"
+    },
+    "gatewayId": {
+      "type": "string",
+      "description": "For future automated payment gateways"
+    },
+    "paymentNotes": {
+      "type": "text",
+      "description": "Customer payment notes"
+    },
+    "adminNotes": {
+      "type": "text",
+      "description": "Admin notes for payment review"
+    },
+    "confirmedBy": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    },
+    "confirmedAt": {
+      "type": "datetime"
+    },
+    "paymentReviews": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::payment-review.payment-review",
+      "mappedBy": "manualPayment"
+    },
+    "paymentConfirmations": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::payment-confirmation.payment-confirmation",
+      "mappedBy": "manualPayment"
+    },
+    "paymentComments": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::payment-comment.payment-comment",
+      "mappedBy": "manualPayment"
+    },
+    "createdAt": {
+      "type": "datetime"
+    },
+    "updatedAt": {
+      "type": "datetime"
+    }
+  }
+}

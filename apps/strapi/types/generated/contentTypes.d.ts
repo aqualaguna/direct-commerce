@@ -457,6 +457,61 @@ export interface ApiAddressAddress extends Struct.CollectionTypeSchema {
   };
 }
 
+export interface ApiBasicPaymentMethodBasicPaymentMethod
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'basic_payment_methods';
+  info: {
+    description: 'Basic payment methods for manual payments';
+    displayName: 'Basic Payment Method';
+    pluralName: 'basic-payment-methods';
+    singularName: 'basic-payment-method';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    code: Schema.Attribute.Enumeration<
+      ['cash', 'bank_transfer', 'check', 'money_order', 'other']
+    > &
+      Schema.Attribute.Required &
+      Schema.Attribute.Unique;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    description: Schema.Attribute.Text & Schema.Attribute.Required;
+    gatewayCode: Schema.Attribute.String;
+    instructions: Schema.Attribute.Text;
+    isActive: Schema.Attribute.Boolean &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<true>;
+    isAutomated: Schema.Attribute.Boolean &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<false>;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::basic-payment-method.basic-payment-method'
+    > &
+      Schema.Attribute.Private;
+    manualPayments: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::manual-payment.manual-payment'
+    >;
+    name: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 255;
+      }>;
+    publishedAt: Schema.Attribute.DateTime;
+    requiresConfirmation: Schema.Attribute.Boolean &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<true>;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
 export interface ApiCartItemCartItem extends Struct.CollectionTypeSchema {
   collectionName: 'cart_items';
   info: {
@@ -1148,6 +1203,88 @@ export interface ApiInventoryInventory extends Struct.CollectionTypeSchema {
   };
 }
 
+export interface ApiManualPaymentManualPayment
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'manual_payments';
+  info: {
+    description: 'Manual payment records for order processing';
+    displayName: 'Manual Payment';
+    pluralName: 'manual-payments';
+    singularName: 'manual-payment';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    adminNotes: Schema.Attribute.Text;
+    amount: Schema.Attribute.Decimal &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 0;
+        },
+        number
+      >;
+    confirmedAt: Schema.Attribute.DateTime;
+    confirmedBy: Schema.Attribute.Relation<
+      'manyToOne',
+      'plugin::users-permissions.user'
+    >;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    currency: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 3;
+      }> &
+      Schema.Attribute.DefaultTo<'USD'>;
+    gatewayId: Schema.Attribute.String;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::manual-payment.manual-payment'
+    > &
+      Schema.Attribute.Private;
+    orderId: Schema.Attribute.String;
+    paymentComments: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::payment-comment.payment-comment'
+    >;
+    paymentConfirmations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::payment-confirmation.payment-confirmation'
+    >;
+    paymentMethod: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::basic-payment-method.basic-payment-method'
+    > &
+      Schema.Attribute.Required;
+    paymentNotes: Schema.Attribute.Text;
+    paymentReviews: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::payment-review.payment-review'
+    >;
+    paymentType: Schema.Attribute.Enumeration<['manual', 'automated']> &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'manual'>;
+    publishedAt: Schema.Attribute.DateTime;
+    status: Schema.Attribute.Enumeration<
+      ['pending', 'confirmed', 'paid', 'rejected', 'cancelled']
+    > &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'pending'>;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    user: Schema.Attribute.Relation<
+      'manyToOne',
+      'plugin::users-permissions.user'
+    > &
+      Schema.Attribute.Required;
+  };
+}
+
 export interface ApiOptionGroupOptionGroup extends Struct.CollectionTypeSchema {
   collectionName: 'option_groups';
   info: {
@@ -1251,6 +1388,254 @@ export interface ApiOptionValueOptionValue extends Struct.CollectionTypeSchema {
       'manyToMany',
       'api::product-listing-variant.product-listing-variant'
     >;
+  };
+}
+
+export interface ApiOrderStatusUpdateOrderStatusUpdate
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'order_status_updates';
+  info: {
+    description: 'Order status update records for tracking order lifecycle changes';
+    displayName: 'Order Status Update';
+    pluralName: 'order-status-updates';
+    singularName: 'order-status-update';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    actualDeliveryDate: Schema.Attribute.Date;
+    automationRule: Schema.Attribute.String;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    estimatedDeliveryDate: Schema.Attribute.Date;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::order-status-update.order-status-update'
+    > &
+      Schema.Attribute.Private;
+    metadata: Schema.Attribute.JSON;
+    newStatus: Schema.Attribute.String & Schema.Attribute.Required;
+    notificationChannels: Schema.Attribute.JSON;
+    notificationSent: Schema.Attribute.Boolean &
+      Schema.Attribute.DefaultTo<false>;
+    orderId: Schema.Attribute.String;
+    paymentConfirmation: Schema.Attribute.Relation<
+      'oneToOne',
+      'api::payment-confirmation.payment-confirmation'
+    >;
+    previousStatus: Schema.Attribute.String & Schema.Attribute.Required;
+    publishedAt: Schema.Attribute.DateTime;
+    statusUpdateHistory: Schema.Attribute.JSON;
+    triggeredBy: Schema.Attribute.Enumeration<
+      [
+        'payment_confirmation',
+        'manual_update',
+        'system',
+        'customer_request',
+        'admin_action',
+        'automated_rule',
+      ]
+    > &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'manual_update'>;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    updateNotes: Schema.Attribute.Text;
+    updateReason: Schema.Attribute.Enumeration<
+      [
+        'payment_received',
+        'payment_confirmed',
+        'payment_failed',
+        'order_cancelled',
+        'order_refunded',
+        'shipping_updated',
+        'customer_request',
+        'system_automation',
+        'admin_decision',
+        'fraud_detection',
+        'inventory_issue',
+        'other',
+      ]
+    >;
+  };
+}
+
+export interface ApiPaymentCommentPaymentComment
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'payment_notes';
+  info: {
+    description: 'Notes and comments for manual payments';
+    displayName: 'Payment Note';
+    pluralName: 'payment-comments';
+    singularName: 'payment-comment';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    author: Schema.Attribute.Relation<
+      'manyToOne',
+      'plugin::users-permissions.user'
+    >;
+    content: Schema.Attribute.Text &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 2000;
+      }>;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    isInternal: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::payment-comment.payment-comment'
+    > &
+      Schema.Attribute.Private;
+    manualPayment: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::manual-payment.manual-payment'
+    >;
+    metadata: Schema.Attribute.JSON;
+    noteType: Schema.Attribute.Enumeration<
+      ['customer', 'admin', 'system', 'gateway']
+    > &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'admin'>;
+    publishedAt: Schema.Attribute.DateTime;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
+export interface ApiPaymentConfirmationPaymentConfirmation
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'payment_confirmations';
+  info: {
+    description: 'Payment confirmation records for manual payment approval workflow';
+    displayName: 'Payment Confirmation';
+    pluralName: 'payment-confirmations';
+    singularName: 'payment-confirmation';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    automationRules: Schema.Attribute.JSON;
+    confirmationEvidence: Schema.Attribute.JSON;
+    confirmationHistory: Schema.Attribute.JSON;
+    confirmationMethod: Schema.Attribute.Enumeration<
+      [
+        'admin_dashboard',
+        'api_call',
+        'webhook',
+        'email_confirmation',
+        'phone_confirmation',
+      ]
+    > &
+      Schema.Attribute.DefaultTo<'admin_dashboard'>;
+    confirmationNotes: Schema.Attribute.Text;
+    confirmationStatus: Schema.Attribute.Enumeration<
+      ['pending', 'confirmed', 'failed', 'cancelled']
+    > &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'pending'>;
+    confirmationType: Schema.Attribute.Enumeration<['manual', 'automated']> &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'manual'>;
+    confirmedAt: Schema.Attribute.DateTime & Schema.Attribute.Required;
+    confirmedBy: Schema.Attribute.Relation<
+      'manyToOne',
+      'plugin::users-permissions.user'
+    > &
+      Schema.Attribute.Required;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::payment-confirmation.payment-confirmation'
+    > &
+      Schema.Attribute.Private;
+    manualPayment: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::manual-payment.manual-payment'
+    > &
+      Schema.Attribute.Required;
+    nextRetryAt: Schema.Attribute.DateTime;
+    orderStatusUpdate: Schema.Attribute.Relation<
+      'oneToOne',
+      'api::order-status-update.order-status-update'
+    >;
+    publishedAt: Schema.Attribute.DateTime;
+    retryCount: Schema.Attribute.Integer & Schema.Attribute.DefaultTo<0>;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
+export interface ApiPaymentReviewPaymentReview
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'payment_reviews';
+  info: {
+    description: 'Payment review records for admin approval workflow';
+    displayName: 'Payment Review';
+    pluralName: 'payment-reviews';
+    singularName: 'payment-review';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    assignedTo: Schema.Attribute.Relation<
+      'manyToOne',
+      'plugin::users-permissions.user'
+    >;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    dueDate: Schema.Attribute.DateTime;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::payment-review.payment-review'
+    > &
+      Schema.Attribute.Private;
+    manualPayment: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::manual-payment.manual-payment'
+    > &
+      Schema.Attribute.Required;
+    priority: Schema.Attribute.Enumeration<
+      ['low', 'normal', 'high', 'urgent']
+    > &
+      Schema.Attribute.DefaultTo<'normal'>;
+    publishedAt: Schema.Attribute.DateTime;
+    reviewDuration: Schema.Attribute.Integer;
+    reviewedAt: Schema.Attribute.DateTime;
+    reviewer: Schema.Attribute.Relation<
+      'manyToOne',
+      'plugin::users-permissions.user'
+    > &
+      Schema.Attribute.Required;
+    reviewHistory: Schema.Attribute.JSON;
+    reviewNotes: Schema.Attribute.Text;
+    status: Schema.Attribute.Enumeration<
+      ['pending', 'approved', 'rejected', 'requires_info']
+    > &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'pending'>;
+    tags: Schema.Attribute.JSON;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
   };
 }
 
@@ -2612,6 +2997,7 @@ declare module '@strapi/strapi' {
       'admin::transfer-token-permission': AdminTransferTokenPermission;
       'admin::user': AdminUser;
       'api::address.address': ApiAddressAddress;
+      'api::basic-payment-method.basic-payment-method': ApiBasicPaymentMethodBasicPaymentMethod;
       'api::cart-item.cart-item': ApiCartItemCartItem;
       'api::cart.cart': ApiCartCart;
       'api::category.category': ApiCategoryCategory;
@@ -2622,8 +3008,13 @@ declare module '@strapi/strapi' {
       'api::guest-checkout.guest-checkout': ApiGuestCheckoutGuestCheckout;
       'api::inventory-history.inventory-history': ApiInventoryHistoryInventoryHistory;
       'api::inventory.inventory': ApiInventoryInventory;
+      'api::manual-payment.manual-payment': ApiManualPaymentManualPayment;
       'api::option-group.option-group': ApiOptionGroupOptionGroup;
       'api::option-value.option-value': ApiOptionValueOptionValue;
+      'api::order-status-update.order-status-update': ApiOrderStatusUpdateOrderStatusUpdate;
+      'api::payment-comment.payment-comment': ApiPaymentCommentPaymentComment;
+      'api::payment-confirmation.payment-confirmation': ApiPaymentConfirmationPaymentConfirmation;
+      'api::payment-review.payment-review': ApiPaymentReviewPaymentReview;
       'api::privacy-setting.privacy-setting': ApiPrivacySettingPrivacySetting;
       'api::product-listing-variant.product-listing-variant': ApiProductListingVariantProductListingVariant;
       'api::product-listing.product-listing': ApiProductListingProductListing;

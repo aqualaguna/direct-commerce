@@ -1,0 +1,78 @@
+{
+  "kind": "collectionType",
+  "collectionName": "payment_reviews",
+  "info": {
+    "singularName": "payment-review",
+    "pluralName": "payment-reviews",
+    "displayName": "Payment Review",
+    "description": "Payment review records for admin approval workflow"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "manualPayment": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::manual-payment.manual-payment",
+      "inversedBy": "paymentReviews",
+      "required": true
+    },
+    "reviewer": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user",
+      "required": true
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": [
+        "pending",
+        "approved",
+        "rejected",
+        "requires_info"
+      ],
+      "required": true,
+      "default": "pending"
+    },
+    "reviewNotes": {
+      "type": "text",
+      "description": "Admin review notes and comments"
+    },
+    "reviewedAt": {
+      "type": "datetime"
+    },
+    "reviewDuration": {
+      "type": "integer",
+      "description": "Time taken to review in minutes"
+    },
+    "priority": {
+      "type": "enumeration",
+      "enum": [
+        "low",
+        "normal",
+        "high",
+        "urgent"
+      ],
+      "default": "normal"
+    },
+    "assignedTo": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    },
+    "dueDate": {
+      "type": "datetime",
+      "description": "Review due date"
+    },
+    "reviewHistory": {
+      "type": "json",
+      "description": "Review history and audit trail"
+    },
+    "tags": {
+      "type": "json",
+      "description": "Review tags for categorization"
+    }
+  }
+}
