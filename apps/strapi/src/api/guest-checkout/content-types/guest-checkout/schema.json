@@ -49,12 +49,7 @@
       "component": "shared.address",
       "required": true
     },
-    "cart": {
-      "type": "relation",
-      "relation": "oneToOne",
-      "target": "api::cart.cart",
-      "mappedBy": "guestCheckout"
-    },
+
     "checkoutSession": {
       "type": "relation",
       "relation": "oneToOne",
@@ -63,20 +58,14 @@
     },
     "convertedToUser": {
       "type": "relation",
-      "relation": "oneToOne",
-      "target": "plugin::users-permissions.user",
-      "mappedBy": "guestCheckout"
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
     },
     "convertedAt": {
       "type": "datetime",
       "required": false
     },
-    "order": {
-      "type": "relation",
-      "relation": "oneToOne",
-      "target": "api::order.order",
-      "mappedBy": "guestCheckout"
-    },
+
     "status": {
       "type": "enumeration",
       "enum": [

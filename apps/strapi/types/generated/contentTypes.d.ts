@@ -675,10 +675,6 @@ export interface ApiCheckoutFormCheckoutForm
   attributes: {
     accessibilityFeatures: Schema.Attribute.JSON &
       Schema.Attribute.DefaultTo<{}>;
-    checkoutSession: Schema.Attribute.Relation<
-      'manyToOne',
-      'api::checkout-session.checkout-session'
-    >;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -729,10 +725,6 @@ export interface ApiCheckoutStepCheckoutStep
         number
       > &
       Schema.Attribute.DefaultTo<0>;
-    checkoutSession: Schema.Attribute.Relation<
-      'manyToOne',
-      'api::checkout-session.checkout-session'
-    >;
     completedAt: Schema.Attribute.DateTime;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
@@ -796,12 +788,15 @@ export interface ApiCheckoutCheckoutSession
   attributes: {
     abandonedAt: Schema.Attribute.DateTime;
     billingAddress: Schema.Attribute.Component<'shared.address', false>;
-    cart: Schema.Attribute.Relation<'oneToOne', 'api::cart.cart'>;
     completedAt: Schema.Attribute.DateTime;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
     expiresAt: Schema.Attribute.DateTime & Schema.Attribute.Required;
+    guestCheckout: Schema.Attribute.Relation<
+      'oneToOne',
+      'api::guest-checkout.guest-checkout'
+    >;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
@@ -809,7 +804,6 @@ export interface ApiCheckoutCheckoutSession
     > &
       Schema.Attribute.Private;
     metadata: Schema.Attribute.JSON;
-    order: Schema.Attribute.Relation<'oneToOne', 'api::order.order'>;
     paymentMethod: Schema.Attribute.String &
       Schema.Attribute.SetMinMaxLength<{
         maxLength: 100;
@@ -934,7 +928,6 @@ export interface ApiGuestCheckoutGuestCheckout
     abandonedAt: Schema.Attribute.DateTime;
     billingAddress: Schema.Attribute.Component<'shared.address', false> &
       Schema.Attribute.Required;
-    cart: Schema.Attribute.Relation<'oneToOne', 'api::cart.cart'>;
     checkoutSession: Schema.Attribute.Relation<
       'oneToOne',
       'api::checkout-session.checkout-session'
@@ -942,7 +935,7 @@ export interface ApiGuestCheckoutGuestCheckout
     completedAt: Schema.Attribute.DateTime;
     convertedAt: Schema.Attribute.DateTime;
     convertedToUser: Schema.Attribute.Relation<
-      'oneToOne',
+      'manyToOne',
       'plugin::users-permissions.user'
     >;
     createdAt: Schema.Attribute.DateTime;
@@ -971,7 +964,6 @@ export interface ApiGuestCheckoutGuestCheckout
     > &
       Schema.Attribute.Private;
     metadata: Schema.Attribute.JSON;
-    order: Schema.Attribute.Relation<'oneToOne', 'api::order.order'>;
     phone: Schema.Attribute.String &
       Schema.Attribute.SetMinMaxLength<{
         maxLength: 20;

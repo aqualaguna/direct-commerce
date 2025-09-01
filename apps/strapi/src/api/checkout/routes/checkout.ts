@@ -6,8 +6,7 @@ export default {
       path: '/checkout/session',
       handler: 'checkout.create',
       config: {
-        policies: ['global::is-authenticated'],
-        middlewares: ['global::rate-limit']
+        policies: ['global::is-authenticated']
       }
     },
 
@@ -17,8 +16,7 @@ export default {
       path: '/checkout/session/:sessionId',
       handler: 'checkout.findOne',
       config: {
-        policies: ['global::is-authenticated'],
-        middlewares: ['global::rate-limit']
+        policies: ['global::is-authenticated']
       }
     },
 
@@ -28,8 +26,7 @@ export default {
       path: '/checkout/session/:sessionId',
       handler: 'checkout.update',
       config: {
-        policies: ['global::is-authenticated'],
-        middlewares: ['global::rate-limit']
+        policies: ['global::is-authenticated']
       }
     },
 
@@ -39,8 +36,7 @@ export default {
       path: '/checkout/session/:sessionId/addresses',
       handler: 'checkout.addAddress',
       config: {
-        policies: ['global::is-authenticated'],
-        middlewares: ['global::rate-limit']
+        policies: ['global::is-authenticated']
       }
     },
 
@@ -50,8 +46,7 @@ export default {
       path: '/checkout/session/:sessionId/validate',
       handler: 'checkout.validate',
       config: {
-        policies: ['global::is-authenticated'],
-        middlewares: ['global::rate-limit']
+        policies: ['global::is-authenticated']
       }
     },
 
@@ -61,8 +56,7 @@ export default {
       path: '/checkout/session/:sessionId/next',
       handler: 'checkout.nextStep',
       config: {
-        policies: ['global::is-authenticated'],
-        middlewares: ['global::rate-limit']
+        policies: ['global::is-authenticated']
       }
     },
 
@@ -72,8 +66,7 @@ export default {
       path: '/checkout/session/:sessionId/previous',
       handler: 'checkout.previousStep',
       config: {
-        policies: ['global::is-authenticated'],
-        middlewares: ['global::rate-limit']
+        policies: ['global::is-authenticated']
       }
     },
 
@@ -83,8 +76,7 @@ export default {
       path: '/checkout/session/:sessionId/jump',
       handler: 'checkout.jumpToStep',
       config: {
-        policies: ['global::is-authenticated'],
-        middlewares: ['global::rate-limit']
+        policies: ['global::is-authenticated']
       }
     },
 
@@ -94,8 +86,7 @@ export default {
       path: '/checkout/session/:sessionId/validate-step',
       handler: 'checkout.validateStep',
       config: {
-        policies: ['global::is-authenticated'],
-        middlewares: ['global::rate-limit']
+        policies: ['global::is-authenticated']
       }
     },
 
@@ -105,8 +96,7 @@ export default {
       path: '/checkout/session/:sessionId/analytics',
       handler: 'checkout.getAnalytics',
       config: {
-        policies: ['global::is-authenticated'],
-        middlewares: ['global::rate-limit']
+        policies: ['global::is-authenticated']
       }
     },
 
@@ -116,8 +106,7 @@ export default {
       path: '/checkout/session/:sessionId/abandon',
       handler: 'checkout.abandon',
       config: {
-        policies: ['global::is-authenticated'],
-        middlewares: ['global::rate-limit']
+        policies: ['global::is-authenticated']
       }
     },
 
@@ -127,8 +116,7 @@ export default {
       path: '/checkout/guest/session',
       handler: 'checkout.create',
       config: {
-        policies: ['global::is-public'],
-        middlewares: ['global::rate-limit']
+        policies: ['global::is-public']
       }
     },
 
@@ -137,8 +125,7 @@ export default {
       path: '/checkout/guest/session/:sessionId',
       handler: 'checkout.findOne',
       config: {
-        policies: ['global::is-public'],
-        middlewares: ['global::rate-limit']
+        policies: ['global::is-public']
       }
     },
 
@@ -147,8 +134,7 @@ export default {
       path: '/checkout/guest/session/:sessionId',
       handler: 'checkout.update',
       config: {
-        policies: ['global::is-public'],
-        middlewares: ['global::rate-limit']
+        policies: ['global::is-public']
       }
     },
 
@@ -157,8 +143,7 @@ export default {
       path: '/checkout/guest/session/:sessionId/addresses',
       handler: 'checkout.addAddress',
       config: {
-        policies: ['global::is-public'],
-        middlewares: ['global::rate-limit']
+        policies: ['global::is-public']
       }
     },
 
@@ -167,8 +152,7 @@ export default {
       path: '/checkout/guest/session/:sessionId/validate',
       handler: 'checkout.validate',
       config: {
-        policies: ['global::is-public'],
-        middlewares: ['global::rate-limit']
+        policies: ['global::is-public']
       }
     },
 
@@ -177,8 +161,7 @@ export default {
       path: '/checkout/guest/session/:sessionId/next',
       handler: 'checkout.nextStep',
       config: {
-        policies: ['global::is-public'],
-        middlewares: ['global::rate-limit']
+        policies: ['global::is-public']
       }
     },
 
@@ -187,8 +170,7 @@ export default {
       path: '/checkout/guest/session/:sessionId/previous',
       handler: 'checkout.previousStep',
       config: {
-        policies: ['global::is-public'],
-        middlewares: ['global::rate-limit']
+        policies: ['global::is-public']
       }
     },
 
@@ -197,8 +179,7 @@ export default {
       path: '/checkout/guest/session/:sessionId/jump',
       handler: 'checkout.jumpToStep',
       config: {
-        policies: ['global::is-public'],
-        middlewares: ['global::rate-limit']
+        policies: ['global::is-public']
       }
     },
 
@@ -207,8 +188,7 @@ export default {
       path: '/checkout/guest/session/:sessionId/validate-step',
       handler: 'checkout.validateStep',
       config: {
-        policies: ['global::is-public'],
-        middlewares: ['global::rate-limit']
+        policies: ['global::is-public']
       }
     },
 
@@ -217,8 +197,7 @@ export default {
       path: '/checkout/guest/session/:sessionId/analytics',
       handler: 'checkout.getAnalytics',
       config: {
-        policies: ['global::is-public'],
-        middlewares: ['global::rate-limit']
+        policies: ['global::is-public']
       }
     },
 
@@ -227,8 +206,7 @@ export default {
       path: '/checkout/guest/session/:sessionId/abandon',
       handler: 'checkout.abandon',
       config: {
-        policies: ['global::is-public'],
-        middlewares: ['global::rate-limit']
+        policies: ['global::is-public']
       }
     }
   ]

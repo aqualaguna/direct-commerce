@@ -22,15 +22,9 @@
     "user": {
       "type": "relation",
       "relation": "manyToOne",
-      "target": "plugin::users-permissions.user",
-      "inversedBy": "checkoutSessions"
+      "target": "plugin::users-permissions.user"
     },
-    "cart": {
-      "type": "relation",
-      "relation": "oneToOne",
-      "target": "api::cart.cart",
-      "mappedBy": "checkoutSession"
-    },
+
     "step": {
       "type": "enumeration",
       "enum": [
@@ -75,12 +69,7 @@
       "required": false,
       "maxLength": 100
     },
-    "order": {
-      "type": "relation",
-      "relation": "oneToOne",
-      "target": "api::order.order",
-      "mappedBy": "checkoutSession"
-    },
+
     "expiresAt": {
       "type": "datetime",
       "required": true
@@ -96,6 +85,13 @@
     "metadata": {
       "type": "json",
       "required": false
+    },
+    "guestCheckout": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::guest-checkout.guest-checkout",
+      "inversedBy": "checkoutSession",
+      "description": "Associated guest checkout"
     }
   }
 }

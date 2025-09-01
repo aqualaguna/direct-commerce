@@ -23,7 +23,6 @@
       "type": "relation",
       "relation": "manyToOne",
       "target": "plugin::users-permissions.user",
-      "inversedBy": "carts",
       "description": "User who owns this cart (null for guest carts)"
     },
     "items": {

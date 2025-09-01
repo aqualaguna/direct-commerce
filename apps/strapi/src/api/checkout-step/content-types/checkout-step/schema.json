@@ -12,12 +12,7 @@
   },
   "pluginOptions": {},
   "attributes": {
-    "checkoutSession": {
-      "type": "relation",
-      "relation": "manyToOne",
-      "target": "api::checkout-session.checkout-session",
-      "inversedBy": "checkoutSteps"
-    },
+
     "stepName": {
       "type": "enumeration",
       "enum": [

@@ -1,7 +1,5 @@
 'use strict'
 
-import { Strapi } from '@strapi/strapi'
-
 interface CheckoutSessionData {
   cartId?: string
   guestCheckout?: boolean
@@ -17,7 +15,7 @@ interface CheckoutSessionUpdate {
   order?: any
 }
 
-export default ({ strapi }: { strapi: Strapi }) => ({
+export default ({ strapi }: { strapi: any }) => ({
   /**
    * Create a new checkout session
    */
