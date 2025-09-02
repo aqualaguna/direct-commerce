@@ -28,15 +28,16 @@ This epic delivers the core shopping and purchasing functionality that converts 
 - Billing address management
 - Checkout form validation and error handling
 
-### Story 4.3: Payment Processing Integration
+### Story 4.3: Manual Payment Confirmation System
 **Status:** Not Started
-**Goal:** Integrate payment processing with multiple payment methods
+**Goal:** Implement manual payment confirmation workflow for admin approval
 **Acceptance Criteria:**
-- Stripe payment gateway integration
-- Credit card payment processing
-- PayPal integration
-- Payment method selection
-- Secure payment data handling (PCI compliance)
+- Order placement with pending payment status
+- Admin dashboard for payment review and approval
+- Payment confirmation workflow (pending → confirmed → paid)
+- Order status updates based on payment confirmation
+- Basic payment method selection (cash, bank transfer, etc.)
+- Payment notes and admin comments system
 
 ### Story 4.4: Order Creation and Management
 **Status:** Not Started
@@ -83,9 +84,9 @@ This epic delivers the core shopping and purchasing functionality that converts 
 - Ready for Epic 5 (Order Management & Fulfillment)
 
 ## Technical Notes
-- Integrates with Stripe for payment processing
-- PCI DSS compliance for payment data
+- Manual payment confirmation workflow (no payment gateway integration)
+- Admin dashboard for payment review and approval
+- Order status workflow management
 - Real-time inventory validation
 - Tax calculation integration
 - Email notification system
-- Order status workflow management

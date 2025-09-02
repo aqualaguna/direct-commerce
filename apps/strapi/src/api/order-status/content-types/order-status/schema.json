@@ -1,0 +1,103 @@
+{
+  "kind": "collectionType",
+  "collectionName": "order_statuses",
+  "info": {
+    "singularName": "order-status",
+    "pluralName": "order-statuses",
+    "displayName": "Order Status",
+    "description": "Order status history and tracking"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "order": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::order.order",
+      "required": true
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": [
+        "pending",
+        "confirmed",
+        "processing",
+        "shipped",
+        "delivered",
+        "cancelled",
+        "refunded"
+      ],
+      "required": true
+    },
+    "previousStatus": {
+      "type": "string",
+      "maxLength": 50
+    },
+    "statusReason": {
+      "type": "enumeration",
+      "enum": [
+        "customer_request",
+        "payment_failed",
+        "out_of_stock",
+        "fraud_detected",
+        "admin_action",
+        "system_auto",
+        "shipping_issue"
+      ]
+    },
+    "notes": {
+      "type": "text",
+      "maxLength": 2000
+    },
+    "expectedDuration": {
+      "type": "integer",
+      "min": 0
+    },
+    "notificationSent": {
+      "type": "boolean",
+      "default": false
+    },
+    "notificationMethod": {
+      "type": "enumeration",
+      "enum": [
+        "email",
+        "sms",
+        "push",
+        "none"
+      ]
+    },
+    "updatedBy": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user",
+      "required": true
+    },
+    "automatedTrigger": {
+      "type": "string",
+      "maxLength": 100
+    },
+    "relatedEvents": {
+      "type": "json"
+    },
+    "customerVisible": {
+      "type": "boolean",
+      "default": true
+    },
+    "internalStatus": {
+      "type": "string",
+      "maxLength": 100
+    },
+    "priority": {
+      "type": "enumeration",
+      "enum": [
+        "low",
+        "normal",
+        "high",
+        "urgent"
+      ],
+      "default": "normal"
+    }
+  }
+}

@@ -45,7 +45,7 @@ export default ({ strapi }: { strapi: any }) => ({
 
       // Check if user already has an active checkout session
       if (user && !guestCheckout) {
-        const existingSession = await strapi.documents('api::checkout-session.checkout-session').findFirst({
+        const existingSession = await strapi.documents('api::checkout.checkout-session').findFirst({
           filters: {
             user: user.id,
             status: 'active'
@@ -72,7 +72,7 @@ export default ({ strapi }: { strapi: any }) => ({
         order: null
       }
 
-      const checkoutSession = await strapi.documents('api::checkout-session.checkout-session').create({
+      const checkoutSession = await strapi.documents('api::checkout.checkout-session').create({
         data: sessionData,
         populate: ['cart', 'user']
       })
@@ -106,7 +106,7 @@ export default ({ strapi }: { strapi: any }) => ({
         return ctx.badRequest('Session ID is required')
       }
 
-      const checkoutSession = await strapi.documents('api::checkout-session.checkout-session').findOne({
+      const checkoutSession = await strapi.documents('api::checkout.checkout-session').findOne({
         documentId: sessionId,
         populate: ['cart', 'cart.items', 'cart.items.product', 'user', 'shippingAddress', 'billingAddress']
       })
@@ -152,7 +152,7 @@ export default ({ strapi }: { strapi: any }) => ({
         return ctx.badRequest('Session ID is required')
       }
 
-      const checkoutSession = await strapi.documents('api::checkout-session.checkout-session').findOne({
+      const checkoutSession = await strapi.documents('api::checkout.checkout-session').findOne({
         documentId: sessionId,
         populate: ['user']
       })
@@ -176,7 +176,7 @@ export default ({ strapi }: { strapi: any }) => ({
       }
 
       // Update checkout session
-      const updatedSession = await strapi.documents('api::checkout-session.checkout-session').update({
+      const updatedSession = await strapi.documents('api::checkout.checkout-session').update({
         documentId: sessionId,
         data: updateData,
         populate: ['cart', 'user', 'shippingAddress', 'billingAddress']
@@ -209,7 +209,7 @@ export default ({ strapi }: { strapi: any }) => ({
         return ctx.badRequest('Address type must be shipping or billing')
       }
 
-      const checkoutSession = await strapi.documents('api::checkout-session.checkout-session').findOne({
+      const checkoutSession = await strapi.documents('api::checkout.checkout-session').findOne({
         documentId: sessionId,
         populate: ['user']
       })
@@ -245,7 +245,7 @@ export default ({ strapi }: { strapi: any }) => ({
       // Update checkout session with address
       const updateData = type === 'shipping' ? { shippingAddress: address.documentId } : { billingAddress: address.documentId }
       
-      const updatedSession = await strapi.documents('api::checkout-session.checkout-session').update({
+      const updatedSession = await strapi.documents('api::checkout.checkout-session').update({
         documentId: sessionId,
         data: updateData,
         populate: ['cart', 'user', 'shippingAddress', 'billingAddress']
@@ -276,7 +276,7 @@ export default ({ strapi }: { strapi: any }) => ({
         return ctx.badRequest('Session ID is required')
       }
 
-      const checkoutSession = await strapi.documents('api::checkout-session.checkout-session').findOne({
+      const checkoutSession = await strapi.documents('api::checkout.checkout-session').findOne({
         documentId: sessionId,
         populate: ['cart', 'cart.items', 'user', 'shippingAddress', 'billingAddress']
       })
@@ -311,7 +311,7 @@ export default ({ strapi }: { strapi: any }) => ({
         return ctx.badRequest('Session ID is required')
       }
 
-      const checkoutSession = await strapi.documents('api::checkout-session.checkout-session').findOne({
+      const checkoutSession = await strapi.documents('api::checkout.checkout-session').findOne({
         documentId: sessionId,
         populate: ['user']
       })
@@ -352,7 +352,7 @@ export default ({ strapi }: { strapi: any }) => ({
         return ctx.badRequest('Session ID is required')
       }
 
-      const checkoutSession = await strapi.documents('api::checkout-session.checkout-session').findOne({
+      const checkoutSession = await strapi.documents('api::checkout.checkout-session').findOne({
         documentId: sessionId,
         populate: ['user']
       })
@@ -395,7 +395,7 @@ export default ({ strapi }: { strapi: any }) => ({
         return ctx.badRequest('Session ID and step name are required')
       }
 
-      const checkoutSession = await strapi.documents('api::checkout-session.checkout-session').findOne({
+      const checkoutSession = await strapi.documents('api::checkout.checkout-session').findOne({
         documentId: sessionId,
         populate: ['user']
       })
@@ -438,7 +438,7 @@ export default ({ strapi }: { strapi: any }) => ({
         return ctx.badRequest('Session ID, step name, and form data are required')
       }
 
-      const checkoutSession = await strapi.documents('api::checkout-session.checkout-session').findOne({
+      const checkoutSession = await strapi.documents('api::checkout.checkout-session').findOne({
         documentId: sessionId,
         populate: ['user']
       })
@@ -487,7 +487,7 @@ export default ({ strapi }: { strapi: any }) => ({
         return ctx.badRequest('Session ID is required')
       }
 
-      const checkoutSession = await strapi.documents('api::checkout-session.checkout-session').findOne({
+      const checkoutSession = await strapi.documents('api::checkout.checkout-session').findOne({
         documentId: sessionId,
         populate: ['user']
       })
@@ -531,7 +531,7 @@ export default ({ strapi }: { strapi: any }) => ({
         return ctx.badRequest('Session ID is required')
       }
 
-      const checkoutSession = await strapi.documents('api::checkout-session.checkout-session').findOne({
+      const checkoutSession = await strapi.documents('api::checkout.checkout-session').findOne({
         documentId: sessionId,
         populate: ['user']
       })
@@ -546,7 +546,7 @@ export default ({ strapi }: { strapi: any }) => ({
       }
 
       // Update session status
-      await strapi.documents('api::checkout-session.checkout-session').update({
+      await strapi.documents('api::checkout.checkout-session').update({
         documentId: sessionId,
         data: {
           status: 'abandoned'
@@ -623,7 +623,7 @@ export default ({ strapi }: { strapi: any }) => ({
 
   async getSessionAnalytics(sessionId: string): Promise<any> {
     try {
-      const session = await strapi.documents('api::checkout-session.checkout-session').findOne({
+      const session = await strapi.documents('api::checkout.checkout-session').findOne({
         documentId: sessionId
       })
 

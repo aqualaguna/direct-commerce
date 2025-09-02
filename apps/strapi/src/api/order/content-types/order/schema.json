@@ -1,0 +1,184 @@
+{
+  "kind": "collectionType",
+  "collectionName": "orders",
+  "info": {
+    "singularName": "order",
+    "pluralName": "orders",
+    "displayName": "Order",
+    "description": "Ecommerce orders with comprehensive management"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "orderNumber": {
+      "type": "string",
+      "required": true,
+      "unique": true,
+      "minLength": 1,
+      "maxLength": 50
+    },
+    "user": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    },
+    "cart": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::cart.cart"
+    },
+    "checkoutSession": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::checkout.checkout-session"
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": [
+        "pending",
+        "confirmed",
+        "processing",
+        "shipped",
+        "delivered",
+        "cancelled",
+        "refunded"
+      ],
+      "default": "pending",
+      "required": true
+    },
+    "items": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::order-item.order-item",
+      "mappedBy": "order"
+    },
+    "subtotal": {
+      "type": "decimal",
+      "required": true,
+      "min": 0,
+      "default": 0
+    },
+    "tax": {
+      "type": "decimal",
+      "required": true,
+      "min": 0,
+      "default": 0
+    },
+    "shipping": {
+      "type": "decimal",
+      "required": true,
+      "min": 0,
+      "default": 0
+    },
+    "discount": {
+      "type": "decimal",
+      "required": true,
+      "min": 0,
+      "default": 0
+    },
+    "total": {
+      "type": "decimal",
+      "required": true,
+      "min": 0,
+      "default": 0
+    },
+    "currency": {
+      "type": "string",
+      "required": true,
+      "default": "USD",
+      "maxLength": 3
+    },
+    "shippingAddress": {
+      "type": "component",
+      "component": "shared.address",
+      "required": true
+    },
+    "billingAddress": {
+      "type": "component",
+      "component": "shared.address",
+      "required": true
+    },
+    "paymentStatus": {
+      "type": "enumeration",
+      "enum": [
+        "pending",
+        "confirmed",
+        "paid",
+        "failed",
+        "refunded",
+        "cancelled"
+      ],
+      "default": "pending",
+      "required": true
+    },
+    "paymentMethod": {
+      "type": "string",
+      "required": true,
+      "maxLength": 100
+    },
+    "manualPayment": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::manual-payment.manual-payment"
+    },
+    "shippingMethod": {
+      "type": "string",
+      "required": true,
+      "maxLength": 100
+    },
+    "trackingNumber": {
+      "type": "string",
+      "maxLength": 100
+    },
+    "estimatedDelivery": {
+      "type": "datetime"
+    },
+    "actualDelivery": {
+      "type": "datetime"
+    },
+    "orderSource": {
+      "type": "enumeration",
+      "enum": [
+        "web",
+        "mobile",
+        "admin",
+        "api"
+      ],
+      "default": "web",
+      "required": true
+    },
+    "customerNotes": {
+      "type": "text",
+      "maxLength": 1000
+    },
+    "adminNotes": {
+      "type": "text",
+      "maxLength": 2000
+    },
+    "fraudScore": {
+      "type": "integer",
+      "min": 0,
+      "max": 100
+    },
+    "isGift": {
+      "type": "boolean",
+      "default": false
+    },
+    "giftMessage": {
+      "type": "text",
+      "maxLength": 500
+    },
+    "referralCode": {
+      "type": "string",
+      "maxLength": 50
+    },
+    "tags": {
+      "type": "json"
+    },
+    "metadata": {
+      "type": "json"
+    }
+  }
+}

@@ -58,3 +58,4 @@ recommendations:
       refs: ['docs/stories/4.2.checkout-process-implementation.md#task-6']
     - action: 'Implement checkout session caching'
       refs: ['apps/strapi/src/services/checkout-flow.ts']
+

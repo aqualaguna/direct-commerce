@@ -188,7 +188,7 @@ export default ({ strapi }: { strapi: any }) => ({
 
       // Transfer checkout session to new user
       if (guestCheckout.checkoutSession) {
-        await strapi.documents('api::checkout-session.checkout-session' as any).update({
+        await strapi.documents('api::checkout.checkout-session' as any).update({
           documentId: guestCheckout.checkoutSession.documentId,
           data: {
             user: { connect: [newUser.documentId] },

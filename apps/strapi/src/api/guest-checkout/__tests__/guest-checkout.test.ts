@@ -49,7 +49,7 @@ describe('Guest Checkout Service', () => {
           mockStrapi.userMocks = mockMethods
         } else if (contentType === 'api::cart.cart') {
           mockStrapi.cartMocks = mockMethods
-        } else if (contentType === 'api::checkout-session.checkout-session') {
+        } else if (contentType === 'api::checkout.checkout-session') {
           mockStrapi.checkoutSessionMocks = mockMethods
         }
         
@@ -87,7 +87,7 @@ describe('Guest Checkout Service', () => {
         return mockStrapi.userMocks
       } else if (contentType === 'api::cart.cart') {
         return mockStrapi.cartMocks
-      } else if (contentType === 'api::checkout-session.checkout-session') {
+      } else if (contentType === 'api::checkout.checkout-session') {
         return mockStrapi.checkoutSessionMocks
       }
       return createMockMethods()

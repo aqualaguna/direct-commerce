@@ -985,7 +985,7 @@ export interface ApiGuestCheckoutGuestCheckout
       Schema.Attribute.Required;
     checkoutSession: Schema.Attribute.Relation<
       'oneToOne',
-      'api::checkout-session.checkout-session'
+      'api::checkout.checkout-session'
     >;
     completedAt: Schema.Attribute.DateTime;
     convertedAt: Schema.Attribute.DateTime;
@@ -1391,6 +1391,318 @@ export interface ApiOptionValueOptionValue extends Struct.CollectionTypeSchema {
   };
 }
 
+export interface ApiOrderConfirmationOrderConfirmation
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'order_confirmations';
+  info: {
+    description: 'Order confirmations and receipt generation';
+    displayName: 'Order Confirmation';
+    pluralName: 'order-confirmations';
+    singularName: 'order-confirmation';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    confirmationNumber: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.Unique &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 50;
+      }>;
+    confirmationType: Schema.Attribute.Enumeration<
+      ['automatic', 'manual', 'payment_triggered']
+    > &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'automatic'>;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    customMessage: Schema.Attribute.Text &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 1000;
+      }>;
+    emailAddress: Schema.Attribute.Email & Schema.Attribute.Required;
+    emailSent: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
+    emailSentAt: Schema.Attribute.DateTime;
+    emailTemplate: Schema.Attribute.String &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 100;
+      }>;
+    estimatedProcessingTime: Schema.Attribute.String &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 200;
+      }>;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::order-confirmation.order-confirmation'
+    > &
+      Schema.Attribute.Private;
+    nextSteps: Schema.Attribute.Text &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 1000;
+      }>;
+    order: Schema.Attribute.Relation<'manyToOne', 'api::order.order'> &
+      Schema.Attribute.Required;
+    phoneNumber: Schema.Attribute.String &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 20;
+      }>;
+    printingQueue: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
+    promotionalContent: Schema.Attribute.Text &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 2000;
+      }>;
+    publishedAt: Schema.Attribute.DateTime;
+    receiptFormat: Schema.Attribute.Enumeration<['pdf', 'html', 'json']> &
+      Schema.Attribute.DefaultTo<'pdf'>;
+    receiptGenerated: Schema.Attribute.Boolean &
+      Schema.Attribute.DefaultTo<false>;
+    receiptGeneratedAt: Schema.Attribute.DateTime;
+    receiptUrl: Schema.Attribute.String &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 500;
+      }>;
+    smsNotificationSent: Schema.Attribute.Boolean &
+      Schema.Attribute.DefaultTo<false>;
+    smsNotificationSentAt: Schema.Attribute.DateTime;
+    socialSharingEnabled: Schema.Attribute.Boolean &
+      Schema.Attribute.DefaultTo<false>;
+    surveyLink: Schema.Attribute.String &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 500;
+      }>;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
+export interface ApiOrderHistoryOrderHistory
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'order_histories';
+  info: {
+    description: 'Order history tracking and audit trail';
+    displayName: 'Order History';
+    pluralName: 'order-histories';
+    singularName: 'order-history';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    affectedFields: Schema.Attribute.JSON;
+    automatedAction: Schema.Attribute.String &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 100;
+      }>;
+    changedBy: Schema.Attribute.Relation<
+      'manyToOne',
+      'plugin::users-permissions.user'
+    > &
+      Schema.Attribute.Required;
+    changeReason: Schema.Attribute.Text &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 500;
+      }>;
+    changeSource: Schema.Attribute.Enumeration<
+      [
+        'customer',
+        'admin',
+        'system',
+        'payment_gateway',
+        'shipping_carrier',
+        'fraud_detection',
+        'webhook',
+      ]
+    > &
+      Schema.Attribute.Required;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    eventType: Schema.Attribute.Enumeration<
+      [
+        'order_created',
+        'status_changed',
+        'payment_updated',
+        'shipping_updated',
+        'item_modified',
+        'address_changed',
+        'notes_updated',
+        'tracking_updated',
+        'refund_processed',
+        'cancellation_requested',
+        'fraud_flag_raised',
+        'admin_action',
+        'system_action',
+      ]
+    > &
+      Schema.Attribute.Required;
+    followUpNotes: Schema.Attribute.Text &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 1000;
+      }>;
+    ipAddress: Schema.Attribute.String &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 45;
+      }>;
+    isCustomerVisible: Schema.Attribute.Boolean &
+      Schema.Attribute.DefaultTo<true>;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::order-history.order-history'
+    > &
+      Schema.Attribute.Private;
+    metadata: Schema.Attribute.JSON;
+    newValue: Schema.Attribute.JSON;
+    order: Schema.Attribute.Relation<'manyToOne', 'api::order.order'> &
+      Schema.Attribute.Required;
+    previousValue: Schema.Attribute.JSON;
+    priority: Schema.Attribute.Enumeration<
+      ['low', 'normal', 'high', 'critical']
+    > &
+      Schema.Attribute.DefaultTo<'normal'>;
+    publishedAt: Schema.Attribute.DateTime;
+    relatedEvents: Schema.Attribute.JSON;
+    requiresFollowUp: Schema.Attribute.Boolean &
+      Schema.Attribute.DefaultTo<false>;
+    sessionId: Schema.Attribute.String &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 100;
+      }>;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    userAgent: Schema.Attribute.Text &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 500;
+      }>;
+  };
+}
+
+export interface ApiOrderItemOrderItem extends Struct.CollectionTypeSchema {
+  collectionName: 'order_items';
+  info: {
+    description: 'Individual items within an order';
+    displayName: 'Order Item';
+    pluralName: 'order-items';
+    singularName: 'order-item';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    customizations: Schema.Attribute.JSON;
+    digitalDeliveryStatus: Schema.Attribute.Enumeration<
+      ['pending', 'delivered', 'failed']
+    >;
+    dimensions: Schema.Attribute.JSON;
+    discountAmount: Schema.Attribute.Decimal &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 0;
+        },
+        number
+      > &
+      Schema.Attribute.DefaultTo<0>;
+    giftWrapping: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
+    isDigital: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
+    linePrice: Schema.Attribute.Decimal &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 0;
+        },
+        number
+      >;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::order-item.order-item'
+    > &
+      Schema.Attribute.Private;
+    order: Schema.Attribute.Relation<'manyToOne', 'api::order.order'>;
+    originalPrice: Schema.Attribute.Decimal &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 0;
+        },
+        number
+      >;
+    productDescription: Schema.Attribute.Text &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 2000;
+      }>;
+    productListing: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::product-listing.product-listing'
+    > &
+      Schema.Attribute.Required;
+    productListingVariant: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::product-listing-variant.product-listing-variant'
+    >;
+    productName: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 255;
+      }>;
+    publishedAt: Schema.Attribute.DateTime;
+    quantity: Schema.Attribute.Integer &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 1;
+        },
+        number
+      > &
+      Schema.Attribute.DefaultTo<1>;
+    returnEligible: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
+    sku: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 100;
+      }>;
+    taxAmount: Schema.Attribute.Decimal &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 0;
+        },
+        number
+      > &
+      Schema.Attribute.DefaultTo<0>;
+    unitPrice: Schema.Attribute.Decimal &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 0;
+        },
+        number
+      >;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    warrantyInfo: Schema.Attribute.Text &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 500;
+      }>;
+    weight: Schema.Attribute.Decimal &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 0;
+        },
+        number
+      >;
+  };
+}
+
 export interface ApiOrderStatusUpdateOrderStatusUpdate
   extends Struct.CollectionTypeSchema {
   collectionName: 'order_status_updates';
@@ -1460,6 +1772,372 @@ export interface ApiOrderStatusUpdateOrderStatusUpdate
         'inventory_issue',
         'other',
       ]
+    >;
+  };
+}
+
+export interface ApiOrderStatusOrderStatus extends Struct.CollectionTypeSchema {
+  collectionName: 'order_statuses';
+  info: {
+    description: 'Order status history and tracking';
+    displayName: 'Order Status';
+    pluralName: 'order-statuses';
+    singularName: 'order-status';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    automatedTrigger: Schema.Attribute.String &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 100;
+      }>;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    customerVisible: Schema.Attribute.Boolean &
+      Schema.Attribute.DefaultTo<true>;
+    expectedDuration: Schema.Attribute.Integer &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 0;
+        },
+        number
+      >;
+    internalStatus: Schema.Attribute.String &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 100;
+      }>;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::order-status.order-status'
+    > &
+      Schema.Attribute.Private;
+    notes: Schema.Attribute.Text &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 2000;
+      }>;
+    notificationMethod: Schema.Attribute.Enumeration<
+      ['email', 'sms', 'push', 'none']
+    >;
+    notificationSent: Schema.Attribute.Boolean &
+      Schema.Attribute.DefaultTo<false>;
+    order: Schema.Attribute.Relation<'manyToOne', 'api::order.order'> &
+      Schema.Attribute.Required;
+    previousStatus: Schema.Attribute.String &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 50;
+      }>;
+    priority: Schema.Attribute.Enumeration<
+      ['low', 'normal', 'high', 'urgent']
+    > &
+      Schema.Attribute.DefaultTo<'normal'>;
+    publishedAt: Schema.Attribute.DateTime;
+    relatedEvents: Schema.Attribute.JSON;
+    status: Schema.Attribute.Enumeration<
+      [
+        'pending',
+        'confirmed',
+        'processing',
+        'shipped',
+        'delivered',
+        'cancelled',
+        'refunded',
+      ]
+    > &
+      Schema.Attribute.Required;
+    statusReason: Schema.Attribute.Enumeration<
+      [
+        'customer_request',
+        'payment_failed',
+        'out_of_stock',
+        'fraud_detected',
+        'admin_action',
+        'system_auto',
+        'shipping_issue',
+      ]
+    >;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
+export interface ApiOrderTrackingOrderTracking
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'order_trackings';
+  info: {
+    description: 'Order tracking and shipment updates';
+    displayName: 'Order Tracking';
+    pluralName: 'order-trackings';
+    singularName: 'order-tracking';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    actualDelivery: Schema.Attribute.DateTime;
+    carrier: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 50;
+      }>;
+    carrierCode: Schema.Attribute.String &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 20;
+      }>;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    currentLocation: Schema.Attribute.Component<'shared.location', false>;
+    deliveryNotes: Schema.Attribute.Text &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 1000;
+      }>;
+    estimatedDelivery: Schema.Attribute.DateTime;
+    isActive: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
+    lastRetryAt: Schema.Attribute.DateTime;
+    lastUpdate: Schema.Attribute.DateTime;
+    lastUpdateSource: Schema.Attribute.Enumeration<
+      ['carrier_api', 'webhook', 'manual', 'email', 'sms']
+    > &
+      Schema.Attribute.DefaultTo<'manual'>;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::order-tracking.order-tracking'
+    > &
+      Schema.Attribute.Private;
+    metadata: Schema.Attribute.JSON;
+    nextRetryAt: Schema.Attribute.DateTime;
+    order: Schema.Attribute.Relation<'manyToOne', 'api::order.order'> &
+      Schema.Attribute.Required;
+    packageDimensions: Schema.Attribute.JSON;
+    packageWeight: Schema.Attribute.Decimal &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 0;
+        },
+        number
+      >;
+    publishedAt: Schema.Attribute.DateTime;
+    retryCount: Schema.Attribute.Integer &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 0;
+        },
+        number
+      > &
+      Schema.Attribute.DefaultTo<0>;
+    shipmentDate: Schema.Attribute.DateTime;
+    signatureName: Schema.Attribute.String &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 100;
+      }>;
+    signatureRequired: Schema.Attribute.Boolean &
+      Schema.Attribute.DefaultTo<false>;
+    status: Schema.Attribute.Enumeration<
+      [
+        'pending',
+        'in_transit',
+        'out_for_delivery',
+        'delivered',
+        'failed',
+        'returned',
+        'lost',
+        'damaged',
+      ]
+    > &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'pending'>;
+    trackingNumber: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 100;
+      }>;
+    trackingUrl: Schema.Attribute.String &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 500;
+      }>;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    updateHistory: Schema.Attribute.JSON;
+    webhookSecret: Schema.Attribute.String &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 100;
+      }>;
+    webhookUrl: Schema.Attribute.String &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 500;
+      }>;
+  };
+}
+
+export interface ApiOrderOrder extends Struct.CollectionTypeSchema {
+  collectionName: 'orders';
+  info: {
+    description: 'Ecommerce orders with comprehensive management';
+    displayName: 'Order';
+    pluralName: 'orders';
+    singularName: 'order';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    actualDelivery: Schema.Attribute.DateTime;
+    adminNotes: Schema.Attribute.Text &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 2000;
+      }>;
+    billingAddress: Schema.Attribute.Component<'shared.address', false> &
+      Schema.Attribute.Required;
+    cart: Schema.Attribute.Relation<'oneToOne', 'api::cart.cart'>;
+    checkoutSession: Schema.Attribute.Relation<
+      'oneToOne',
+      'api::checkout.checkout-session'
+    >;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    currency: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 3;
+      }> &
+      Schema.Attribute.DefaultTo<'USD'>;
+    customerNotes: Schema.Attribute.Text &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 1000;
+      }>;
+    discount: Schema.Attribute.Decimal &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 0;
+        },
+        number
+      > &
+      Schema.Attribute.DefaultTo<0>;
+    estimatedDelivery: Schema.Attribute.DateTime;
+    fraudScore: Schema.Attribute.Integer &
+      Schema.Attribute.SetMinMax<
+        {
+          max: 100;
+          min: 0;
+        },
+        number
+      >;
+    giftMessage: Schema.Attribute.Text &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 500;
+      }>;
+    isGift: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
+    items: Schema.Attribute.Relation<'oneToMany', 'api::order-item.order-item'>;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<'oneToMany', 'api::order.order'> &
+      Schema.Attribute.Private;
+    manualPayment: Schema.Attribute.Relation<
+      'oneToOne',
+      'api::manual-payment.manual-payment'
+    >;
+    metadata: Schema.Attribute.JSON;
+    orderNumber: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.Unique &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 50;
+        minLength: 1;
+      }>;
+    orderSource: Schema.Attribute.Enumeration<
+      ['web', 'mobile', 'admin', 'api']
+    > &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'web'>;
+    paymentMethod: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 100;
+      }>;
+    paymentStatus: Schema.Attribute.Enumeration<
+      ['pending', 'confirmed', 'paid', 'failed', 'refunded', 'cancelled']
+    > &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'pending'>;
+    publishedAt: Schema.Attribute.DateTime;
+    referralCode: Schema.Attribute.String &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 50;
+      }>;
+    shipping: Schema.Attribute.Decimal &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 0;
+        },
+        number
+      > &
+      Schema.Attribute.DefaultTo<0>;
+    shippingAddress: Schema.Attribute.Component<'shared.address', false> &
+      Schema.Attribute.Required;
+    shippingMethod: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 100;
+      }>;
+    status: Schema.Attribute.Enumeration<
+      [
+        'pending',
+        'confirmed',
+        'processing',
+        'shipped',
+        'delivered',
+        'cancelled',
+        'refunded',
+      ]
+    > &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'pending'>;
+    subtotal: Schema.Attribute.Decimal &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 0;
+        },
+        number
+      > &
+      Schema.Attribute.DefaultTo<0>;
+    tags: Schema.Attribute.JSON;
+    tax: Schema.Attribute.Decimal &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 0;
+        },
+        number
+      > &
+      Schema.Attribute.DefaultTo<0>;
+    total: Schema.Attribute.Decimal &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 0;
+        },
+        number
+      > &
+      Schema.Attribute.DefaultTo<0>;
+    trackingNumber: Schema.Attribute.String &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 100;
+      }>;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    user: Schema.Attribute.Relation<
+      'manyToOne',
+      'plugin::users-permissions.user'
     >;
   };
 }
@@ -3011,7 +3689,13 @@ declare module '@strapi/strapi' {
       'api::manual-payment.manual-payment': ApiManualPaymentManualPayment;
       'api::option-group.option-group': ApiOptionGroupOptionGroup;
       'api::option-value.option-value': ApiOptionValueOptionValue;
+      'api::order-confirmation.order-confirmation': ApiOrderConfirmationOrderConfirmation;
+      'api::order-history.order-history': ApiOrderHistoryOrderHistory;
+      'api::order-item.order-item': ApiOrderItemOrderItem;
       'api::order-status-update.order-status-update': ApiOrderStatusUpdateOrderStatusUpdate;
+      'api::order-status.order-status': ApiOrderStatusOrderStatus;
+      'api::order-tracking.order-tracking': ApiOrderTrackingOrderTracking;
+      'api::order.order': ApiOrderOrder;
       'api::payment-comment.payment-comment': ApiPaymentCommentPaymentComment;
       'api::payment-confirmation.payment-confirmation': ApiPaymentConfirmationPaymentConfirmation;
       'api::payment-review.payment-review': ApiPaymentReviewPaymentReview;

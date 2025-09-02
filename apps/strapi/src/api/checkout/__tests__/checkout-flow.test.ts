@@ -82,7 +82,7 @@ describe('Checkout Flow Service', () => {
       })
 
       expect(result).toEqual(mockSession)
-      expect(mockStrapi.documents).toHaveBeenCalledWith('api::checkout-session.checkout-session')
+      expect(mockStrapi.documents).toHaveBeenCalledWith('api::checkout.checkout-session')
       expect(mockDocuments.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({

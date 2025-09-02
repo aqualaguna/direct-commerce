@@ -52,7 +52,7 @@ export default ({ strapi }: { strapi: any }) => {
      */
     async createSession(data: CreateCheckoutSessionData): Promise<CheckoutSession> {
       try {
-        const checkoutSession = await strapi.documents('api::checkout-session.checkout-session').create({
+        const checkoutSession = await strapi.documents('api::checkout.checkout-session').create({
           data: {
             sessionId: data.sessionId,
             user: data.userId ? { connect: [data.userId] } : undefined,
@@ -81,7 +81,7 @@ export default ({ strapi }: { strapi: any }) => {
      */
     async getSession(sessionId: string): Promise<CheckoutSession | null> {
       try {
-        const checkoutSession = await strapi.documents('api::checkout-session.checkout-session').findFirst({
+        const checkoutSession = await strapi.documents('api::checkout.checkout-session').findFirst({
           filters: { sessionId },
           populate: ['user', 'cart', 'order', 'shippingAddress', 'billingAddress']
         })
@@ -126,7 +126,7 @@ export default ({ strapi }: { strapi: any }) => {
           updateData.abandonedAt = new Date()
         }
 
-        const checkoutSession = await strapi.documents('api::checkout-session.checkout-session').update({
+        const checkoutSession = await strapi.documents('api::checkout.checkout-session').update({
           documentId: existingSession.documentId,
           data: updateData,
           populate: ['user', 'cart', 'order', 'shippingAddress', 'billingAddress']
@@ -319,7 +319,7 @@ export default ({ strapi }: { strapi: any }) => {
      */
     async cleanupExpiredSessions(): Promise<number> {
       try {
-        const expiredSessions = await strapi.documents('api::checkout-session.checkout-session').findMany({
+        const expiredSessions = await strapi.documents('api::checkout.checkout-session').findMany({
           filters: {
             status: 'active',
             expiresAt: { $lt: new Date() }
@@ -329,7 +329,7 @@ export default ({ strapi }: { strapi: any }) => {
 
         let cleanedCount = 0
         for (const session of expiredSessions) {
-          await strapi.documents('api::checkout-session.checkout-session').update({
+          await strapi.documents('api::checkout.checkout-session').update({
             documentId: session.documentId,
             data: {
               status: 'expired'
@@ -351,14 +351,14 @@ export default ({ strapi }: { strapi: any }) => {
      */
     async getAnalytics(): Promise<any> {
       try {
-        const totalSessions = await strapi.documents('api::checkout-session.checkout-session').count()
-        const completedSessions = await strapi.documents('api::checkout-session.checkout-session').count({
+        const totalSessions = await strapi.documents('api::checkout.checkout-session').count()
+        const completedSessions = await strapi.documents('api::checkout.checkout-session').count({
           status: 'completed'
         })
-        const abandonedSessions = await strapi.documents('api::checkout-session.checkout-session').count({
+        const abandonedSessions = await strapi.documents('api::checkout.checkout-session').count({
           status: 'abandoned'
         })
-        const expiredSessions = await strapi.documents('api::checkout-session.checkout-session').count({
+        const expiredSessions = await strapi.documents('api::checkout.checkout-session').count({
           status: 'expired'
         })
 

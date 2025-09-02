@@ -53,7 +53,7 @@
     "checkoutSession": {
       "type": "relation",
       "relation": "oneToOne",
-      "target": "api::checkout-session.checkout-session",
+      "target": "api::checkout.checkout-session",
       "mappedBy": "guestCheckout"
     },
     "convertedToUser": {
