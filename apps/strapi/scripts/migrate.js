@@ -126,7 +126,7 @@ function migrate() {
   switch (action) {
     case 'migrate':
       console.log('\n🔄 Running database migrations...');
-      if (runStrapiCommand('npx strapi database:migrate', env)) {
+      if (runStrapiCommand('npx strapi db:migrate', env)) {
         console.log('✅ Database migrations completed successfully');
       } else {
         process.exit(1);
@@ -135,7 +135,7 @@ function migrate() {
 
     case 'seed':
       console.log('\n🌱 Running database seeding...');
-      if (runStrapiCommand('npx strapi database:seed', env)) {
+      if (runStrapiCommand('npx strapi db:seed', env)) {
         console.log('✅ Database seeding completed successfully');
       } else {
         process.exit(1);
@@ -144,7 +144,7 @@ function migrate() {
 
     case 'reset':
       console.log('\n🔄 Resetting database...');
-      if (runStrapiCommand('npx strapi database:reset', env)) {
+      if (runStrapiCommand('npx strapi db:reset', env)) {
         console.log('✅ Database reset completed successfully');
       } else {
         process.exit(1);
@@ -154,8 +154,8 @@ function migrate() {
     case 'bootstrap':
       console.log('\n🚀 Bootstrapping database (migrate + seed)...');
       if (
-        runStrapiCommand('npx strapi database:migrate', env) &&
-        runStrapiCommand('npx strapi database:seed', env)
+        runStrapiCommand('npx strapi db:migrate', env) &&
+        runStrapiCommand('npx strapi db:seed', env)
       ) {
         console.log('✅ Database bootstrap completed successfully');
       } else {

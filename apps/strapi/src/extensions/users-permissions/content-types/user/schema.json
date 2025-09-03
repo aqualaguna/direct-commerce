@@ -51,7 +51,6 @@
       "type": "relation",
       "relation": "manyToOne",
       "target": "plugin::users-permissions.user",
-      "inversedBy": "roleAssignments"
     },
     "roleAssignedAt": {
       "type": "datetime"
@@ -122,12 +121,7 @@
       "target": "api::privacy-setting.privacy-setting",
       "mappedBy": "user"
     },
-    "roleAssignments": {
-      "type": "relation",
-      "relation": "oneToMany",
-      "target": "plugin::users-permissions.user",
-      "mappedBy": "roleAssignedBy"
-    },
+
     "carts": {
       "type": "relation",
       "relation": "oneToMany",
