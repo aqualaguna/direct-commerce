@@ -1,4 +1,7 @@
 # Ecommerce Platform
+BMAD Core method using cursor.
+but please don't use it as this project is experimental and stil ALPHA Status.
+the code and the test may be halucinate due to not reading the generated code.
 
 Single-Seller Ecommerce Platform built with Strapi backend and Astro frontend in a monorepo structure.
 
