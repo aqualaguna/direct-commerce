@@ -1,0 +1,73 @@
+---
+import { ViewTransitions } from 'astro:transitions';
+import Header from '@/components/layout/Header.astro';
+import Footer from '@/components/layout/Footer.astro';
+import '../styles/global.css';
+
+export interface Props {
+  title: string;
+  description?: string;
+  image?: string;
+  canonical?: string;
+}
+
+const { title, description = 'Your premium ecommerce destination', image, canonical } = Astro.props;
+const canonicalURL = canonical || Astro.url.href;
+---
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="description" content={description} />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="generator" content={Astro.generator} />
+    
+    <!-- SEO Meta Tags -->
+    <title>{title}</title>
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonicalURL} />
+    {image && <meta property="og:image" content={image} />}
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    {image && <meta name="twitter:image" content={image} />}
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href={canonicalURL} />
+    
+    <!-- Preconnect to external domains -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    
+    <!-- View Transitions -->
+    <ViewTransitions />
+  </head>
+  <body class="min-h-screen bg-gray-50 text-gray-900 antialiased">
+    <div class="flex min-h-screen flex-col">
+      <Header />
+      
+      <main class="flex-1">
+        <slot />
+      </main>
+      
+      <Footer />
+    </div>
+    
+    <!-- Analytics -->
+    {import.meta.env.PUBLIC_ANALYTICS_ENABLED === 'true' && (
+      <script>
+        // Add your analytics code here
+        console.log('Analytics enabled');
+      </script>
+    )}
+  </body>
+</html>
