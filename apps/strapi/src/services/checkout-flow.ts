@@ -1,11 +1,15 @@
 'use strict'
 
+import { StepProgressService, CheckoutSessionStepProgress } from './step-progress'
+import { getStepNames, getNextStep, getPreviousStep } from '../config/checkout-steps'
+
 interface CheckoutSession {
   documentId: string
   sessionId: string
   user?: any
   cart: any
-  step: 'cart' | 'shipping' | 'billing' | 'payment' | 'review' | 'confirmation'
+  currentStep: string
+  stepProgress?: CheckoutSessionStepProgress
   status: 'active' | 'completed' | 'abandoned' | 'expired'
   shippingAddress?: any
   billingAddress?: any
@@ -28,7 +32,8 @@ interface CreateCheckoutSessionData {
 }
 
 interface UpdateCheckoutSessionData {
-  step?: 'cart' | 'shipping' | 'billing' | 'payment' | 'review' | 'confirmation'
+  currentStep?: string
+  stepProgress?: CheckoutSessionStepProgress
   status?: 'active' | 'completed' | 'abandoned' | 'expired'
   shippingAddress?: any
   billingAddress?: any
@@ -52,12 +57,16 @@ export default ({ strapi }: { strapi: any }) => {
      */
     async createSession(data: CreateCheckoutSessionData): Promise<CheckoutSession> {
       try {
+        // Initialize step progress for new session
+        const stepProgress = StepProgressService.initializeStepProgress()
+
         const checkoutSession = await strapi.documents('api::checkout.checkout-session').create({
           data: {
             sessionId: data.sessionId,
             user: data.userId ? { connect: [data.userId] } : undefined,
             cart: { connect: [data.cartId] },
-            step: 'cart',
+            currentStep: 'cart',
+            stepProgress,
             status: 'active',
             expiresAt: data.expiresAt,
             metadata: {
@@ -104,8 +113,8 @@ export default ({ strapi }: { strapi: any }) => {
         }
 
         // Validate step progression
-        if (data.step && !service.isValidStepProgression(existingSession.step, data.step)) {
-          throw new Error(`Invalid step progression from ${existingSession.step} to ${data.step}`)
+        if (data.currentStep && !service.isValidStepProgression(existingSession.currentStep, data.currentStep)) {
+          throw new Error(`Invalid step progression from ${existingSession.currentStep} to ${data.currentStep}`)
         }
 
         const updateData: any = { ...data }
@@ -144,9 +153,9 @@ export default ({ strapi }: { strapi: any }) => {
      * Validate checkout step progression
      */
     isValidStepProgression(currentStep: string, newStep: string): boolean {
-      const stepOrder = ['cart', 'shipping', 'billing', 'payment', 'review', 'confirmation']
-      const currentIndex = stepOrder.indexOf(currentStep)
-      const newIndex = stepOrder.indexOf(newStep)
+      const stepNames = getStepNames()
+      const currentIndex = stepNames.indexOf(currentStep)
+      const newIndex = stepNames.indexOf(newStep)
 
       // Allow moving forward one step or backward any number of steps
       return newIndex <= currentIndex + 1
@@ -217,7 +226,7 @@ export default ({ strapi }: { strapi: any }) => {
         }
 
         const isValid = errors.length === 0
-        const canProceed = isValid && service.isValidStepProgression(session.step, step)
+        const canProceed = isValid && service.isValidStepProgression(session.currentStep, step)
 
         return {
           isValid,
@@ -374,6 +383,180 @@ export default ({ strapi }: { strapi: any }) => {
       } catch (error) {
         strapi.log.error('Error getting checkout analytics:', error)
         throw new Error('Failed to get checkout analytics')
+      }
+    },
+
+    /**
+     * Mark step as completed
+     */
+    async markStepCompleted(sessionId: string, stepName: string, formData?: Record<string, any>): Promise<CheckoutSession> {
+      try {
+        const session = await service.getSession(sessionId)
+        if (!session) {
+          throw new Error('Checkout session not found')
+        }
+
+        const currentStepProgress = session.stepProgress || StepProgressService.initializeStepProgress()
+        const updatedStepProgress = StepProgressService.markStepCompleted(currentStepProgress, stepName, formData)
+
+        const nextStep = getNextStep(stepName)
+        const updateData: UpdateCheckoutSessionData = {
+          stepProgress: updatedStepProgress
+        }
+
+        if (nextStep) {
+          updateData.currentStep = nextStep
+        }
+
+        return await service.updateSession(sessionId, updateData)
+      } catch (error) {
+        strapi.log.error('Error marking step as completed:', error)
+        throw error
+      }
+    },
+
+    /**
+     * Mark step as incomplete
+     */
+    async markStepIncomplete(sessionId: string, stepName: string, validationErrors?: string[]): Promise<CheckoutSession> {
+      try {
+        const session = await service.getSession(sessionId)
+        if (!session) {
+          throw new Error('Checkout session not found')
+        }
+
+        const currentStepProgress = session.stepProgress || StepProgressService.initializeStepProgress()
+        const updatedStepProgress = StepProgressService.markStepIncomplete(currentStepProgress, stepName, validationErrors)
+
+        return await service.updateSession(sessionId, {
+          stepProgress: updatedStepProgress
+        })
+      } catch (error) {
+        strapi.log.error('Error marking step as incomplete:', error)
+        throw error
+      }
+    },
+
+    /**
+     * Update step form data
+     */
+    async updateStepFormData(sessionId: string, stepName: string, formData: Record<string, any>): Promise<CheckoutSession> {
+      try {
+        const session = await service.getSession(sessionId)
+        if (!session) {
+          throw new Error('Checkout session not found')
+        }
+
+        const currentStepProgress = session.stepProgress || StepProgressService.initializeStepProgress()
+        const updatedStepProgress = StepProgressService.updateStepFormData(currentStepProgress, stepName, formData)
+
+        return await service.updateSession(sessionId, {
+          stepProgress: updatedStepProgress
+        })
+      } catch (error) {
+        strapi.log.error('Error updating step form data:', error)
+        throw error
+      }
+    },
+
+    /**
+     * Get step progress for a session
+     */
+    async getStepProgress(sessionId: string): Promise<CheckoutSessionStepProgress> {
+      try {
+        const session = await service.getSession(sessionId)
+        if (!session) {
+          throw new Error('Checkout session not found')
+        }
+
+        return session.stepProgress || StepProgressService.initializeStepProgress()
+      } catch (error) {
+        strapi.log.error('Error getting step progress:', error)
+        throw error
+      }
+    },
+
+    /**
+     * Navigate to next step
+     */
+    async navigateToNextStep(sessionId: string): Promise<CheckoutSession> {
+      try {
+        const session = await service.getSession(sessionId)
+        if (!session) {
+          throw new Error('Checkout session not found')
+        }
+
+        const navigationResult = StepProgressService.canProceedToNextStep(session.stepProgress || {}, session.currentStep)
+        
+        if (!navigationResult.canProceed) {
+          throw new Error(`Cannot proceed to next step: ${navigationResult.errors.join(', ')}`)
+        }
+
+        if (!navigationResult.nextStep) {
+          throw new Error('No next step available')
+        }
+
+        return await service.updateSession(sessionId, {
+          currentStep: navigationResult.nextStep
+        })
+      } catch (error) {
+        strapi.log.error('Error navigating to next step:', error)
+        throw error
+      }
+    },
+
+    /**
+     * Navigate to previous step
+     */
+    async navigateToPreviousStep(sessionId: string): Promise<CheckoutSession> {
+      try {
+        const session = await service.getSession(sessionId)
+        if (!session) {
+          throw new Error('Checkout session not found')
+        }
+
+        const navigationResult = StepProgressService.canGoToPreviousStep(session.currentStep)
+        
+        if (!navigationResult.canProceed) {
+          throw new Error(`Cannot go to previous step: ${navigationResult.errors.join(', ')}`)
+        }
+
+        return await service.updateSession(sessionId, {
+          currentStep: navigationResult.previousStep
+        })
+      } catch (error) {
+        strapi.log.error('Error navigating to previous step:', error)
+        throw error
+      }
+    },
+
+    /**
+     * Get checkout progress analytics
+     */
+    async getStepProgressAnalytics(sessionId: string): Promise<any> {
+      try {
+        const session = await service.getSession(sessionId)
+        if (!session) {
+          throw new Error('Checkout session not found')
+        }
+
+        const stepProgress = session.stepProgress || StepProgressService.initializeStepProgress()
+        const progress = StepProgressService.getCheckoutProgress(stepProgress)
+        const stepAnalytics = {}
+
+        getStepNames().forEach(stepName => {
+          stepAnalytics[stepName] = StepProgressService.getStepAnalytics(stepProgress, stepName)
+        })
+
+        return {
+          currentStep: session.currentStep,
+          progress,
+          stepAnalytics,
+          stepStatus: StepProgressService.getAllStepProgress(stepProgress)
+        }
+      } catch (error) {
+        strapi.log.error('Error getting step progress analytics:', error)
+        throw error
       }
     }
   }

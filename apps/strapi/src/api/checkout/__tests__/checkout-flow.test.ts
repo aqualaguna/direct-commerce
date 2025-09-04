@@ -87,7 +87,7 @@ describe('Checkout Flow Service', () => {
         expect.objectContaining({
           data: expect.objectContaining({
             sessionId: 'session123',
-            step: 'cart',
+            currentStep: 'cart',
             status: 'active'
           }),
           populate: ['user', 'cart', 'order']
@@ -144,13 +144,13 @@ describe('Checkout Flow Service', () => {
       const existingSession = {
         documentId: 'doc123',
         sessionId: 'session123',
-        step: 'cart',
+        currentStep: 'cart',
         status: 'active'
       }
 
       const updatedSession = {
         ...existingSession,
-        step: 'shipping',
+        currentStep: 'shipping',
         shippingAddress: { firstName: 'John', lastName: 'Doe' }
       }
 
@@ -158,7 +158,7 @@ describe('Checkout Flow Service', () => {
       mockDocuments.update.mockResolvedValue(updatedSession)
 
       const result = await checkoutFlowService.updateSession('session123', {
-        step: 'shipping',
+        currentStep: 'shipping',
         shippingAddress: { firstName: 'John', lastName: 'Doe' }
       })
 
@@ -167,7 +167,7 @@ describe('Checkout Flow Service', () => {
         expect.objectContaining({
           documentId: 'doc123',
           data: expect.objectContaining({
-            step: 'shipping',
+            currentStep: 'shipping',
             shippingAddress: { firstName: 'John', lastName: 'Doe' }
           }),
           populate: ['user', 'cart', 'order', 'shippingAddress', 'billingAddress']
@@ -186,13 +186,13 @@ describe('Checkout Flow Service', () => {
       const existingSession = {
         documentId: 'doc123',
         sessionId: 'session123',
-        step: 'cart',
+        currentStep: 'cart',
         status: 'active'
       }
 
       mockDocuments.findFirst.mockResolvedValue(existingSession)
 
-      await expect(checkoutFlowService.updateSession('session123', { step: 'payment' }))
+      await expect(checkoutFlowService.updateSession('session123', { currentStep: 'payment' }))
         .rejects.toThrow('Invalid step progression from cart to payment')
     })
   })
@@ -274,7 +274,7 @@ describe('Checkout Flow Service', () => {
 
       expect(result.isValid).toBe(true)
       expect(result.errors).toHaveLength(0)
-      expect(result.canProceed).toBe(true)
+      expect(result.canProceed).toBe(false) // Can't proceed from shipping to shipping
     })
 
     it('should fail shipping validation for missing address', async () => {

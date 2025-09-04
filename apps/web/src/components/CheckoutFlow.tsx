@@ -21,7 +21,7 @@ export const CheckoutFlow: React.FC<CheckoutFlowProps> = ({
   className = ''
 }) => {
   const [currentStep, setCurrentStep] = useState<CheckoutStepType>('cart')
-  const [stepProgress, setStepProgress] = useState<StepProgress | null>(null)
+  const [stepProgress, setStepProgress] = useState<Record<string, any> | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -45,7 +45,7 @@ export const CheckoutFlow: React.FC<CheckoutFlowProps> = ({
   // Load initial session data
   useEffect(() => {
     if (session && !sessionLoading) {
-      setCurrentStep(session.step || 'cart')
+      setCurrentStep(session.currentStep || 'cart')
       setStepProgress(session.stepProgress)
       setIsLoading(false)
     }
@@ -78,25 +78,23 @@ export const CheckoutFlow: React.FC<CheckoutFlowProps> = ({
       // Submit form data
       await submitForm()
 
-      // Move to next step
-      const response = await fetch(`/api/checkout/session/${sessionId}/next`, {
+      // Mark current step as completed and move to next step
+      const response = await fetch(`/api/checkout/session/${sessionId}/steps/${currentStep}/complete`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
+        },
+        body: JSON.stringify({ formData })
       })
 
       if (!response.ok) {
-        throw new Error('Failed to move to next step')
+        throw new Error('Failed to complete step')
       }
 
-      const newStepProgress = await response.json()
-      setStepProgress(newStepProgress)
-      setCurrentStep(newStepProgress.currentStep)
-
-      // Update session
-      await updateSession({ step: newStepProgress.currentStep })
+      const updatedSession = await response.json()
+      setStepProgress(updatedSession.stepProgress)
+      setCurrentStep(updatedSession.currentStep)
 
       // Check if checkout is complete
       if (newStepProgress.currentStep === 'confirmation') {
@@ -117,7 +115,7 @@ export const CheckoutFlow: React.FC<CheckoutFlowProps> = ({
       setIsLoading(true)
       setError(null)
 
-      const response = await fetch(`/api/checkout/session/${sessionId}/previous`, {
+      const response = await fetch(`/api/checkout/session/${sessionId}/steps/previous`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -129,19 +127,16 @@ export const CheckoutFlow: React.FC<CheckoutFlowProps> = ({
         throw new Error('Failed to move to previous step')
       }
 
-      const newStepProgress = await response.json()
-      setStepProgress(newStepProgress)
-      setCurrentStep(newStepProgress.currentStep)
-
-      // Update session
-      await updateSession({ step: newStepProgress.currentStep })
+      const updatedSession = await response.json()
+      setStepProgress(updatedSession.stepProgress)
+      setCurrentStep(updatedSession.currentStep)
 
       setIsLoading(false)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to move to previous step')
       setIsLoading(false)
     }
-  }, [session, stepProgress, sessionId, updateSession])
+  }, [session, stepProgress, sessionId])
 
   const handleJumpToStep = useCallback(async (stepName: CheckoutStepType) => {
     if (!session || !stepProgress) return
@@ -150,32 +145,38 @@ export const CheckoutFlow: React.FC<CheckoutFlowProps> = ({
       setIsLoading(true)
       setError(null)
 
-      const response = await fetch(`/api/checkout/session/${sessionId}/jump`, {
-        method: 'POST',
+      // Check if step is accessible (all previous steps completed)
+      const stepIndex = ['cart', 'shipping', 'billing', 'payment', 'review', 'confirmation'].indexOf(stepName)
+      const currentIndex = ['cart', 'shipping', 'billing', 'payment', 'review', 'confirmation'].indexOf(currentStep)
+      
+      if (stepIndex > currentIndex + 1) {
+        throw new Error('Cannot jump to step - previous steps must be completed first')
+      }
+
+      // Update current step
+      const response = await fetch(`/api/checkout/session/${sessionId}`, {
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
-        body: JSON.stringify({ stepName })
+        body: JSON.stringify({ currentStep: stepName })
       })
 
       if (!response.ok) {
         throw new Error('Failed to jump to step')
       }
 
-      const newStepProgress = await response.json()
-      setStepProgress(newStepProgress)
-      setCurrentStep(newStepProgress.currentStep)
-
-      // Update session
-      await updateSession({ step: newStepProgress.currentStep })
+      const updatedSession = await response.json()
+      setStepProgress(updatedSession.stepProgress)
+      setCurrentStep(updatedSession.currentStep)
 
       setIsLoading(false)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to jump to step')
       setIsLoading(false)
     }
-  }, [session, stepProgress, sessionId, updateSession])
+  }, [session, stepProgress, sessionId, currentStep])
 
   const handleAbandon = useCallback(async () => {
     try {
@@ -222,8 +223,7 @@ export const CheckoutFlow: React.FC<CheckoutFlowProps> = ({
       {/* Progress indicator */}
       <CheckoutProgress
         currentStep={currentStep}
-        completedSteps={stepProgress?.completedSteps || []}
-        availableSteps={stepProgress?.availableSteps || []}
+        stepProgress={stepProgress}
         onStepClick={handleJumpToStep}
       />
 
@@ -269,7 +269,7 @@ export const CheckoutFlow: React.FC<CheckoutFlowProps> = ({
         {/* Navigation buttons */}
         <div className="checkout-navigation">
           <div className="navigation-buttons">
-            {stepProgress?.previousStep && (
+            {currentStep !== 'cart' && (
               <button
                 onClick={handlePreviousStep}
                 disabled={isLoading}
@@ -288,23 +288,13 @@ export const CheckoutFlow: React.FC<CheckoutFlowProps> = ({
                 Save for Later
               </button>
 
-              {stepProgress?.nextStep && (
+              {currentStep !== 'confirmation' && (
                 <button
                   onClick={handleNextStep}
                   disabled={isLoading || !isValid}
                   className="btn-primary"
                 >
-                  Continue →
-                </button>
-              )}
-
-              {currentStep === 'review' && (
-                <button
-                  onClick={handleNextStep}
-                  disabled={isLoading || !isValid}
-                  className="btn-primary"
-                >
-                  Place Order
+                  {currentStep === 'review' ? 'Place Order' : 'Continue →'}
                 </button>
               )}
             </div>

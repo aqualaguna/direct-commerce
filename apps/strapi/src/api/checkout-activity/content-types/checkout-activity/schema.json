@@ -1,0 +1,152 @@
+{
+  "kind": "collectionType",
+  "collectionName": "checkout_activities",
+  "info": {
+    "singularName": "checkout-activity",
+    "pluralName": "checkout-activities",
+    "displayName": "Checkout Activity",
+    "description": "High-volume checkout activity tracking for analytics and optimization"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {
+    "i18n": {
+      "localized": false
+    }
+  },
+  "attributes": {
+    "checkoutSessionId": {
+      "type": "uid",
+      "required": true,
+      "unique": false,
+      "targetField": "id"
+    },
+    "userId": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    },
+    "activityType": {
+      "type": "enumeration",
+      "enum": [
+        "step_enter",
+        "step_exit",
+        "form_field_focus",
+        "form_field_blur",
+        "validation_error",
+        "form_submit",
+        "checkout_abandon",
+        "checkout_complete"
+      ],
+      "required": true
+    },
+    "stepName": {
+      "type": "enumeration",
+      "enum": [
+        "cart",
+        "shipping",
+        "billing",
+        "payment",
+        "review",
+        "confirmation"
+      ]
+    },
+    "formField": {
+      "type": "string",
+      "maxLength": 100
+    },
+    "formType": {
+      "type": "enumeration",
+      "enum": [
+        "shipping",
+        "billing",
+        "payment",
+        "review"
+      ]
+    },
+    "fieldType": {
+      "type": "enumeration",
+      "enum": [
+        "text",
+        "email",
+        "select",
+        "checkbox",
+        "radio",
+        "textarea"
+      ]
+    },
+    "interactionType": {
+      "type": "enumeration",
+      "enum": [
+        "focus",
+        "blur",
+        "input",
+        "validation_error",
+        "validation_success"
+      ]
+    },
+    "activityData": {
+      "type": "json",
+      "required": false
+    },
+    "timestamp": {
+      "type": "datetime",
+      "required": true
+    },
+    "stepDuration": {
+      "type": "integer",
+      "min": 0
+    },
+    "deviceType": {
+      "type": "enumeration",
+      "enum": [
+        "desktop",
+        "mobile",
+        "tablet"
+      ]
+    },
+    "browser": {
+      "type": "string",
+      "maxLength": 50
+    },
+    "os": {
+      "type": "string",
+      "maxLength": 50
+    },
+    "screenResolution": {
+      "type": "string",
+      "maxLength": 20
+    },
+    "referrer": {
+      "type": "text"
+    },
+    "utmSource": {
+      "type": "string",
+      "maxLength": 100
+    },
+    "utmMedium": {
+      "type": "string",
+      "maxLength": 100
+    },
+    "utmCampaign": {
+      "type": "string",
+      "maxLength": 100
+    },
+    "location": {
+      "type": "string",
+      "maxLength": 100
+    },
+    "userAgent": {
+      "type": "text"
+    },
+    "ipAddress": {
+      "type": "string",
+      "maxLength": 45
+    },
+    "sessionId": {
+      "type": "string",
+      "maxLength": 255
+    }
+  }
+}

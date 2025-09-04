@@ -17,7 +17,7 @@ export default (config, { strapi }: { strapi: any }) => {
       standardHeaders: true,
       legacyHeaders: false,
       // Use the proper ipKeyGenerator helper for IPv6 support
-      keyGenerator: ipKeyGenerator,
+      keyGenerator: (req: any) => ipKeyGenerator(req.ip || req.connection?.remoteAddress || req.socket?.remoteAddress),
       // Skip rate limiting for certain conditions
       // skip: req => {
       //   // Skip if IP is undefined or unknown

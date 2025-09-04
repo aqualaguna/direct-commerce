@@ -3,25 +3,24 @@ import { CheckoutStepType } from '../../types/checkout'
 
 interface CheckoutProgressProps {
   currentStep: CheckoutStepType
-  completedSteps: string[]
-  availableSteps: string[]
+  stepProgress?: Record<string, any>
   onStepClick: (step: CheckoutStepType) => void
   className?: string
 }
 
+// Static step configuration matching backend
 const stepConfig = {
-  cart: { title: 'Cart', icon: '🛒', order: 1 },
-  shipping: { title: 'Shipping', icon: '📦', order: 2 },
-  billing: { title: 'Billing', icon: '💳', order: 3 },
-  payment: { title: 'Payment', icon: '🔒', order: 4 },
-  review: { title: 'Review', icon: '✅', order: 5 },
-  confirmation: { title: 'Confirmation', icon: '🎉', order: 6 }
+  cart: { title: 'Cart Review', icon: '🛒', order: 1 },
+  shipping: { title: 'Shipping Address', icon: '📦', order: 2 },
+  billing: { title: 'Billing Address', icon: '💳', order: 3 },
+  payment: { title: 'Payment Method', icon: '🔒', order: 4 },
+  review: { title: 'Order Review', icon: '✅', order: 5 },
+  confirmation: { title: 'Order Confirmation', icon: '🎉', order: 6 }
 }
 
 export const CheckoutProgress: React.FC<CheckoutProgressProps> = ({
   currentStep,
-  completedSteps,
-  availableSteps,
+  stepProgress,
   onStepClick,
   className = ''
 }) => {
@@ -29,13 +28,23 @@ export const CheckoutProgress: React.FC<CheckoutProgressProps> = ({
 
   const getStepStatus = (stepName: string) => {
     if (currentStep === stepName) return 'current'
-    if (completedSteps.includes(stepName)) return 'completed'
-    if (availableSteps.includes(stepName)) return 'available'
-    return 'disabled'
+    if (stepProgress?.[stepName]?.isCompleted) return 'completed'
+    
+    // Check if previous steps are completed to determine if this step is available
+    const stepIndex = steps.findIndex(([name]) => name === stepName)
+    if (stepIndex === 0) return 'available' // First step is always available
+    
+    // Check if all previous steps are completed
+    const previousStepsCompleted = steps
+      .slice(0, stepIndex)
+      .every(([name]) => stepProgress?.[name]?.isCompleted)
+    
+    return previousStepsCompleted ? 'available' : 'disabled'
   }
 
   const isStepClickable = (stepName: string) => {
-    return availableSteps.includes(stepName) || completedSteps.includes(stepName)
+    const status = getStepStatus(stepName)
+    return status === 'available' || status === 'completed'
   }
 
   return (
