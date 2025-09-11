@@ -32,9 +32,6 @@ const mockStrapi = {
     update: jest.fn() as jest.MockedFunction<any>,
     delete: jest.fn() as jest.MockedFunction<any>,
     count: jest.fn() as jest.MockedFunction<any>,
-    publish: jest.fn() as jest.MockedFunction<any>,
-    unpublish: jest.fn() as jest.MockedFunction<any>,
-    discardDraft: jest.fn() as jest.MockedFunction<any>,
   })),
   service: jest.fn(serviceName => {
     if (serviceName === 'api::product.search') {
@@ -79,7 +76,6 @@ describe('Product Search Controller', () => {
         { id: 1, name: 'Electronics', slug: 'electronics' },
         { id: 2, name: 'Clothing', slug: 'clothing' },
       ],
-      priceRange: { min: 10.99, max: 49.99 },
       inventoryOptions: [],
     });
 
@@ -111,7 +107,6 @@ describe('Product Search Controller', () => {
           {
             id: 1,
             title: 'Test Product',
-            price: 29.99,
           },
         ],
         meta: {
@@ -133,7 +128,6 @@ describe('Product Search Controller', () => {
         page: 1,
         pageSize: 25,
         categoryId: undefined,
-        priceRange: undefined,
         attributes: undefined,
         sortBy: 'relevance',
         sortOrder: 'desc',
@@ -174,7 +168,6 @@ describe('Product Search Controller', () => {
       // Set specific mock values for this test
       mockFilterService.validateFilterParams.mockReturnValue({
         categoryId: 1,
-        priceRange: { min: 10.99, max: 49.99 },
         attributes: {},
         inStockOnly: false,
         minStock: undefined,
@@ -184,9 +177,7 @@ describe('Product Search Controller', () => {
       mockContext.query = {
         q: 'test',
         categoryId: '1',
-        minPrice: '10.99',
-        maxPrice: '49.99',
-        sortBy: 'price_asc',
+        sortBy: 'title',
         page: '2',
         pageSize: '10',
       };
@@ -197,9 +188,8 @@ describe('Product Search Controller', () => {
         page: 2,
         pageSize: 10,
         categoryId: 1,
-        priceRange: { min: 10.99, max: 49.99 },
         attributes: {},
-        sortBy: 'price_asc',
+        sortBy: 'title',
         sortOrder: 'desc',
         includeInactive: false,
         inStockOnly: false,
@@ -234,7 +224,6 @@ describe('Product Search Controller', () => {
         page: 1, // Corrected from 0 to 1
         pageSize: 100, // Capped at 100
         categoryId: undefined,
-        priceRange: undefined,
         attributes: undefined,
         sortBy: 'relevance',
         sortOrder: 'desc',
@@ -242,34 +231,6 @@ describe('Product Search Controller', () => {
         inStockOnly: undefined,
         minStock: undefined,
       });
-    });
-
-    it('should validate price range parameters', async () => {
-      mockContext.query = {
-        q: 'test',
-        minPrice: 'invalid',
-        maxPrice: '50',
-      };
-
-      await searchController.search(mockContext);
-
-      expect(mockContext.badRequest).toHaveBeenCalledWith(
-        'Invalid price range values'
-      );
-    });
-
-    it('should validate price range logic', async () => {
-      mockContext.query = {
-        q: 'test',
-        minPrice: '100',
-        maxPrice: '50',
-      };
-
-      await searchController.search(mockContext);
-
-      expect(mockContext.badRequest).toHaveBeenCalledWith(
-        'Minimum price cannot be greater than maximum price'
-      );
     });
 
     it('should validate category ID', async () => {
@@ -411,7 +372,6 @@ describe('Product Search Controller', () => {
           { id: 1, name: 'Electronics', slug: 'electronics' },
           { id: 2, name: 'Clothing', slug: 'clothing' },
         ],
-        priceRange: { min: 10.99, max: 49.99 },
         inventoryOptions: [],
       });
 
@@ -422,33 +382,13 @@ describe('Product Search Controller', () => {
           { id: 1, name: 'Electronics', slug: 'electronics' },
           { id: 2, name: 'Clothing', slug: 'clothing' },
         ],
-        priceRange: { min: 10.99, max: 49.99 },
         inventoryOptions: [],
         sortOptions: expect.arrayContaining([
           { value: 'relevance', label: 'Most Relevant' },
-          { value: 'price_asc', label: 'Price: Low to High' },
-          { value: 'price_desc', label: 'Price: High to Low' },
         ]),
       });
     });
 
-    it('should handle empty price stats', async () => {
-      // Set specific mock for this test
-      mockFilterService.getAvailableFilters.mockResolvedValue({
-        categories: [],
-        priceRange: { min: 0, max: 1000 },
-        inventoryOptions: [],
-      });
-
-      await searchController.getFilterOptions(mockContext);
-
-      expect(mockContext.send).toHaveBeenCalledWith({
-        categories: [],
-        priceRange: { min: 0, max: 1000 },
-        inventoryOptions: [],
-        sortOptions: expect.any(Array),
-      });
-    });
 
     it('should handle service errors', async () => {
       // Set specific mock to throw error for this test

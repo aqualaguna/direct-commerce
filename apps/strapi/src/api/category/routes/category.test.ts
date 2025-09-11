@@ -75,9 +75,9 @@ describe('Category Routes', () => {
         (route: any) => route.path === '/categories/tree'
       );
       expect(treeRoute).toBeDefined();
-      expect(treeRoute.method).toBe('GET');
+      expect(treeRoute.method).toBe('POST');
       expect(treeRoute.handler).toBe('api::category.category.getTree');
-      expect(treeRoute.config.policies).toEqual(['api::category.is-public']);
+      expect(treeRoute.config.policies).toEqual(['global::is-public']);
 
       // Check for breadcrumbs route
       const breadcrumbsRoute = customRoutes.find(
@@ -103,7 +103,7 @@ describe('Category Routes', () => {
       expect(productsRoute).toBeDefined();
       expect(productsRoute.method).toBe('GET');
       expect(productsRoute.config.policies).toEqual([
-        'api::category.is-public',
+        'global::is-public',
       ]);
 
       // Check for assign products route
@@ -125,9 +125,9 @@ describe('Category Routes', () => {
         (route: any) => route.path === '/categories/navigation'
       );
       expect(navigationRoute).toBeDefined();
-      expect(navigationRoute.method).toBe('GET');
+      expect(navigationRoute.method).toBe('POST');
       expect(navigationRoute.config.policies).toEqual([
-        'api::category.is-public',
+        'global::is-public',
       ]);
 
       // Check for search route
@@ -135,8 +135,8 @@ describe('Category Routes', () => {
         (route: any) => route.path === '/categories/search'
       );
       expect(searchRoute).toBeDefined();
-      expect(searchRoute.method).toBe('GET');
-      expect(searchRoute.config.policies).toEqual(['api::category.is-public']);
+      expect(searchRoute.method).toBe('POST');
+      expect(searchRoute.config.policies).toEqual(['global::is-public']);
     });
 
     it('should use documentId parameter for entity-specific routes', () => {
@@ -201,13 +201,10 @@ describe('Category Routes', () => {
       );
 
       const expectedGetPaths = [
-        '/categories/tree',
         '/categories/:documentId/breadcrumbs',
         '/categories/:documentId/products',
         '/categories/:documentId/stats',
-        '/categories/navigation',
         '/categories/:documentId/siblings',
-        '/categories/search',
       ];
 
       expectedGetPaths.forEach(path => {

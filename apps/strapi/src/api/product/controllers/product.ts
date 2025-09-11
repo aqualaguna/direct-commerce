@@ -20,23 +20,16 @@ interface ProductQuery {
 }
 
 interface ProductData {
-  title: string;
-  slug?: string;
+  name: string;
+  brand?: string;
   description: string;
-  shortDescription: string;
-  price: number;
-  comparePrice?: number;
   sku: string;
   inventory: number;
   status?: string;
-  isActive?: boolean;
-  featured?: boolean;
   category?: any;
-  images?: any[];
-  seo?: any;
 }
 
-type ProductStatus = 'draft' | 'published';
+type ProductStatus = 'draft' | 'active' | 'inactive';
 type UserRole = 'admin' | 'authenticated' | 'public';
 
 export default factories.createCoreController(
@@ -51,8 +44,7 @@ export default factories.createCoreController(
         const queryParams: ProductQuery = {
           filters: {
             ...((query.filters as Record<string, unknown>) || {}),
-            // Use status filter instead of publishedAt for Strapi 5
-            status: 'published',
+            status: 'active',
           },
           sort: query.sort || { createdAt: 'desc' },
           pagination: {
@@ -63,19 +55,15 @@ export default factories.createCoreController(
             ),
           },
           populate: {
-            images: {
-              fields: ['url', 'width', 'height', 'formats'],
-            },
             category: {
               fields: ['id', 'name', 'slug'], // Use documentId instead of id
             },
-            seo: true,
           },
         };
 
         // Handle admin requests (include draft products)
         if (ctx.state.user?.role?.type === 'admin') {
-          // Admin can see both published and draft products
+          // Admin can see both active and draft products
           delete queryParams.filters?.status;
         }
 
@@ -118,13 +106,9 @@ export default factories.createCoreController(
         const product = await strapi.documents('api::product.product').findOne({
           documentId,
           populate: {
-            images: {
-              fields: ['url', 'width', 'height', 'formats'],
-            },
             category: {
               fields: ['id', 'name', 'slug'], // Use documentId instead of id
             },
-            seo: true,
           },
         });
 
@@ -132,10 +116,10 @@ export default factories.createCoreController(
           return ctx.notFound('Product not found');
         }
 
-        // Check if product is published (for non-admin users) using status
+        // Check if product is active (for non-admin users) using status
         if (
           ctx.state.user?.role?.type !== 'admin' &&
-          (product as any).status !== 'published'
+          (product as any).status !== 'active'
         ) {
           return ctx.notFound('Product not found');
         }
@@ -158,10 +142,8 @@ export default factories.createCoreController(
 
         // Validate required fields with proper type checking
         const requiredFields: (keyof ProductData)[] = [
-          'title',
+          'name',
           'description',
-          'shortDescription',
-          'price',
           'sku',
           'inventory',
         ];
@@ -170,11 +152,6 @@ export default factories.createCoreController(
           if (!data[field] && data[field] !== 0) {
             return ctx.badRequest(`${field} is required`);
           }
-        }
-
-        // Validate price using modern type checking
-        if (typeof data.price !== 'number' || data.price <= 0) {
-          return ctx.badRequest('Price must be greater than 0');
         }
 
         // Validate inventory
@@ -198,9 +175,7 @@ export default factories.createCoreController(
         const product = await strapi.documents('api::product.product').create({
           data,
           populate: {
-            images: true,
             category: true,
-            seo: true,
           },
         });
 
@@ -238,13 +213,6 @@ export default factories.createCoreController(
           return ctx.notFound('Product not found');
         }
 
-        // Validate price if provided with proper type checking
-        if (
-          data.price !== undefined &&
-          (typeof data.price !== 'number' || data.price <= 0)
-        ) {
-          return ctx.badRequest('Price must be greater than 0');
-        }
 
         // Validate inventory if provided
         if (
@@ -273,9 +241,7 @@ export default factories.createCoreController(
           documentId,
           data,
           populate: {
-            images: true,
             category: true,
-            seo: true,
           },
         });
 
@@ -333,10 +299,10 @@ export default factories.createCoreController(
           return ctx.badRequest('Status is required');
         }
 
-        const validStatuses: ProductStatus[] = ['draft', 'published'];
+        const validStatuses: ProductStatus[] = ['draft', 'active', 'inactive'];
         if (!validStatuses.includes(status as ProductStatus)) {
           return ctx.badRequest(
-            'Invalid status. Must be one of: draft, published'
+            'Invalid status. Must be one of: draft, active, inactive'
           );
         }
 
@@ -440,57 +406,6 @@ export default factories.createCoreController(
       }
     },
 
-    // Publish product using Document Service API Draft & Publish
-    async publishProduct(ctx) {
-      try {
-        // Support both legacy id and new documentId parameters
-        const documentId = ctx.params.documentId || ctx.params.id;
-
-        if (!documentId) {
-          return ctx.badRequest('Product documentId is required');
-        }
-
-        // Use Document Service API publish method
-        const result = await strapi.documents('api::product.product').publish({
-          documentId,
-        });
-
-        return { data: result };
-      } catch (error) {
-        strapi.log.error('Error publishing product:', error);
-        if (error instanceof Error) {
-          return ctx.badRequest(error.message);
-        }
-        ctx.throw(500, 'Internal server error');
-      }
-    },
-
-    // Unpublish product using Document Service API Draft & Publish
-    async unpublishProduct(ctx) {
-      try {
-        // Support both legacy id and new documentId parameters
-        const documentId = ctx.params.documentId || ctx.params.id;
-
-        if (!documentId) {
-          return ctx.badRequest('Product documentId is required');
-        }
-
-        // Use Document Service API unpublish method
-        const result = await strapi
-          .documents('api::product.product')
-          .unpublish({
-            documentId,
-          });
-
-        return { data: result };
-      } catch (error) {
-        strapi.log.error('Error unpublishing product:', error);
-        if (error instanceof Error) {
-          return ctx.badRequest(error.message);
-        }
-        ctx.throw(500, 'Internal server error');
-      }
-    },
 
     async reactivateProduct(ctx) {
       try {
@@ -510,111 +425,6 @@ export default factories.createCoreController(
         if (error instanceof Error) {
           return ctx.badRequest(error.message);
         }
-        ctx.throw(500, 'Internal server error');
-      }
-    },
-
-    // SEO management endpoints
-    async generateSEO(ctx) {
-      try {
-        const { id } = ctx.params;
-
-        if (!id) {
-          return ctx.badRequest('Product ID is required');
-        }
-
-        const product = await strapi.entityService.findOne(
-          'api::product.product',
-          id,
-          {
-            populate: ['images', 'category'] as any,
-          }
-        );
-
-        if (!product) {
-          return ctx.notFound('Product not found');
-        }
-
-        const seoService = strapi.service('api::product.seo');
-        const seoData = await seoService.generateSEOData(product);
-
-        return { data: seoData };
-      } catch (error) {
-        strapi.log.error('Error generating SEO data:', error);
-        ctx.throw(500, 'Internal server error');
-      }
-    },
-
-    async validateSEO(ctx) {
-      try {
-        const { seoData } = ctx.request.body;
-
-        if (!seoData) {
-          return ctx.badRequest('SEO data is required');
-        }
-
-        const seoService = strapi.service('api::product.seo');
-        const validationResult = await seoService.validateSEOData(seoData);
-
-        return { data: validationResult };
-      } catch (error) {
-        strapi.log.error('Error validating SEO data:', error);
-        ctx.throw(500, 'Internal server error');
-      }
-    },
-
-    async optimizeSEO(ctx) {
-      try {
-        const { id } = ctx.params;
-        const { seoData } = ctx.request.body;
-
-        if (!id) {
-          return ctx.badRequest('Product ID is required');
-        }
-
-        const product = await strapi.entityService.findOne(
-          'api::product.product',
-          id,
-          {
-            populate: ['images', 'category'] as any,
-          }
-        );
-
-        if (!product) {
-          return ctx.notFound('Product not found');
-        }
-
-        const seoService = strapi.service('api::product.seo');
-        const optimizedSEO = await seoService.optimizeSEOData(
-          seoData || {},
-          product
-        );
-
-        return { data: optimizedSEO };
-      } catch (error) {
-        strapi.log.error('Error optimizing SEO data:', error);
-        ctx.throw(500, 'Internal server error');
-      }
-    },
-
-    async getSitemapData(ctx) {
-      try {
-        const { query } = ctx;
-
-        const products = await strapi.entityService.findMany(
-          'api::product.product',
-          {
-            filters: { status: 'active', publishedAt: { $notNull: true } },
-            populate: ['category'],
-          }
-        );
-
-        const seoService = strapi.service('api::product.seo');
-        const sitemapData = await seoService.generateSitemapData(products);
-
-        return { data: sitemapData };
-      } catch (error) {
-        strapi.log.error('Error generating sitemap data:', error);
         ctx.throw(500, 'Internal server error');
       }
     },
@@ -766,18 +576,18 @@ export default factories.createCoreController(
     async search(ctx) {
       try {
         const { query } = ctx;
-        const { q, category, minPrice, maxPrice, featured, isActive } = query;
+        const { q, category } = query;
 
         const filters: Record<string, unknown> = {
-          status: 'published', // Use status filter instead of publishedAt
+          status: 'active',
         };
 
         // Text search with proper typing
         if (q && typeof q === 'string') {
           filters.$or = [
-            { title: { $containsi: q } },
+            { name: { $containsi: q } },
+            { brand: { $containsi: q } },
             { description: { $containsi: q } },
-            { shortDescription: { $containsi: q } },
             { sku: { $containsi: q } },
           ];
         }
@@ -787,32 +597,7 @@ export default factories.createCoreController(
           filters.category = { slug: category };
         }
 
-        // Price range filter with proper type checking
-        if (minPrice || maxPrice) {
-          filters.price = {};
-          if (minPrice) {
-            const min = parseFloat(String(minPrice));
-            if (!isNaN(min)) {
-              (filters.price as Record<string, number>).$gte = min;
-            }
-          }
-          if (maxPrice) {
-            const max = parseFloat(String(maxPrice));
-            if (!isNaN(max)) {
-              (filters.price as Record<string, number>).$lte = max;
-            }
-          }
-        }
 
-        // Featured filter
-        if (featured !== undefined) {
-          filters.featured = featured === 'true';
-        }
-
-        // Active filter
-        if (isActive !== undefined) {
-          filters.isActive = isActive === 'true';
-        }
 
         // Use Document Service API for search
         const products = await strapi
@@ -828,9 +613,6 @@ export default factories.createCoreController(
               ),
             },
             populate: {
-              images: {
-                fields: ['url', 'width', 'height', 'formats'],
-              },
               category: {
                 fields: ['id', 'name', 'slug'], // Use documentId instead of id
               },

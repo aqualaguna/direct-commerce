@@ -4,13 +4,14 @@
 
 import { factories } from '@strapi/strapi';
 
+// Create core routes with minimal configuration to avoid conflicts
 const coreRoutes = factories.createCoreRouter('api::category.category', {
   config: {
     find: {
-      policies: ['api::category.is-public'],
+      policies: ['global::is-public'],
     },
     findOne: {
-      policies: ['api::category.is-public'],
+      policies: ['global::is-public'],
     },
     create: {
       policies: ['api::category.is-admin'],
@@ -23,43 +24,42 @@ const coreRoutes = factories.createCoreRouter('api::category.category', {
     },
   },
 });
-// console.log(coreRoutes);
 
-const customRouter = (innerRouter, extraRoutes = []) => {
-  let routes;
-  return {
-    get prefix() {
-      return innerRouter.prefix;
-    },
-    get routes() {
-      if (!routes) {
-        routes = innerRouter.routes.concat(extraRoutes);
-      }
-      return routes;
-    },
-  };
-};
-
-// Debug: Expand the spread operator and ternary for clarity
+// Custom routes only - core CRUD routes are handled by createCoreRouter
+// IMPORTANT: Specific routes must come BEFORE parameterized routes to avoid conflicts
 const extraRoutes = [
-  // Core CRUD routes with policies
-  // ...(typeof coreRoutes?.routes === 'function' ? (coreRoutes.routes() || []): coreRoutes?.routes || []),
-
-  // Custom routes for hierarchy management
+  // Custom routes for hierarchy management (specific paths first)
   {
-    method: 'GET',
+    method: 'POST',
     path: '/categories/tree',
     handler: 'api::category.category.getTree',
     config: {
-      policies: ['api::category.is-public'],
+      policies: ['global::is-public'],
     },
   },
+  {
+    method: 'POST',
+    path: '/categories/navigation',
+    handler: 'api::category.category.getNavigation',
+    config: {
+      policies: ['global::is-public'],
+    },
+  },
+  {
+    method: 'POST',
+    path: '/categories/search',
+    handler: 'api::category.category.search',
+    config: {
+      policies: ['global::is-public'],
+    },
+  },
+
   {
     method: 'GET',
     path: '/categories/:documentId/breadcrumbs',
     handler: 'api::category.category.getBreadcrumbs',
     config: {
-      policies: ['api::category.is-public'],
+      policies: ['global::is-public'],
     },
   },
 
@@ -69,7 +69,7 @@ const extraRoutes = [
     path: '/categories/:documentId/products',
     handler: 'api::category.category.getProducts',
     config: {
-      policies: ['api::category.is-public'],
+      policies: ['global::is-public'],
     },
   },
   {
@@ -101,35 +101,32 @@ const extraRoutes = [
     path: '/categories/:documentId/stats',
     handler: 'api::category.category.getStats',
     config: {
-      policies: ['api::category.is-public'],
+      policies: ['global::is-public'],
     },
   },
 
   // Custom routes for navigation and search
   {
     method: 'GET',
-    path: '/categories/navigation',
-    handler: 'api::category.category.getNavigation',
-    config: {
-      policies: ['api::category.is-public'],
-    },
-  },
-  {
-    method: 'GET',
     path: '/categories/:documentId/siblings',
     handler: 'api::category.category.getSiblings',
     config: {
-      policies: ['api::category.is-public'],
+      policies: ['global::is-public'],
     },
-  },
-  {
-    method: 'GET',
-    path: '/categories/search',
-    handler: 'api::category.category.search',
-    config: {
-      policies: ['api::category.is-public'],
-    },
-  },
+  }
+
 ];
 
-export default customRouter(coreRoutes, extraRoutes);
+// Create a custom router that extends the core routes
+const customRouter = {
+  get prefix() {
+    return coreRoutes.prefix;
+  },
+  get routes() {
+    const coreRoutesArray = Array.isArray(coreRoutes.routes) ? coreRoutes.routes : [];
+    const allRoutes = [...coreRoutesArray, ...extraRoutes];
+    return allRoutes;
+  },
+};
+
+export default customRouter;

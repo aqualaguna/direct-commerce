@@ -1,31 +1,37 @@
 export default ({ env }) => ({
-  upload: {
-    config: {
-      provider: 'aws-s3',
-      providerOptions: {
-        s3Options: {
-          accessKeyId: env('R2_ACCESS_KEY_ID'),
-          secretAccessKey: env('R2_SECRET_ACCESS_KEY'),
-          region: env('R2_REGION', 'auto'),
-          endpoint: env('R2_ENDPOINT'),
-          forcePathStyle: true,
-        },
-        params: {
-          Bucket: env('R2_BUCKET'),
+  // Disable upload plugin for test environment to avoid S3 warnings
+  ...(env('NODE_ENV') !== 'test' && {
+    upload: {
+      config: {
+        provider: 'aws-s3',
+        providerOptions: {
+          s3Options: {
+            accessKeyId: env('R2_ACCESS_KEY_ID'),
+            secretAccessKey: env('R2_SECRET_ACCESS_KEY'),
+            region: env('R2_REGION', 'auto'),
+            endpoint: env('R2_ENDPOINT'),
+            forcePathStyle: true,
+          },
+          params: {
+            Bucket: env('R2_BUCKET'),
+          },
         },
       },
     },
-  },
-  email: {
-    config: {
-      provider: '@strapi/provider-email-sendgrid',
-      providerOptions: {
-        apiKey: env('SENDGRID_API_KEY'),
-        defaultFrom: env('EMAIL_FROM', 'noreply@example.com'),
-        defaultReplyTo: env('EMAIL_REPLY_TO', 'support@example.com'),
+  }),
+  // Disable email plugin for test environment to avoid SendGrid warnings
+  ...(env('NODE_ENV') !== 'test' && {
+    email: {
+      config: {
+        provider: '@strapi/provider-email-sendgrid',
+        providerOptions: {
+          apiKey: env('SENDGRID_API_KEY'),
+          defaultFrom: env('EMAIL_FROM', 'noreply@example.com'),
+          defaultReplyTo: env('EMAIL_REPLY_TO', 'support@example.com'),
+        },
       },
     },
-  },
+  }),
   'schema-visualizer': {
     enabled: true,
   },
@@ -54,6 +60,19 @@ export default ({ env }) => ({
       lockout: {
         maxAttempts: 5,
         lockoutDuration: 15 * 60 * 1000, // 15 minutes
+      },
+      // Default permissions - make all content types public by default
+      defaultPermissions: {
+        public: {
+          // List of content types that should be public by default
+          publicContentTypes: [
+            'api::category.category',
+            'api::product-listing.product-listing',
+            // Add more content types as needed
+          ],
+          // Actions that should be public for these content types
+          publicActions: ['find', 'findOne']
+        }
       },
     },
   },

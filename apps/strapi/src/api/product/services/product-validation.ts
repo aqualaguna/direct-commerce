@@ -21,11 +21,11 @@ export default {
 
     // Apply all business rules
     const rules: BusinessRule[] = [
-      { validate: this.priceRule },
+      { name: 'nameRule', validate: this.nameRule },
+      { name: 'brandRule', validate: this.brandRule },
       { validate: this.inventoryRule },
       { validate: this.skuRule },
       { validate: this.categoryRule },
-      { validate: this.pricingRule },
     ];
 
     for (const rule of rules) {
@@ -42,24 +42,62 @@ export default {
   },
 
   /**
-   * Price business rule: Price must be positive and reasonable
+   * Name business rule: Name must be valid and follow format
    */
-  async priceRule(data: any): Promise<ValidationResult> {
+  async nameRule(data: any): Promise<ValidationResult> {
     const errors: string[] = [];
 
-    if (data.price !== undefined) {
-      if (data.price <= 0) {
-        errors.push('Price must be greater than 0');
-      }
+    if (data.name !== undefined) {
+      if (!data.name || typeof data.name !== 'string') {
+        errors.push('Name is required and must be a string');
+      } else {
+        if (data.name.trim().length === 0) {
+          errors.push('Name cannot be empty');
+        }
 
-      if (data.price > 999999.99) {
-        errors.push('Price cannot exceed 999,999.99');
-      }
+        if (data.name.length > 255) {
+          errors.push('Name must be 255 characters or less');
+        }
 
-      // Check for suspicious pricing (too low for certain product types)
-      if (data.price < 0.01 && data.category) {
-        // This could be enhanced with category-specific minimum pricing
-        errors.push('Price seems too low for this product type');
+        if (data.name.length < 2) {
+          errors.push('Name must be at least 2 characters long');
+        }
+
+        // Check for valid characters (letters, numbers, spaces, hyphens, apostrophes)
+        if (!/^[a-zA-Z0-9\s\-'&.]+$/.test(data.name)) {
+          errors.push('Name can only contain letters, numbers, spaces, hyphens, apostrophes, ampersands, and periods');
+        }
+      }
+    }
+
+    return {
+      isValid: errors.length === 0,
+      errors,
+    };
+  },
+
+  /**
+   * Brand business rule: Brand must be valid if provided
+   */
+  async brandRule(data: any): Promise<ValidationResult> {
+    const errors: string[] = [];
+
+    if (data.brand !== undefined && data.brand !== null) {
+      if (typeof data.brand !== 'string') {
+        errors.push('Brand must be a string');
+      } else {
+        if (data.brand.length > 100) {
+          errors.push('Brand must be 100 characters or less');
+        }
+
+        if (data.brand.length > 0 && data.brand.length < 2) {
+          errors.push('Brand must be at least 2 characters long if provided');
+        }
+
+        // Check for valid characters (letters, numbers, spaces, hyphens, apostrophes)
+        if (data.brand.length > 0 && !/^[a-zA-Z0-9\s\-'&.]+$/.test(data.brand)) {
+          errors.push('Brand can only contain letters, numbers, spaces, hyphens, apostrophes, ampersands, and periods');
+        }
       }
     }
 
@@ -85,7 +123,7 @@ export default {
       }
 
       // Check for suspicious inventory levels
-      if (data.inventory === 0 && data.isActive) {
+      if (data.inventory === 0) {
         errors.push('Active products should have inventory available');
       }
     }
@@ -144,32 +182,6 @@ export default {
   },
 
   /**
-   * Pricing business rule: Compare price must be higher than regular price
-   */
-  async pricingRule(data: any): Promise<ValidationResult> {
-    const errors: string[] = [];
-
-    if (data.comparePrice !== undefined && data.price !== undefined) {
-      if (data.comparePrice <= data.price) {
-        errors.push('Compare price must be greater than regular price');
-      }
-
-      // Check for unreasonable price differences
-      const priceDifference = data.comparePrice - data.price;
-      const priceRatio = priceDifference / data.price;
-
-      if (priceRatio > 5) {
-        errors.push('Compare price difference seems too large');
-      }
-    }
-
-    return {
-      isValid: errors.length === 0,
-      errors,
-    };
-  },
-
-  /**
    * Validate product status transitions
    */
   async validateStatusTransition(
@@ -200,55 +212,6 @@ export default {
     };
   },
 
-  /**
-   * Validate SEO fields
-   */
-  async validateSEOFields(seoData: any): Promise<ValidationResult> {
-    const errors: string[] = [];
-
-    if (seoData) {
-      // Meta title validation
-      if (seoData.metaTitle) {
-        if (seoData.metaTitle.length > 60) {
-          errors.push('Meta title should be 60 characters or less');
-        }
-        if (seoData.metaTitle.length < 10) {
-          errors.push('Meta title should be at least 10 characters');
-        }
-      }
-
-      // Meta description validation
-      if (seoData.metaDescription) {
-        if (seoData.metaDescription.length > 160) {
-          errors.push('Meta description should be 160 characters or less');
-        }
-        if (seoData.metaDescription.length < 50) {
-          errors.push('Meta description should be at least 50 characters');
-        }
-      }
-
-      // Keywords validation
-      if (seoData.keywords) {
-        const keywords = seoData.keywords
-          .split(',')
-          .map((k: string) => k.trim());
-        if (keywords.length > 10) {
-          errors.push('Keywords should not exceed 10 items');
-        }
-
-        for (const keyword of keywords) {
-          if (keyword.length > 50) {
-            errors.push('Individual keywords should not exceed 50 characters');
-          }
-        }
-      }
-    }
-
-    return {
-      isValid: errors.length === 0,
-      errors,
-    };
-  },
 
   /**
    * Validate bulk operation data

@@ -82,7 +82,6 @@ interface ApiResponse<T> {
 }
 
 interface CategoryFilters {
-  publishedAt?: { $notNull: boolean };
   parent?: string | null;
   name?: unknown;
   category?: string;
@@ -110,7 +109,7 @@ interface SortOptions {
 
 export default factories.createCoreController(
   'api::category.category',
-  ({ strapi }: any) => ({
+  ({ strapi }) => ({
     /**
      * Find categories with hierarchical structure support
      */
@@ -118,11 +117,10 @@ export default factories.createCoreController(
       try {
         const { query } = ctx;
 
-        // Apply filters with improved error handling - use publishedAt for Draft & Publish
-        const filters = {
+        const filters : any = {
           ...((query.filters as object) || {}),
-          publishedAt: { $notNull: true },
         };
+        
 
         // Apply sorting with validation (default by sortOrder)
         const sort = query.sort || {
@@ -138,6 +136,20 @@ export default factories.createCoreController(
             100
           ),
         };
+        
+        // Handle pagination query parameters
+        if (query.pagination) {
+          const paginationQuery = query.pagination as any;
+          if (paginationQuery.page) {
+            pagination.page = Math.max(1, parseInt(paginationQuery.page) || 1);
+          }
+          if (paginationQuery.pageSize) {
+            pagination.pageSize = Math.min(
+              Math.max(1, parseInt(paginationQuery.pageSize) || 25),
+              100
+            );
+          }
+        }
 
         // Populate relations for hierarchy and products
         const populate = {
@@ -146,7 +158,6 @@ export default factories.createCoreController(
           seo: true,
           ...((query.populate as object) || {}),
         };
-
         // Use Document Service API instead of Entity Service
         const categories = await strapi
           .documents('api::category.category')
@@ -157,10 +168,28 @@ export default factories.createCoreController(
             populate,
           });
 
+        // Handle pagination metadata properly
+        const meta = (categories as any)?.meta || {};
+        if (meta.pagination) {
+          meta.pagination = {
+            page: meta.pagination.page || pagination.page,
+            pageSize: meta.pagination.pageSize || pagination.pageSize,
+            pageCount: meta.pagination.pageCount || Math.ceil((meta.pagination.total || 0) / pagination.pageSize),
+            total: meta.pagination.total || 0,
+          };
+        } else {
+          meta.pagination = {
+            page: pagination.page,
+            pageSize: pagination.pageSize,
+            pageCount: 1,
+            total: Array.isArray(categories) ? categories.length : 0,
+          };
+        }
+
+
         return {
           data: Array.isArray(categories) ? categories : [],
-          meta:
-            (categories as any)?.meta || (categories as any)?.pagination || {},
+          meta,
         };
       } catch (error) {
         strapi.log.error('Error in category find:', error);
@@ -173,10 +202,10 @@ export default factories.createCoreController(
      */
     async findOne(ctx: any) {
       try {
-        const { documentId } = ctx.params;
-
-        if (!documentId) {
-          return ctx.badRequest('Category documentId is required');
+        const { id } = ctx.request.params;
+        
+        if (!id) {
+          return ctx.badRequest('Category docudmentId is required');
         }
 
         const populate = {
@@ -189,12 +218,12 @@ export default factories.createCoreController(
         const category = await strapi
           .documents('api::category.category')
           .findOne({
-            documentId,
+            documentId: id,
             populate,
           });
 
         if (!category) {
-          return ctx.notFound('Category not found');
+          return ctx.notFound('FindOne: Category not found');
         }
 
         // Generate breadcrumbs for the category
@@ -226,6 +255,18 @@ export default factories.createCoreController(
           return ctx.badRequest('Category name is required');
         }
 
+        // Validate slug uniqueness if provided
+        if (data.slug) {
+          const existingSlugCategory = await strapi
+            .documents('api::category.category')
+            .findFirst({
+              filters: { slug: data.slug }
+            });
+          if (existingSlugCategory) {
+            return ctx.badRequest('Category slug must be unique');
+          }
+        }
+
         // Validate parent category if provided
         if (data.parent) {
           const parentCategory = await strapi
@@ -240,7 +281,7 @@ export default factories.createCoreController(
           // Check for circular reference
           const wouldCreateCircle = await strapi
             .service('api::category.category')
-            .checkCircularReference(data.parent, null);
+            .checkCircularReference(data.parent as string, null);
           if (wouldCreateCircle) {
             return ctx.badRequest(
               'Circular reference detected in category hierarchy'
@@ -250,7 +291,7 @@ export default factories.createCoreController(
           // Validate uniqueness within parent category
           const existingCategory = await strapi
             .service('api::category.category')
-            .findByNameAndParent(data.name, data.parent);
+            .findByNameAndParent(data.name, data.parent as string);
           if (existingCategory) {
             return ctx.badRequest(
               'Category name must be unique within the same parent category'
@@ -297,8 +338,9 @@ export default factories.createCoreController(
      */
     async update(ctx: any) {
       try {
-        const { documentId } = ctx.params;
+        const { id } = ctx.request.params;
         const { data } = ctx.request.body;
+        const documentId = id;
 
         if (!documentId) {
           return ctx.badRequest('Category documentId is required');
@@ -312,6 +354,18 @@ export default factories.createCoreController(
           });
         if (!existingCategory) {
           return ctx.notFound('Category not found');
+        }
+
+        // Validate slug uniqueness if being updated
+        if (data?.slug) {
+          const existingSlugCategory = await strapi
+            .documents('api::category.category')
+            .findFirst({
+              filters: { slug: data.slug }
+            });
+          if (existingSlugCategory && existingSlugCategory.documentId !== documentId) {
+            return ctx.badRequest('Category slug must be unique');
+          }
         }
 
         // Validate parent category if being updated
@@ -384,7 +438,8 @@ export default factories.createCoreController(
      */
     async delete(ctx: any) {
       try {
-        const { documentId } = ctx.params;
+        const { id } = ctx.request.params;
+        const documentId = id;
 
         if (!documentId) {
           return ctx.badRequest('Category documentId is required');
@@ -444,6 +499,7 @@ export default factories.createCoreController(
           .getCategoryTree();
         return { data: tree };
       } catch (error) {
+        console.error('Error in getTree controller:', error);
         strapi.log.error('Error getting category tree:', error);
         ctx.throw(500, 'Internal server error');
       }
@@ -502,8 +558,7 @@ export default factories.createCoreController(
         };
 
         const filters = {
-          category: documentId,
-          publishedAt: { $notNull: true }, // Use publishedAt for Draft & Publish
+          category: { documentId: documentId },
           ...((query.filters as object) || {}),
         };
 
@@ -517,9 +572,10 @@ export default factories.createCoreController(
             sort,
             pagination,
             populate: {
-              category: true,
-              images: true,
-              seo: true,
+              category: {
+                fields: ['id', 'name', 'slug'] as any,
+              },
+              inventoryRecord: true as any,
             },
           });
 
@@ -547,6 +603,10 @@ export default factories.createCoreController(
 
         if (!productIds || !Array.isArray(productIds)) {
           return ctx.badRequest('Product IDs array is required');
+        }
+
+        if (productIds.length === 0) {
+          return ctx.badRequest('Product IDs array cannot be empty');
         }
 
         // Use Document Service API to verify category exists
@@ -791,5 +851,6 @@ export default factories.createCoreController(
         ctx.throw(500, 'Internal server error');
       }
     },
+
   })
 );

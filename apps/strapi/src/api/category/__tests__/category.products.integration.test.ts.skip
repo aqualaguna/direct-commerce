@@ -1,0 +1,248 @@
+import request from 'supertest';
+
+describe('Category Product Management Integration Tests', () => {
+  const SERVER_URL = 'http://localhost:1337';
+  let adminToken: string;
+
+  // Generate unique test data with timestamp
+  const timestamp = Date.now();
+  const testCategory = {
+    name: `Test Category ${timestamp}`,
+    description: 'This is a test category for integration testing',
+    slug: `test-category-${timestamp}`
+  };
+
+  beforeAll(async () => {
+    // Get admin token for authenticated requests
+    adminToken = process.env.STRAPI_API_TOKEN as string;
+
+    if (!adminToken) {
+      throw new Error('STRAPI_API_TOKEN environment variable is not set. Please ensure the test server is running and the token is generated.');
+    }
+  });
+
+  afterAll(async () => {
+    // Global cleanup - delete all test categories that might have been left behind
+    try {
+      const response = await request(SERVER_URL)
+        .get('/api/categories')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .timeout(10000);
+
+      if (response.status === 200 && response.body.data) {
+        const categories = response.body.data;
+        for (const category of categories) {
+          // Only delete categories that match our test pattern
+          if (category.name && category.name.includes('Product Test Category') ||
+            category.name && category.name.includes('Target Category')) {
+            try {
+              await request(SERVER_URL)
+                .delete(`/api/categories/${category.documentId}`)
+                .set('Authorization', `Bearer ${adminToken}`)
+                .timeout(10000);
+            } catch (error) {
+              console.warn(`Failed to delete category ${category.documentId}:`, error);
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to perform global cleanup:', error);
+    }
+  });
+
+  describe('Category Product Management', () => {
+    let testCategoryId: string;
+    let testProductIds: string[] = [];
+
+    beforeAll(async () => {
+      // Create a test category
+      const categoryResponse = await request(SERVER_URL)
+        .post('/api/categories')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ data: { ...testCategory, name: `Product Test Category ${timestamp}`, slug: `product-test-category-${timestamp}` } })
+        .timeout(10000);
+
+      expect([200, 201]).toContain(categoryResponse.status);
+      testCategoryId = categoryResponse.body.data.documentId;
+
+      // Create test products (assuming product API exists)
+      const testProducts = [
+        { 
+          sku: `TEST-PROD-1-${timestamp}`, 
+          basePrice: 10.99, 
+          inventory: 10,
+          status: 'active',
+          category: testCategoryId 
+        },
+        { 
+          sku: `TEST-PROD-2-${timestamp}`, 
+          basePrice: 19.99, 
+          inventory: 5,
+          status: 'active',
+          category: testCategoryId 
+        }
+      ];
+
+      for (const product of testProducts) {
+        try {
+          const productResponse = await request(SERVER_URL)
+            .post('/api/products')
+            .set('Authorization', `Bearer ${adminToken}`)
+            .send({ data: product })
+            .timeout(10000);
+
+          if (productResponse.status === 200 || productResponse.status === 201) {
+            testProductIds.push(productResponse.body.data.documentId);
+          }
+        } catch (error) {
+          console.warn('Failed to create test product:', error);
+        }
+      }
+    });
+
+    afterAll(async () => {
+      // Clean up products
+      for (const productId of testProductIds) {
+        try {
+          await request(SERVER_URL)
+            .delete(`/api/products/${productId}`)
+            .set('Authorization', `Bearer ${adminToken}`)
+            .timeout(10000);
+        } catch (error) {
+          console.warn(`Failed to delete product ${productId}:`, error);
+        }
+      }
+
+      // Clean up category
+      if (testCategoryId) {
+        try {
+          await request(SERVER_URL)
+            .delete(`/api/categories/${testCategoryId}`)
+            .set('Authorization', `Bearer ${adminToken}`)
+            .timeout(10000);
+        } catch (error) {
+          console.warn(`Failed to delete category ${testCategoryId}:`, error);
+        }
+      }
+    });
+
+    it('should get products in category', async () => {
+      const response = await request(SERVER_URL)
+        .get(`/api/categories/${testCategoryId}/products`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .timeout(10000);
+
+      expect(response.status).toBe(200);
+      expect(response.body.data).toBeDefined();
+      expect(Array.isArray(response.body.data)).toBe(true);
+    });
+
+    it('should assign products to category', async () => {
+      if (testProductIds.length === 0) {
+        console.warn('No test products available for assignment test');
+        return;
+      }
+
+      const response = await request(SERVER_URL)
+        .post(`/api/categories/${testCategoryId}/products/assign`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ productIds: testProductIds })
+        .timeout(10000);
+
+      expect(response.status).toBe(200);
+      expect(response.body.data).toBeDefined();
+      expect(response.body.data.message).toBe('Products assigned successfully');
+    });
+
+    it('should remove products from category', async () => {
+      if (testProductIds.length === 0) {
+        console.warn('No test products available for removal test');
+        return;
+      }
+
+      const response = await request(SERVER_URL)
+        .post(`/api/categories/${testCategoryId}/products/remove`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ productIds: testProductIds })
+        .timeout(10000);
+
+      expect(response.status).toBe(200);
+      expect(response.body.data).toBeDefined();
+      expect(response.body.data.message).toBe('Products removed successfully');
+    });
+
+    it('should move products between categories', async () => {
+      if (testProductIds.length === 0) {
+        console.warn('No test products available for move test');
+        return;
+      }
+
+      // Create a target category
+      const targetCategoryResponse = await request(SERVER_URL)
+        .post('/api/categories')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ data: { ...testCategory, name: `Target Category ${timestamp}`, slug: `target-category-${timestamp}` } })
+        .timeout(10000);
+
+      expect([200, 201]).toContain(targetCategoryResponse.status);
+      const targetCategoryId = targetCategoryResponse.body.data.documentId;
+
+      try {
+        const response = await request(SERVER_URL)
+          .post(`/api/categories/${testCategoryId}/products/move`)
+          .set('Authorization', `Bearer ${adminToken}`)
+          .send({ 
+            targetCategoryId: targetCategoryId,
+            productIds: testProductIds 
+          })
+          .timeout(10000);
+
+        expect(response.status).toBe(200);
+        expect(response.body.data).toBeDefined();
+        expect(response.body.data.message).toBe('Products moved successfully');
+      } finally {
+        // Clean up target category
+        try {
+          await request(SERVER_URL)
+            .delete(`/api/categories/${targetCategoryId}`)
+            .set('Authorization', `Bearer ${adminToken}`)
+            .timeout(10000);
+        } catch (error) {
+          console.warn(`Failed to delete target category ${targetCategoryId}:`, error);
+        }
+      }
+    });
+
+    it('should handle invalid product assignment', async () => {
+      const response = await request(SERVER_URL)
+        .post(`/api/categories/${testCategoryId}/products/assign`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ productIds: ['invalid-product-id'] })
+        .timeout(10000);
+
+      // Should handle gracefully - either succeed or fail with proper error
+      expect([200, 400, 404]).toContain(response.status);
+    });
+
+    it('should handle empty product list for assignment', async () => {
+      const response = await request(SERVER_URL)
+        .post(`/api/categories/${testCategoryId}/products/assign`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ productIds: [] })
+        .timeout(10000);
+
+      expect(response.status).toBe(400);
+    });
+
+    it('should handle missing productIds in assignment request', async () => {
+      const response = await request(SERVER_URL)
+        .post(`/api/categories/${testCategoryId}/products/assign`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({})
+        .timeout(10000);
+
+      expect(response.status).toBe(400);
+    });
+  });
+});

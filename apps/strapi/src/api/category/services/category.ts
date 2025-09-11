@@ -10,14 +10,14 @@ export default factories.createCoreService(
     /**
      * Find category by name and parent
      */
-    async findByNameAndParent(name: string, parentId: number | null) {
+    async findByNameAndParent(name: string, parentId: string | null) {
       try {
         const filters: any = {
           name: { $eqi: name },
         };
 
         if (parentId) {
-          filters.parent = parentId;
+          filters.parent = { documentId: parentId };
         } else {
           filters.parent = { $null: true };
         }
@@ -42,15 +42,15 @@ export default factories.createCoreService(
      * Check for circular reference in category hierarchy
      */
     async checkCircularReference(
-      parentId: number,
-      categoryId: number | null
+      parentId: string,
+      categoryId: string | null
     ): Promise<boolean> {
       try {
         if (!parentId || parentId === categoryId) {
           return categoryId !== null; // Self-reference is circular
         }
 
-        const visited = new Set<number>();
+        const visited = new Set<string>();
         let currentId = parentId;
 
         while (currentId && !visited.has(currentId)) {
@@ -63,7 +63,7 @@ export default factories.createCoreService(
           const category = await strapi
             .documents('api::category.category')
             .findOne({
-              documentId: String(currentId),
+              documentId: currentId,
               populate: { parent: true },
               fields: ['id', 'name', 'slug'],
             });
@@ -85,12 +85,12 @@ export default factories.createCoreService(
     /**
      * Get next sort order for a parent category
      */
-    async getNextSortOrder(parentId: number | null): Promise<number> {
+    async getNextSortOrder(parentId: string | null): Promise<number> {
       try {
         const filters: any = {};
 
         if (parentId) {
-          filters.parent = parentId;
+          filters.parent = { documentId: parentId };
         } else {
           filters.parent = { $null: true };
         }
@@ -126,7 +126,6 @@ export default factories.createCoreService(
           .documents('api::category.category')
           .findMany({
             filters: {
-              publishedAt: { $notNull: true },
             },
             sort: { sortOrder: 'asc', name: 'asc' },
             populate: {
@@ -267,7 +266,6 @@ export default factories.createCoreService(
             .findMany({
               filters: {
                 parent: currentId as any,
-                publishedAt: { $notNull: true },
               },
               fields: ['id', 'name', 'slug'],
             });
@@ -355,7 +353,6 @@ export default factories.createCoreService(
       try {
         const filters: any = {
           isActive,
-          publishedAt: { $notNull: true },
         };
 
         if (parentId !== undefined) {
@@ -393,7 +390,7 @@ export default factories.createCoreService(
             documentId: String(categoryId),
             populate: {
               products: {
-                fields: ['id', 'status', 'isActive', 'inventory', 'price'] as any,
+                fields: ['id', 'status', 'isActive', 'inventory', 'basePrice'] as any,
               },
               children: {
                 fields: ['id', 'name'] as any,
@@ -427,13 +424,13 @@ export default factories.createCoreService(
             (p: any) => p.inventory > 0 && p.inventory <= 10
           ).length,
           totalValue: products.reduce(
-            (sum: number, p: any) => sum + (parseFloat(p.price) || 0),
+            (sum: number, p: any) => sum + (parseFloat(p.basePrice) || 0),
             0
           ),
           averagePrice:
             products.length > 0
               ? products.reduce(
-                  (sum: number, p: any) => sum + (parseFloat(p.price) || 0),
+                  (sum: number, p: any) => sum + (parseFloat(p.basePrice) || 0),
                   0
                 ) / products.length
               : 0,
@@ -471,7 +468,6 @@ export default factories.createCoreService(
           .findMany({
             filters: {
               category: { $in: categoryIds } as any,
-              publishedAt: { $notNull: true },
             },
             sort: { createdAt: 'desc' },
             populate: {
@@ -599,7 +595,6 @@ export default factories.createCoreService(
           .findMany({
             filters: {
               category: { $null: true } as any,
-              publishedAt: { $notNull: true },
             },
             sort: { createdAt: 'desc' },
           });
@@ -622,7 +617,6 @@ export default factories.createCoreService(
             filters: {
               parent: { $null: true } as any,
               isActive: true,
-              publishedAt: { $notNull: true },
             },
             sort: { sortOrder: 'asc', name: 'asc' },
             populate: {
@@ -706,12 +700,12 @@ export default factories.createCoreService(
     /**
      * Get sibling categories (categories with the same parent)
      */
-    async getSiblingCategories(categoryId: number) {
+    async getSiblingCategories(documentId: string) {
       try {
         const category = await strapi
           .documents('api::category.category')
           .findOne({
-            documentId: String(categoryId),
+            documentId: documentId,
             populate: {
               parent: true,
             },
@@ -722,21 +716,20 @@ export default factories.createCoreService(
         }
 
         const categoryData = category as any;
-        const parentId = categoryData.parent?.id || null;
+        const parentId = categoryData.parent?.documentId || null;
 
         const filters: any = {
           isActive: true,
-          publishedAt: { $notNull: true },
         };
 
         if (parentId) {
-          filters.parent = parentId;
+          filters.parent = { documentId: parentId };
         } else {
           filters.parent = { $null: true };
         }
 
-        // Exclude the current category
-        filters.id = { $ne: categoryId };
+        // Exclude the current category using documentId
+        filters.documentId = { $ne: documentId };
 
         const siblings = await strapi
           .documents('api::category.category')
@@ -767,7 +760,6 @@ export default factories.createCoreService(
                 { description: { $containsi: searchTerm } },
               ],
               isActive: true,
-              publishedAt: { $notNull: true },
             },
             sort: { name: 'asc' },
             limit,

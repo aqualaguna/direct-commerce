@@ -1,5 +1,5 @@
 // Jest setup file for Strapi testing
-
+require('dotenv').config({ path: './.env.test', quiet: true }); // Adjust path if your .env file is named differently or located elsewhere
 // Global Jest setup
 global.jest = jest;
 

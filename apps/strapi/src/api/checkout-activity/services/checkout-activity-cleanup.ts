@@ -28,7 +28,7 @@ export default {
 
       // Delete old activities using Document Service API
       try {
-        const deletedActivities = await strapi.documents('api::checkout-activity.checkout-activity').deleteMany({
+        const deletedActivities = await strapi.query('api::checkout-activity.checkout-activity').deleteMany({
           filters: {
             timestamp: {
               $lt: cutoffDate
@@ -106,7 +106,7 @@ export default {
             $lt: anonymizeDate
           },
           $or: [
-            { userId: { $notNull: true } },
+            { userId: { documentId: { $notNull: true } } },
             { ipAddress: { $notNull: true } },
             { userAgent: { $notNull: true } },
             { sessionId: { $notNull: true } }
@@ -195,7 +195,7 @@ export default {
       }
     } catch (error) {
       strapi.log.error('Error in scheduled cleanup:', error);
-      await this.sendCleanupNotification({ errors: [error.message] });
+      await this.sendCleanupNotification({ errors: [error.message], deletedCount: 0, partitionsDropped: 0 });
     }
   },
 
@@ -226,7 +226,7 @@ export default {
       const ninetyDaysAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
 
       // Count activities by age
-      const totalActivities = await strapi.documents('api::checkout-activity.checkout-activity').count();
+      const totalActivities = await strapi.documents('api::checkout-activity.checkout-activity').count({});
       const activitiesOlderThan30Days = await strapi.documents('api::checkout-activity.checkout-activity').count({
         filters: {
           timestamp: {

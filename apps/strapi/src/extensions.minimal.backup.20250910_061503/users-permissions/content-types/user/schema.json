@@ -1,0 +1,150 @@
+{
+  "kind": "collectionType",
+  "collectionName": "up_users",
+  "info": {
+    "name": "user",
+    "description": "",
+    "singularName": "user",
+    "pluralName": "users",
+    "displayName": "User"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "username": {
+      "type": "string",
+      "unique": true,
+      "minLength": 3
+    },
+    "email": {
+      "type": "email",
+      "unique": true,
+      "minLength": 6
+    },
+    "firstName": {
+      "type": "string",
+      "maxLength": 255
+    },
+    "lastName": {
+      "type": "string",
+      "maxLength": 255
+    },
+    "phone": {
+      "type": "string",
+      "maxLength": 20
+    },
+    "isActive": {
+      "type": "boolean",
+      "default": true
+    },
+    "emailVerified": {
+      "type": "boolean",
+      "default": false
+    },
+    "role": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.role"
+    },
+    "profilePicture": {
+      "type": "media",
+      "multiple": false,
+      "required": false,
+      "allowedTypes": ["images"]
+    },
+    "dateOfBirth": {
+      "type": "date"
+    },
+    "gender": {
+      "type": "enumeration",
+      "enum": ["male", "female", "other", "prefer-not-to-say"]
+    },
+    "bio": {
+      "type": "text",
+      "maxLength": 500
+    },
+    "website": {
+      "type": "string",
+      "maxLength": 255
+    },
+    "location": {
+      "type": "string",
+      "maxLength": 255
+    },
+    "timezone": {
+      "type": "string",
+      "maxLength": 50,
+      "default": "UTC"
+    },
+    "language": {
+      "type": "string",
+      "maxLength": 10,
+      "default": "en"
+    },
+    "currency": {
+      "type": "string",
+      "maxLength": 3,
+      "default": "USD"
+    },
+    "addresses": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::address.address",
+      "mappedBy": "user"
+    },
+    "wishlist": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::product.product"
+    },
+    "preferences": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::user-preference.user-preference",
+      "mappedBy": "user"
+    },
+    "privacySettings": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::privacy-setting.privacy-setting",
+      "mappedBy": "user"
+    },
+
+    "carts": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::cart.cart",
+      "mappedBy": "user",
+      "description": "User's shopping carts"
+    },
+    "engagement_metrics": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::engagement-metrics.engagement-metric",
+      "mappedBy": "user",
+      "description": "User's engagement metrics"
+    },
+    "security_events": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::security-event.security-event",
+      "mappedBy": "user",
+      "description": "User's security events"
+    },
+    "activities": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::user-activity.user-activity",
+      "mappedBy": "user",
+      "description": "User's activity history"
+    },
+    "user_behaviors": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::user-behavior.user-behavior",
+      "mappedBy": "user",
+      "description": "User's behavior patterns"
+    }
+  }
+}

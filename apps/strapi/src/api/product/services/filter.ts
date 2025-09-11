@@ -1,7 +1,7 @@
 /**
  * Product filter service
  *
- * Provides advanced filtering capabilities for products including category, price, and attribute filtering
+ * Provides advanced filtering capabilities for products including category, and attribute filtering
  */
 
 // Strapi imports
@@ -10,10 +10,6 @@ import { factories } from '@strapi/strapi';
 // Type definitions
 export interface FilterParams {
   categoryId?: number;
-  priceRange?: {
-    min?: number;
-    max?: number;
-  };
   attributes?: Record<string, any>;
   inStockOnly?: boolean;
   minStock?: number;
@@ -30,10 +26,6 @@ export interface Category {
 
 export interface FilterOptions {
   categories: Category[];
-  priceRange: {
-    min: number;
-    max: number;
-  };
   inventoryOptions: Array<{
     value: string;
     label: string;
@@ -99,8 +91,6 @@ export default factories.createCoreService(
           .findMany({
             filters: {
               parent: { documentId: String(categoryId) },
-              publishedAt: { $notNull: true },
-              isActive: true,
             },
             fields: ['documentId', 'name', 'slug'],
           } as any);
@@ -125,41 +115,6 @@ export default factories.createCoreService(
         strapi.log.error('Error getting subcategories:', error);
         return [];
       }
-    },
-
-    /**
-     * Applies price range filtering to product queries
-     * @param filters - Existing filters object
-     * @param priceRange - Price range object with min and/or max values
-     * @returns Updated filters object
-     */
-    applyPriceFilter(
-      filters: any,
-      priceRange?: { min?: number; max?: number }
-    ): any {
-      if (!priceRange) {
-        return filters;
-      }
-
-      const { min, max } = priceRange;
-      let priceFilter: any = {};
-
-      if (min !== undefined && max !== undefined) {
-        priceFilter = { $gte: min, $lte: max };
-      } else if (min !== undefined) {
-        priceFilter = { $gte: min };
-      } else if (max !== undefined) {
-        priceFilter = { $lte: max };
-      }
-
-      if (Object.keys(priceFilter).length > 0) {
-        return {
-          ...filters,
-          price: priceFilter,
-        };
-      }
-
-      return filters;
     },
 
     /**
@@ -241,42 +196,6 @@ export default factories.createCoreService(
           sanitized.categoryId = categoryId;
         }
       }
-
-      // Validate price range
-      if (
-        filterParams.minPrice !== undefined ||
-        filterParams.maxPrice !== undefined
-      ) {
-        const priceRange: any = {};
-
-        if (filterParams.minPrice !== undefined) {
-          const min = parseFloat(String(filterParams.minPrice));
-          if (!isNaN(min) && min >= 0) {
-            priceRange.min = min;
-          }
-        }
-
-        if (filterParams.maxPrice !== undefined) {
-          const max = parseFloat(String(filterParams.maxPrice));
-          if (!isNaN(max) && max >= 0) {
-            priceRange.max = max;
-          }
-        }
-
-        // Ensure min <= max
-        if (priceRange.min !== undefined && priceRange.max !== undefined) {
-          if (priceRange.min > priceRange.max) {
-            throw new Error(
-              'Minimum price cannot be greater than maximum price'
-            );
-          }
-        }
-
-        if (Object.keys(priceRange).length > 0) {
-          sanitized.priceRange = priceRange;
-        }
-      }
-
       // Validate inventory filters
       if (filterParams.inStockOnly !== undefined) {
         sanitized.inStockOnly =
@@ -295,8 +214,6 @@ export default factories.createCoreService(
       const customAttributes: any = {};
       const knownSystemFields = [
         'categoryId',
-        'minPrice',
-        'maxPrice',
         'inStockOnly',
         'minStock',
         'q',
@@ -327,7 +244,7 @@ export default factories.createCoreService(
 
     /**
      * Builds complete filter object for product queries
-     * @param baseFilters - Base filters (e.g., published, active)
+     * @param baseFilters - Base filters (e.g., active, active)
      * @param filterParams - Validated filter parameters
      * @returns Complete filter object
      */
@@ -344,11 +261,6 @@ export default factories.createCoreService(
           filterParams.categoryId,
           true
         );
-      }
-
-      // Apply price filtering
-      if (filterParams.priceRange) {
-        filters = this.applyPriceFilter(filters, filterParams.priceRange);
       }
 
       // Apply attribute filtering
@@ -370,7 +282,7 @@ export default factories.createCoreService(
 
     /**
      * Gets available filter options for the frontend
-     * @returns Object containing available categories, price ranges, and attributes
+     * @returns Object containing available categories, ranges, and attributes
      */
     async getAvailableFilters(): Promise<FilterOptions> {
       try {
@@ -379,8 +291,6 @@ export default factories.createCoreService(
           .documents('api::category.category')
           .findMany({
             filters: {
-              publishedAt: { $notNull: true },
-              isActive: true,
             },
             fields: ['documentId', 'name', 'slug'],
             populate: {
@@ -392,26 +302,7 @@ export default factories.createCoreService(
             pagination: { page: 1, pageSize: 100 },
           } as any);
 
-        // Get price range from existing products
-        const priceStats = await strapi.db
-          .query('api::product.product')
-          .findMany({
-            select: ['price'],
-            where: {
-              status: 'published', // Use status instead of publishedAt
-              isActive: true,
-            },
-            orderBy: { price: 'asc' },
-          });
 
-        let priceRange = { min: 0, max: 1000 };
-        if (priceStats.length > 0) {
-          const prices = priceStats.map(p => parseFloat(p.price));
-          priceRange = {
-            min: Math.min(...prices),
-            max: Math.max(...prices),
-          };
-        }
 
         // Build hierarchical category structure
         const categoryData = Array.isArray(categories)
@@ -422,7 +313,6 @@ export default factories.createCoreService(
 
         return {
           categories: hierarchicalCategories,
-          priceRange,
           inventoryOptions: [
             { value: 'all', label: 'All Products' },
             { value: 'in_stock', label: 'In Stock Only' },

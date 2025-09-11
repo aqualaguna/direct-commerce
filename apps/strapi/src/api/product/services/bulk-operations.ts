@@ -23,20 +23,13 @@ interface BulkExportOptions {
 }
 
 interface CSVRow {
-  title: string;
+  name: string;
+  brand: string;
   description: string;
-  shortDescription: string;
-  price: number;
-  comparePrice?: number;
   sku: string;
   inventory: number;
-  isActive: boolean;
-  featured: boolean;
   status: string;
   category?: string;
-  metaTitle?: string;
-  metaDescription?: string;
-  keywords?: string;
 }
 
 export default ({ strapi }: { strapi: any }) => ({
@@ -60,10 +53,9 @@ export default ({ strapi }: { strapi: any }) => ({
 
       // Validate headers
       const requiredHeaders = [
-        'title',
+        'name',
+        'brand',
         'description',
-        'shortDescription',
-        'price',
         'sku',
         'inventory',
       ];
@@ -99,16 +91,8 @@ export default ({ strapi }: { strapi: any }) => ({
 
           // Convert data types
           switch (header) {
-            case 'price':
-            case 'comparePrice':
-              productData[header] = parseFloat(value) || 0;
-              break;
             case 'inventory':
               productData[header] = parseInt(value) || 0;
-              break;
-            case 'isActive':
-            case 'featured':
-              productData[header] = value.toLowerCase() === 'true';
               break;
             default:
               productData[header] = value;
@@ -136,7 +120,7 @@ export default ({ strapi }: { strapi: any }) => ({
               'api::product.product',
               {
                 data: productData,
-                populate: ['images', 'category', 'seo'],
+                populate: ['category'],
               }
             );
 
@@ -204,7 +188,7 @@ export default ({ strapi }: { strapi: any }) => ({
               'api::product.product',
               {
                 data: productData,
-                populate: ['images', 'category', 'seo'],
+                populate: ['category'],
               }
             );
 
@@ -248,7 +232,6 @@ export default ({ strapi }: { strapi: any }) => ({
             category: {
               fields: ['name'],
             },
-            seo: true,
           },
         }
       );
@@ -259,20 +242,13 @@ export default ({ strapi }: { strapi: any }) => ({
 
       // Define CSV headers
       const headers = [
-        'title',
+        'name',
+        'brand',
         'description',
-        'shortDescription',
-        'price',
-        'comparePrice',
         'sku',
         'inventory',
-        'isActive',
-        'featured',
         'status',
         'category',
-        'metaTitle',
-        'metaDescription',
-        'keywords',
       ];
 
       // Create CSV content
@@ -280,20 +256,13 @@ export default ({ strapi }: { strapi: any }) => ({
 
       for (const product of products) {
         const row = [
-          this.escapeCSVValue(product.title),
+          this.escapeCSVValue(product.name),
+          this.escapeCSVValue(product.brand),
           this.escapeCSVValue(product.description),
-          this.escapeCSVValue(product.shortDescription),
-          product.price,
-          product.comparePrice || '',
           this.escapeCSVValue(product.sku),
           product.inventory,
-          product.isActive,
-          product.featured,
           (product as any).status || 'draft',
           this.escapeCSVValue((product as any).category?.name || ''),
-          this.escapeCSVValue((product as any).seo?.metaTitle || ''),
-          this.escapeCSVValue((product as any).seo?.metaDescription || ''),
-          this.escapeCSVValue((product as any).seo?.keywords || ''),
         ];
 
         csvContent += `${row.join(',')}\n`;
@@ -318,13 +287,9 @@ export default ({ strapi }: { strapi: any }) => ({
         {
           filters: options.filters || {},
           populate: {
-            images: {
-              fields: ['url', 'width', 'height', 'formats'],
-            },
             category: {
               fields: ['id', 'name', 'slug'],
             },
-            seo: true,
           },
         }
       );
@@ -400,7 +365,7 @@ export default ({ strapi }: { strapi: any }) => ({
           productId,
           {
             data: updateData,
-            populate: ['images', 'category', 'seo'],
+            populate: ['category'],
           }
         );
         result.results.push(updatedProduct);
@@ -511,37 +476,23 @@ export default ({ strapi }: { strapi: any }) => ({
    */
   generateCSVTemplate(): string {
     const headers = [
-      'title',
+      'name',
+      'brand',
       'description',
-      'shortDescription',
-      'price',
-      'comparePrice',
       'sku',
       'inventory',
-      'isActive',
-      'featured',
       'status',
       'category',
-      'metaTitle',
-      'metaDescription',
-      'keywords',
     ];
 
     const exampleRow = [
       'Sample Product',
-      'This is a sample product description',
+      'This is a sample product brand',
       'Sample product short description',
-      '29.99',
-      '39.99',
       'SAMPLE-001',
       '10',
-      'true',
-      'false',
       'draft',
       'Electronics',
-      'Sample Product - Electronics',
-      'Sample product description for SEO',
-      'sample, product, electronics',
     ];
 
     return `${headers.join(',')}\n${exampleRow.join(',')}`;

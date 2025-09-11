@@ -28,11 +28,11 @@ interface FindByStatusOptions {
 
 interface StatusStatistics {
   draft: number;
-  published: number;
+  active: number;
   total: number;
   percentages: {
     draft: number;
-    published: number;
+    active: number;
   };
 }
 
@@ -74,7 +74,7 @@ export default factories.createCoreService(
           .update({
             documentId,
             data: { status: newStatus as any },
-            populate: ['images', 'category', 'seo'] as any,
+            populate: ['category'] as any,
           });
 
         return updatedProduct;
@@ -104,13 +104,9 @@ export default factories.createCoreService(
             sort: options.sort || { createdAt: 'desc' },
             pagination: options.pagination || { page: 1, pageSize: 25 },
             populate: {
-              images: {
-                fields: ['url', 'width', 'height', 'formats'],
-              },
               category: {
                 fields: ['id', 'name', 'slug'],
               },
-              seo: true,
             },
           });
 
@@ -141,13 +137,9 @@ export default factories.createCoreService(
             sort: options.sort || { createdAt: 'desc' },
             pagination: options.pagination || { page: 1, pageSize: 25 },
             populate: {
-              images: {
-                fields: ['url', 'width', 'height', 'formats'],
-              },
               category: {
                 fields: ['id', 'name', 'slug'],
               },
-              seo: true,
             },
           });
 
@@ -203,24 +195,25 @@ export default factories.createCoreService(
      */
     async getStatusStatistics(): Promise<StatusStatistics> {
       try {
-        const [draft, published] = await Promise.all([
+        const [draft, active] = await Promise.all([
           strapi.documents('api::product.product').count({
             status: 'draft',
           }),
           strapi.documents('api::product.product').count({
-            status: 'published',
+            // @ts-ignore
+            status: 'active'
           }),
         ]);
 
-        const total = draft + published;
+        const total = draft + active;
 
         return {
           draft,
-          published,
+          active,
           total,
           percentages: {
             draft: total > 0 ? Math.round((draft / total) * 100) : 0,
-            published: total > 0 ? Math.round((published / total) * 100) : 0,
+            active: total > 0 ? Math.round((active / total) * 100) : 0,
           },
         };
       } catch (error) {
@@ -229,52 +222,8 @@ export default factories.createCoreService(
       }
     },
 
-    /**
-     * Publish product using Document Service API Draft & Publish
-     */
-    async publishProduct(documentId: string): Promise<unknown> {
-      try {
-        // Use Document Service API publish method for Draft & Publish
-        const result = await strapi.documents('api::product.product').publish({
-          documentId,
-        });
-        return result;
-      } catch (error) {
-        strapi.log.error('Error publishing product:', error);
-        throw error;
-      }
-    },
 
-    /**
-     * Unpublish product using Document Service API Draft & Publish
-     */
-    async unpublishProduct(documentId: string): Promise<unknown> {
-      try {
-        // Use Document Service API unpublish method for Draft & Publish
-        const result = await strapi
-          .documents('api::product.product')
-          .unpublish({
-            documentId,
-          });
-        return result;
-      } catch (error) {
-        strapi.log.error('Error unpublishing product:', error);
-        throw error;
-      }
-    },
-
-    /**
-     * Reactivate product (legacy method - now uses publish)
-     */
-    async reactivateProduct(documentId: string): Promise<unknown> {
-      try {
-        return await this.publishProduct(documentId);
-      } catch (error) {
-        strapi.log.error('Error reactivating product:', error);
-        throw error;
-      }
-    },
-
+  
     /**
      * Get products ready for publication - Updated to Document Service API
      */
@@ -284,9 +233,8 @@ export default factories.createCoreService(
       try {
         const filters: any = {
           status: 'draft',
-          title: { $notNull: true },
+          name: { $notNull: true },
           description: { $notNull: true },
-          price: { $gt: 0 },
           sku: { $notNull: true },
           inventory: { $gte: 0 },
         };
@@ -298,13 +246,9 @@ export default factories.createCoreService(
             sort: options.sort || { createdAt: 'desc' },
             pagination: options.pagination || { page: 1, pageSize: 25 },
             populate: {
-              images: {
-                fields: ['url', 'width', 'height', 'formats'],
-              },
               category: {
                 fields: ['id', 'name', 'slug'],
               },
-              seo: true,
             },
           });
 

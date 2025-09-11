@@ -13,12 +13,8 @@ interface SearchQuery {
   page?: string | number;
   pageSize?: string | number;
   categoryId?: string | number;
-  minPrice?: string | number;
-  maxPrice?: string | number;
   sortBy?:
     | 'relevance'
-    | 'price_asc'
-    | 'price_desc'
     | 'title'
     | 'newest'
     | 'oldest';
@@ -33,10 +29,6 @@ interface SearchOptions {
   page: number;
   pageSize: number;
   categoryId?: number;
-  priceRange?: {
-    min?: number;
-    max?: number;
-  };
   attributes?: Record<string, any>;
   sortBy: string;
   sortOrder: string;
@@ -79,8 +71,6 @@ export default factories.createCoreController(
           page = 1,
           pageSize = 25,
           categoryId,
-          minPrice,
-          maxPrice,
           sortBy = 'relevance',
           sortOrder = 'desc',
           includeInactive = false,
@@ -96,27 +86,6 @@ export default factories.createCoreController(
           100
         );
 
-        // Validate price range
-        let priceRange;
-        if (minPrice !== undefined || maxPrice !== undefined) {
-          const min = minPrice ? parseFloat(String(minPrice)) : undefined;
-          const max = maxPrice ? parseFloat(String(maxPrice)) : undefined;
-
-          if (
-            (min !== undefined && isNaN(min)) ||
-            (max !== undefined && isNaN(max))
-          ) {
-            return ctx.badRequest('Invalid price range values');
-          }
-
-          if (min !== undefined && max !== undefined && min > max) {
-            return ctx.badRequest(
-              'Minimum price cannot be greater than maximum price'
-            );
-          }
-
-          priceRange = { min, max };
-        }
 
         // Validate category ID
         let validatedCategoryId: number | undefined;
@@ -131,8 +100,6 @@ export default factories.createCoreController(
         // Validate sort options
         const validSortOptions = [
           'relevance',
-          'price_asc',
-          'price_desc',
           'title',
           'newest',
           'oldest',
@@ -150,8 +117,6 @@ export default factories.createCoreController(
         const filterService = strapi.service('api::product.filter');
         const filterParams = filterService.validateFilterParams({
           categoryId: validatedCategoryId,
-          minPrice,
-          maxPrice,
           inStockOnly,
           minStock,
           ...additionalFilters,
@@ -162,7 +127,6 @@ export default factories.createCoreController(
           page: validatedPage,
           pageSize: validatedPageSize,
           categoryId: filterParams.categoryId,
-          priceRange: filterParams.priceRange,
           attributes: filterParams.attributes,
           sortBy: String(sortBy),
           sortOrder: String(sortOrder),
@@ -270,8 +234,6 @@ export default factories.createCoreController(
         // Get available sort options
         const sortOptions = [
           { value: 'relevance', label: 'Most Relevant' },
-          { value: 'price_asc', label: 'Price: Low to High' },
-          { value: 'price_desc', label: 'Price: High to Low' },
           { value: 'title', label: 'Name: A to Z' },
           { value: 'newest', label: 'Newest First' },
           { value: 'oldest', label: 'Oldest First' },

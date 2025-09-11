@@ -7,7 +7,7 @@ export default async (
   _config: any,
   { strapi: _strapi }: any
 ) => {
-  // Allow public access to published products
+  // Allow public access to active products
   const { user } = policyContext.state;
 
   // If user is authenticated, allow access
@@ -15,17 +15,17 @@ export default async (
     return true;
   }
 
-  // For unauthenticated users, only allow access to published products
+  // For unauthenticated users, only allow access to active products
   const { query } = policyContext;
 
-  // Add filter to only show published products for public access
+  // Add filter to only show active products for public access
   if (query && !query.filters) {
     query.filters = {};
   }
 
-  // Only show published products to public users
+  // Only show active products to public users
   if (query) {
-    query.filters.publishedAt = { $notNull: true };
+    query.filters.status = 'active';
   }
 
   return true;

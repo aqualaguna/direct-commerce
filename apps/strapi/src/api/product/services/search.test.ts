@@ -20,18 +20,6 @@ jest.mock('./filter', () => ({
           filters.category = { id: filterParams.categoryId };
         }
 
-        // Apply price filtering
-        if (filterParams?.priceRange) {
-          const { min, max } = filterParams.priceRange;
-          if (min !== undefined && max !== undefined) {
-            filters.price = { $gte: min, $lte: max };
-          } else if (min !== undefined) {
-            filters.price = { $gte: min };
-          } else if (max !== undefined) {
-            filters.price = { $lte: max };
-          }
-        }
-
         return filters;
       }),
   },
@@ -49,18 +37,6 @@ const mockFilterServiceInstance = {
         filters.category = { id: filterParams.categoryId };
       }
 
-      // Apply price filtering
-      if (filterParams?.priceRange) {
-        const { min, max } = filterParams.priceRange;
-        if (min !== undefined && max !== undefined) {
-          filters.price = { $gte: min, $lte: max };
-        } else if (min !== undefined) {
-          filters.price = { $gte: min };
-        } else if (max !== undefined) {
-          filters.price = { $lte: max };
-        }
-      }
-
       return filters;
     }),
 };
@@ -74,9 +50,6 @@ const mockDocumentsAPI = {
   update: jest.fn() as jest.MockedFunction<any>,
   delete: jest.fn() as jest.MockedFunction<any>,
   count: jest.fn() as jest.MockedFunction<any>,
-  publish: jest.fn() as jest.MockedFunction<any>,
-  unpublish: jest.fn() as jest.MockedFunction<any>,
-  discardDraft: jest.fn() as jest.MockedFunction<any>,
 };
 
 // Mock Strapi with Document Service API
@@ -126,22 +99,18 @@ describe('Product Search Service', () => {
         data: [
           {
             id: 1,
-            title: 'Test Product',
+            name: 'Test Product',
+            brand: 'Test Brand',
             description: 'A great test product',
-            shortDescription: 'Test product short desc',
             sku: 'TEST-001',
-            price: 29.99,
-            featured: false,
             inventory: 10,
           },
           {
             id: 2,
-            title: 'Another Product',
+            name: 'Another Product',
+            brand: 'Another Brand',
             description: 'Another great product',
-            shortDescription: 'Another product short desc',
             sku: 'TEST-002',
-            price: 39.99,
-            featured: true,
             inventory: 5,
           },
         ],
@@ -164,12 +133,11 @@ describe('Product Search Service', () => {
       expect(mockDocumentsAPI.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           filters: expect.objectContaining({
-            publishedAt: { $notNull: true },
-            isActive: true,
+            status: 'active',
             $or: [
-              { title: { $containsi: 'test' } },
+              { name: { $containsi: 'test' } },
+              { brand: { $containsi: 'test' } },
               { description: { $containsi: 'test' } },
-              { shortDescription: { $containsi: 'test' } },
               { sku: { $containsi: 'test' } },
             ],
           }),
@@ -182,9 +150,8 @@ describe('Product Search Service', () => {
         data: [
           {
             id: 1,
-            title: 'Test Product',
-            price: 29.99,
-            featured: false,
+            name: 'Test Product',
+            brand: 'Test Brand',
             inventory: 10,
           },
         ],
@@ -207,8 +174,7 @@ describe('Product Search Service', () => {
       expect(mockDocumentsAPI.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           filters: expect.objectContaining({
-            publishedAt: { $notNull: true },
-            isActive: true,
+            status: 'active',
           }),
         })
       );
@@ -241,58 +207,7 @@ describe('Product Search Service', () => {
       );
     });
 
-    it('should apply price range filtering', async () => {
-      const mockProducts = {
-        data: [],
-        meta: {
-          pagination: {
-            page: 1,
-            pageSize: 25,
-            pageCount: 0,
-            total: 0,
-          },
-        },
-      };
 
-      mockDocumentsAPI.findMany.mockResolvedValue(mockProducts);
-
-      await searchService.fullTextSearch('test', {
-        priceRange: { min: 10, max: 50 },
-      });
-
-      expect(mockDocumentsAPI.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({
-          filters: expect.objectContaining({
-            $or: expect.any(Array),
-            price: { $gte: 10, $lte: 50 },
-          }),
-        })
-      );
-    });
-
-    it('should apply sorting by price ascending', async () => {
-      const mockProducts = {
-        data: [],
-        meta: {
-          pagination: {
-            page: 1,
-            pageSize: 25,
-            pageCount: 0,
-            total: 0,
-          },
-        },
-      };
-
-      mockDocumentsAPI.findMany.mockResolvedValue(mockProducts);
-
-      await searchService.fullTextSearch('test', { sortBy: 'price_asc' });
-
-      expect(mockDocumentsAPI.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({
-          sort: { price: 'asc' },
-        })
-      );
-    });
 
     it('should handle service errors', async () => {
       mockDocumentsAPI.findMany.mockRejectedValue(new Error('Database error'));
@@ -313,29 +228,26 @@ describe('Product Search Service', () => {
       const products = [
         {
           id: 1,
-          title: 'Test Product',
+          name: 'Test Product',
+          brand: 'Test Brand',
           description: 'A great test product',
-          shortDescription: 'Test product short desc',
           sku: 'test-001',
-          featured: false,
           inventory: 10,
         },
         {
           id: 2,
-          title: 'Another Product',
+          name: 'Another Product',
+          brand: 'Another Brand',
           description: 'Contains test keyword',
-          shortDescription: 'No keyword here',
           sku: 'OTHER-002',
-          featured: true,
           inventory: 0,
         },
         {
           id: 3,
-          title: 'Exact Test Match',
+          name: 'Exact Test Match',
+          brand: 'Exact Brand',
           description: 'Perfect match',
-          shortDescription: 'test in short desc',
           sku: 'test',
-          featured: false,
           inventory: 5,
         },
       ];
@@ -356,9 +268,6 @@ describe('Product Search Service', () => {
       const exactMatch = result.find(p => p.sku === 'test');
       expect(exactMatch._relevanceScore).toBeGreaterThan(0);
 
-      // Featured products should get bonus points
-      const featuredProduct = result.find(p => p.featured);
-      expect(featuredProduct._relevanceScore).toBeGreaterThan(0);
     });
 
     it('should handle empty products array', () => {
@@ -371,9 +280,9 @@ describe('Product Search Service', () => {
     it('should return search suggestions', async () => {
       const mockProducts = {
         data: [
-          { title: 'Test Product', sku: 'TEST-001' },
-          { title: 'Testing Tools', sku: 'TEST-002' },
-          { title: 'Another Product', sku: 'OTHER-001' },
+          { name: 'Test Product', brand: 'Test Brand', sku: 'TEST-001' },
+          { name: 'Testing Tools', brand: 'Tool Brand', sku: 'TEST-002' },
+          { name: 'Another Product', brand: 'Another Brand', sku: 'OTHER-001' },
         ],
       };
 
@@ -383,9 +292,11 @@ describe('Product Search Service', () => {
 
       expect(result).toContain('Test Product');
       expect(result).toContain('Testing Tools');
+      expect(result).toContain('Test Brand');
       expect(result).toContain('TEST-001');
       expect(result).toContain('TEST-002');
       expect(result).not.toContain('Another Product');
+      expect(result).not.toContain('Tool Brand'); // Tool Brand doesn't contain 'test'
     });
 
     it('should return empty array for short query', async () => {

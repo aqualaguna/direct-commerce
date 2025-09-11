@@ -8,7 +8,7 @@
     "description": "Product categories with hierarchical structure"
   },
   "options": {
-    "draftAndPublish": true,
+    "draftAndPublish": false,
     "comment": "Category content type for product organization"
   },
   "attributes": {
@@ -21,7 +21,8 @@
     "slug": {
       "type": "uid",
       "targetField": "name",
-      "required": true
+      "required": true,
+      "unique": true
     },
     "description": {
       "type": "richtext"

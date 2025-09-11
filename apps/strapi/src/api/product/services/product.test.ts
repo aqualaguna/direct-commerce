@@ -23,9 +23,6 @@ const mockDocumentService = {
   update: jest.fn() as jest.MockedFunction<any>,
   delete: jest.fn() as jest.MockedFunction<any>,
   count: jest.fn() as jest.MockedFunction<any>,
-  publish: jest.fn() as jest.MockedFunction<any>,
-  unpublish: jest.fn() as jest.MockedFunction<any>,
-  discardDraft: jest.fn() as jest.MockedFunction<any>,
 };
 
 // Mock Strapi with Document Service API following new test standards
@@ -65,8 +62,6 @@ describe('Product Service', () => {
     mockDocumentService.create.mockClear();
     mockDocumentService.update.mockClear();
     mockDocumentService.delete.mockClear();
-    mockDocumentService.publish.mockClear();
-    mockDocumentService.unpublish.mockClear();
     mockDocumentService.count.mockClear();
 
     // Reset the validation service mock to default valid state
@@ -85,19 +80,20 @@ describe('Product Service', () => {
     it('should update product status successfully', async () => {
       const mockProduct = {
         documentId: 'doc123',
-        title: 'Test Product',
+        name: 'Test Product',
+        brand: 'Test Brand',
         status: 'draft',
       };
 
       const mockUpdatedProduct = {
         ...mockProduct,
-        status: 'published',
+        status: 'active',
       };
 
       mockDocumentService.findOne.mockResolvedValue(mockProduct);
       mockDocumentService.update.mockResolvedValue(mockUpdatedProduct);
 
-      const result = await service.updateStatus('doc123', 'published');
+      const result = await service.updateStatus('doc123', 'active');
 
       expect(result).toEqual(mockUpdatedProduct);
       expect(mockDocumentService.findOne).toHaveBeenCalledWith(
@@ -109,8 +105,8 @@ describe('Product Service', () => {
       expect(mockDocumentService.update).toHaveBeenCalledWith(
         expect.objectContaining({
           documentId: 'doc123',
-          data: { status: 'published' },
-          populate: ['images', 'category', 'seo'],
+          data: { status: 'active' },
+          populate: ['category'],
         })
       );
     });
@@ -119,15 +115,16 @@ describe('Product Service', () => {
       mockDocumentService.findOne.mockResolvedValue(null);
 
       await expect(
-        service.updateStatus('non-existent-doc', 'published')
+        service.updateStatus('non-existent-doc', 'active')
       ).rejects.toThrow('Product not found');
     });
 
     it('should throw error for invalid status transition', async () => {
       const mockProduct = {
         documentId: 'doc123',
-        title: 'Test Product',
-        status: 'published',
+        name: 'Test Product',
+        brand: 'Test Brand',
+        status: 'active',
       };
 
       mockDocumentService.findOne.mockResolvedValue(mockProduct);
@@ -136,11 +133,11 @@ describe('Product Service', () => {
       const productValidationService = require('./product-validation').default;
       productValidationService.validateStatusTransition.mockResolvedValue({
         isValid: false,
-        errors: ['Invalid status transition from published to draft'],
+        errors: ['Invalid status transition from active to draft'],
       });
 
       await expect(service.updateStatus('doc123', 'draft')).rejects.toThrow(
-        'Invalid status transition from published to draft'
+        'Invalid status transition from active to draft'
       );
     });
   });
@@ -148,28 +145,24 @@ describe('Product Service', () => {
   describe('findByStatus', () => {
     it('should find products by status', async () => {
       const mockProducts = [
-        { documentId: 'doc1', title: 'Product 1', status: 'published' },
-        { documentId: 'doc2', title: 'Product 2', status: 'published' },
+        { documentId: 'doc1', name: 'Product 1', brand: 'Brand A', status: 'active' },
+        { documentId: 'doc2', name: 'Product 2', brand: 'Brand B', status: 'active' },
       ];
 
       mockDocumentService.findMany.mockResolvedValue(mockProducts);
 
-      const result = await service.findByStatus('published');
+      const result = await service.findByStatus('active');
 
       expect(result).toEqual(mockProducts);
       expect(mockDocumentService.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          filters: { status: 'published' },
+          filters: { status: 'active' },
           sort: { createdAt: 'desc' },
           pagination: { page: 1, pageSize: 25 },
           populate: {
-            images: {
-              fields: ['url', 'width', 'height', 'formats'],
-            },
             category: {
               fields: ['id', 'name', 'slug'],
             },
-            seo: true,
           },
         })
       );
@@ -177,7 +170,7 @@ describe('Product Service', () => {
 
     it('should apply custom options', async () => {
       const mockProducts = [
-        { documentId: 'doc1', title: 'Product 1', status: 'draft' },
+        { documentId: 'doc1', name: 'Product 1', brand: 'Brand A', status: 'draft' },
       ];
 
       mockDocumentService.findMany.mockResolvedValue(mockProducts);
@@ -186,12 +179,12 @@ describe('Product Service', () => {
         filters: { category: 'cat123' },
         sort: { title: 'asc' },
       };
-      const result = await service.findByStatus('published', options);
+      const result = await service.findByStatus('active', options);
 
       expect(result).toEqual(mockProducts);
       expect(mockDocumentService.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          filters: { status: 'published', category: 'cat123' },
+          filters: { status: 'active', category: 'cat123' },
           sort: { title: 'asc' },
           pagination: { page: 1, pageSize: 25 },
         })
@@ -202,28 +195,24 @@ describe('Product Service', () => {
   describe('findWithStatusFilter', () => {
     it('should find products with multiple status filters', async () => {
       const mockProducts = [
-        { documentId: 'doc1', title: 'Product 1', status: 'published' },
-        { documentId: 'doc2', title: 'Product 2', status: 'draft' },
+        { documentId: 'doc1', name: 'Product 1', brand: 'Brand A', status: 'active' },
+        { documentId: 'doc2', name: 'Product 2', brand: 'Brand B', status: 'draft' },
       ];
 
       mockDocumentService.findMany.mockResolvedValue(mockProducts);
 
-      const result = await service.findWithStatusFilter(['published', 'draft']);
+      const result = await service.findWithStatusFilter(['active', 'draft']);
 
       expect(result).toEqual(mockProducts);
       expect(mockDocumentService.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          filters: { status: { $in: ['published', 'draft'] } },
+          filters: { status: { $in: ['active', 'draft'] } },
           sort: { createdAt: 'desc' },
           pagination: { page: 1, pageSize: 25 },
           populate: {
-            images: {
-              fields: ['url', 'width', 'height', 'formats'],
-            },
             category: {
               fields: ['id', 'name', 'slug'],
             },
-            seo: true,
           },
         })
       );
@@ -234,16 +223,18 @@ describe('Product Service', () => {
     it('should update multiple products successfully', async () => {
       const mockProduct1 = {
         documentId: 'doc1',
-        title: 'Product 1',
+        name: 'Product 1',
+        brand: 'Brand A',
         status: 'draft',
       };
       const mockProduct2 = {
         documentId: 'doc2',
-        title: 'Product 2',
+        name: 'Product 2',
+        brand: 'Brand B',
         status: 'draft',
       };
-      const mockUpdatedProduct1 = { ...mockProduct1, status: 'published' };
-      const mockUpdatedProduct2 = { ...mockProduct2, status: 'published' };
+      const mockUpdatedProduct1 = { ...mockProduct1, status: 'active' };
+      const mockUpdatedProduct2 = { ...mockProduct2, status: 'active' };
 
       mockDocumentService.findOne
         .mockResolvedValueOnce(mockProduct1)
@@ -254,7 +245,7 @@ describe('Product Service', () => {
 
       const result = await service.bulkUpdateStatus(
         ['doc1', 'doc2'],
-        'published'
+        'active'
       );
 
       expect(result.success).toBe(2);
@@ -268,12 +259,12 @@ describe('Product Service', () => {
       mockDocumentService.update.mockResolvedValueOnce({
         documentId: 'doc1',
         title: 'Product 1',
-        status: 'published',
+        status: 'active',
       });
 
       const result = await service.bulkUpdateStatus(
         ['doc1', 'doc2'],
-        'published'
+        'active'
       );
 
       expect(result.success).toBe(1);
@@ -286,17 +277,17 @@ describe('Product Service', () => {
     it('should return status statistics', async () => {
       mockDocumentService.count
         .mockResolvedValueOnce(5) // draft
-        .mockResolvedValueOnce(10); // published
+        .mockResolvedValueOnce(10); // active
 
       const result = await service.getStatusStatistics();
 
       expect(result).toEqual({
         total: 15,
         draft: 5,
-        published: 10,
+        active: 10,
         percentages: {
           draft: 33,
-          published: 67,
+          active: 67,
         },
       });
     });
@@ -311,77 +302,24 @@ describe('Product Service', () => {
       expect(result).toEqual({
         total: 0,
         draft: 0,
-        published: 0,
+        active: 0,
         percentages: {
           draft: 0,
-          published: 0,
+          active: 0,
         },
       });
     });
   });
 
-  describe('publishProduct', () => {
-    it('should publish product successfully using Document Service API', async () => {
-      const mockResult = {
-        documentId: 'doc123',
-        entries: [{ documentId: 'doc123', status: 'published' }],
-      };
-
-      mockDocumentService.publish.mockResolvedValue(mockResult);
-
-      const result = await service.publishProduct('doc123');
-
-      expect(result).toEqual(mockResult);
-      expect(mockDocumentService.publish).toHaveBeenCalledWith({
-        documentId: 'doc123',
-      });
-    });
-  });
-
-  describe('unpublishProduct', () => {
-    it('should unpublish product successfully using Document Service API', async () => {
-      const mockResult = {
-        documentId: 'doc123',
-        entries: [{ documentId: 'doc123', status: 'draft' }],
-      };
-
-      mockDocumentService.unpublish.mockResolvedValue(mockResult);
-
-      const result = await service.unpublishProduct('doc123');
-
-      expect(result).toEqual(mockResult);
-      expect(mockDocumentService.unpublish).toHaveBeenCalledWith({
-        documentId: 'doc123',
-      });
-    });
-  });
-
-  describe('reactivateProduct', () => {
-    it('should reactivate product successfully using publish', async () => {
-      const mockResult = {
-        documentId: 'doc123',
-        entries: [{ documentId: 'doc123', status: 'published' }],
-      };
-
-      mockDocumentService.publish.mockResolvedValue(mockResult);
-
-      const result = await service.reactivateProduct('doc123');
-
-      expect(result).toEqual(mockResult);
-      expect(mockDocumentService.publish).toHaveBeenCalledWith({
-        documentId: 'doc123',
-      });
-    });
-  });
 
   describe('getProductsReadyForPublication', () => {
     it('should find draft products ready for publication', async () => {
       const mockProducts = [
         {
           documentId: 'doc1',
-          title: 'Product 1',
+          name: 'Product 1',
+          brand: 'Brand A',
           status: 'draft',
-          price: 10,
           sku: 'SKU1',
           inventory: 5,
         },
@@ -395,22 +333,17 @@ describe('Product Service', () => {
         expect.objectContaining({
           filters: expect.objectContaining({
             status: 'draft',
-            title: { $notNull: true },
+            name: { $notNull: true },
             description: { $notNull: true },
-            price: { $gt: 0 },
             sku: { $notNull: true },
             inventory: { $gte: 0 },
           }),
           sort: { createdAt: 'desc' },
           pagination: { page: 1, pageSize: 25 },
           populate: {
-            images: {
-              fields: ['url', 'width', 'height', 'formats'],
-            },
             category: {
               fields: ['id', 'name', 'slug'],
             },
-            seo: true,
           },
         })
       );

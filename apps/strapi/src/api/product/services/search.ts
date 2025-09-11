@@ -12,20 +12,13 @@ export interface SearchOptions {
   page?: number;
   pageSize?: number;
   categoryId?: number;
-  priceRange?: {
-    min?: number;
-    max?: number;
-  };
   attributes?: Record<string, any>;
   sortBy?:
     | 'relevance'
-    | 'price_asc'
-    | 'price_desc'
     | 'title'
     | 'newest'
     | 'oldest';
   sortOrder?: 'asc' | 'desc';
-  includeInactive?: boolean;
   inStockOnly?: boolean;
   minStock?: number;
 }
@@ -44,12 +37,10 @@ export interface SearchResult {
 
 export interface ProductWithScore {
   documentId: string;
-  title?: string;
+  name?: string;
+  brand?: string;
   description?: string;
-  shortDescription?: string;
   sku?: string;
-  price: number;
-  featured?: boolean;
   inventory?: number;
   _relevanceScore?: number;
   [key: string]: any;
@@ -72,24 +63,19 @@ export default factories.createCoreService(
         page = 1,
         pageSize = 25,
         categoryId,
-        priceRange,
         attributes,
         sortBy = 'relevance',
         sortOrder = 'desc',
-        includeInactive = false,
         inStockOnly = false,
         minStock,
       } = options;
 
       try {
-        // Base filters for published and active products using new Document Service API
+        // Base filters for active and active products using new Document Service API
         const baseFilters: any = {
-          publishedAt: { $notNull: true }, // Keep using publishedAt for compatibility
+          status: 'active',
         };
 
-        if (!includeInactive) {
-          baseFilters.isActive = true;
-        }
 
         // Full-text search filters
         let searchFilters: any = {};
@@ -99,9 +85,9 @@ export default factories.createCoreService(
           // Search across multiple fields with OR condition
           searchFilters = {
             $or: [
-              { title: { $containsi: trimmedQuery } },
+              { name: { $containsi: trimmedQuery } },
+              { brand: { $containsi: trimmedQuery } },
               { description: { $containsi: trimmedQuery } },
-              { shortDescription: { $containsi: trimmedQuery } },
               { sku: { $containsi: trimmedQuery } },
             ],
           };
@@ -111,7 +97,6 @@ export default factories.createCoreService(
         const filterService = strapi.service('api::product.filter');
         const filterParams = {
           categoryId,
-          priceRange,
           attributes,
           inStockOnly,
           minStock,
@@ -132,14 +117,8 @@ export default factories.createCoreService(
         // Determine sorting
         let sort: any = {};
         switch (sortBy) {
-          case 'price_asc':
-            sort = { price: 'asc' };
-            break;
-          case 'price_desc':
-            sort = { price: 'desc' };
-            break;
           case 'title':
-            sort = { title: sortOrder };
+            sort = { name: sortOrder };
             break;
           case 'newest':
             sort = { createdAt: 'desc' };
@@ -149,9 +128,6 @@ export default factories.createCoreService(
             break;
           case 'relevance':
           default:
-            // For relevance, we'll use a combination of factors
-            // Featured products first, then by created date
-            sort = { featured: 'desc', createdAt: 'desc' };
             break;
         }
 
@@ -163,9 +139,6 @@ export default factories.createCoreService(
             sort,
             pagination: { page, pageSize },
             populate: {
-              images: {
-                fields: ['url', 'width', 'height', 'formats'],
-              },
               category: {
                 fields: ['id', 'name', 'slug'],
               },
@@ -175,16 +148,11 @@ export default factories.createCoreService(
             } as any,
             fields: [
               'id',
-              'title',
-              'slug',
+              'name',
+              'brand',
               'description',
-              'shortDescription',
-              'price',
-              'comparePrice',
               'sku',
               'inventory',
-              'isActive',
-              'featured',
               'status',
               'createdAt',
               'updatedAt',
@@ -234,11 +202,19 @@ export default factories.createCoreService(
         .map((product): ProductWithScore => {
           let score = 0;
 
-          // Title matches get highest score
-          if (product.title?.toLowerCase().includes(query)) {
+          // Name matches get highest score
+          if (product.name?.toLowerCase().includes(query)) {
             score += 10;
-            if (product.title.toLowerCase().startsWith(query)) {
-              score += 5; // Bonus for title starting with query
+            if (product.name.toLowerCase().startsWith(query)) {
+              score += 5; // Bonus for name starting with query
+            }
+          }
+
+          // Brand matches get high score
+          if (product.brand?.toLowerCase().includes(query)) {
+            score += 8;
+            if (product.brand.toLowerCase().startsWith(query)) {
+              score += 3; // Bonus for brand starting with query
             }
           }
 
@@ -249,19 +225,9 @@ export default factories.createCoreService(
             score += 8;
           }
 
-          // Short description matches
-          if (product.shortDescription?.toLowerCase().includes(query)) {
-            score += 5;
-          }
-
           // Description matches (lower weight due to potential for long text)
           if (product.description?.toLowerCase().includes(query)) {
             score += 3;
-          }
-
-          // Featured products get bonus score
-          if (product.featured) {
-            score += 2;
           }
 
           // In-stock products get slight bonus
@@ -294,19 +260,19 @@ export default factories.createCoreService(
       try {
         const query = partialQuery.trim();
 
-        // Get product titles that start with or contain the query using Document Service API
+        // Get product names and brands that start with or contain the query using Document Service API
         const products: any = await strapi
           .documents('api::product.product')
           .findMany({
             filters: {
-              publishedAt: { $notNull: true }, // Keep using publishedAt for compatibility
-              isActive: true,
+              status: 'active', 
               $or: [
-                { title: { $containsi: query } },
+                { name: { $containsi: query } },
+                { brand: { $containsi: query } },
                 { sku: { $containsi: query } },
               ],
             },
-            fields: ['title', 'sku'],
+            fields: ['name', 'brand', 'sku'],
             pagination: { page: 1, pageSize: limit * 2 },
           } as any);
 
@@ -315,15 +281,26 @@ export default factories.createCoreService(
 
         const productsArray = products.data || products || [];
         productsArray.forEach(product => {
-          // Add title if it matches
-          if (product.title.toLowerCase().includes(query.toLowerCase())) {
-            suggestions.add(product.title);
+          // Add name if it matches
+          if (product.name && product.name.toLowerCase().includes(query.toLowerCase())) {
+            suggestions.add(product.name);
           }
 
-          // Add SKU if it matches and is different from title
+          // Add brand if it matches and is different from name
           if (
+            product.brand &&
+            product.brand.toLowerCase().includes(query.toLowerCase()) &&
+            product.brand !== product.name
+          ) {
+            suggestions.add(product.brand);
+          }
+
+          // Add SKU if it matches and is different from name and brand
+          if (
+            product.sku &&
             product.sku.toLowerCase().includes(query.toLowerCase()) &&
-            product.sku !== product.title
+            product.sku !== product.name &&
+            product.sku !== product.brand
           ) {
             suggestions.add(product.sku);
           }

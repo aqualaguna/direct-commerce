@@ -18,7 +18,6 @@ describe('Role Management Controller', () => {
         username: 'testuser',
         email: 'test@example.com',
         role: 'manager',
-        roleAssignedBy: 1,
         roleAssignedAt: new Date(),
       };
 
@@ -152,7 +151,6 @@ describe('Role Management Controller', () => {
         username: mockUser.username,
         email: mockUser.email,
         role: mockUser.role,
-        roleAssignedBy: mockUser.roleAssignedBy,
         roleAssignedAt: mockUser.roleAssignedAt,
       });
     });
@@ -191,7 +189,6 @@ describe('Role Management Controller', () => {
         username: 'testuser',
         email: 'test@example.com',
         role: 'customer',
-        roleAssignedBy: 1,
         roleAssignedAt: new Date(),
       };
 
@@ -325,7 +322,6 @@ describe('Role Management Controller', () => {
         username: mockUser.username,
         email: mockUser.email,
         role: mockUser.role,
-        roleAssignedBy: mockUser.roleAssignedBy,
         roleAssignedAt: mockUser.roleAssignedAt,
       });
     });

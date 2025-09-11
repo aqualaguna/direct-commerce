@@ -11,10 +11,10 @@ This document defines the core data models/entities that will be shared between 
 **Key Attributes:**
 - `id`: string - Unique product identifier
 - `sku`: string - Stock keeping unit
-- `basePrice`: decimal - Base product price in cents
-- `comparePrice`: decimal - Original/compare price for discounts
+- `name`: string - Name of the product
+- `brand`: string - Brand of the product
+- `description`: string - Description of the product
 - `inventory`: integer - Available quantity
-- `isActive`: boolean - Whether product is available for purchase
 - `status`: enum - Product status (draft, active, inactive)
 - `category`: relation - Product category
 - `wishlistedBy`: relation[] - Users who have this product in wishlist
@@ -28,10 +28,9 @@ This document defines the core data models/entities that will be shared between 
 interface Product {
   id: string;
   sku: string;
-  basePrice: number; // in cents
-  comparePrice?: number;
+  name: string;
+  brand: string;
   inventory: number;
-  isActive: boolean;
   status: 'draft' | 'active' | 'inactive';
   category?: Category;
   wishlistedBy: User[];

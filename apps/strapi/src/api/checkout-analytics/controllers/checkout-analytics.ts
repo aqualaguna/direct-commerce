@@ -66,9 +66,9 @@ export default {
       });
 
       return {
-        data: activities.data || activities,
+        data: activities,
         meta: {
-          pagination: activities.meta?.pagination || pagination,
+          pagination: pagination,
           filters: Object.keys(filters).length > 0 ? filters : undefined
         }
       };
@@ -277,7 +277,7 @@ export default {
       pagination: { page: 1, pageSize: 10000 }
     });
 
-    return activities.data || activities;
+    return activities;
   },
 
   /**

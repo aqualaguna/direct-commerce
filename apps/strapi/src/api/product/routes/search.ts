@@ -153,13 +153,6 @@ export default {
                         },
                       },
                     },
-                    priceRange: {
-                      type: 'object',
-                      properties: {
-                        min: { type: 'number' },
-                        max: { type: 'number' },
-                      },
-                    },
                     sortOptions: {
                       type: 'array',
                       items: {

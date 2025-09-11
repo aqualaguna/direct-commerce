@@ -43,7 +43,7 @@ describe('Product is-public Policy', () => {
       expect(policyContext.query.filters).toBeUndefined();
     });
 
-    it('should allow access for unauthenticated users with published filter', async () => {
+    it('should allow access for unauthenticated users with active filter', async () => {
       const policyContext = {
         state: { user: null },
         query: {} as any,
@@ -53,7 +53,7 @@ describe('Product is-public Policy', () => {
 
       expect(result).toBe(true);
       expect(policyContext.query.filters).toEqual({
-        publishedAt: { $notNull: true },
+        status: 'active',
       });
     });
 
@@ -72,7 +72,7 @@ describe('Product is-public Policy', () => {
       expect(result).toBe(true);
       expect(policyContext.query.filters).toEqual({
         category: 'electronics',
-        publishedAt: { $notNull: true },
+        status: 'active',
       });
     });
 

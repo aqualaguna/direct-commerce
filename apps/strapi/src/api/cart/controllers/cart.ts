@@ -84,7 +84,30 @@ export default factories.createCoreController('api::cart.cart', ({ strapi }) => 
         return ctx.badRequest('Session ID required for guest users');
       }
 
-      // Validate product exists and is active
+      // Get product listing (required for cart operations)
+      let productListing = null;
+      if (productListingId) {
+        productListing = await strapi.documents('api::product-listing.product-listing').findOne({
+          documentId: productListingId,
+          filters: { isActive: true }
+        });
+      } else {
+        // If no productListingId provided, find the first active listing for this product
+        const listings = await strapi.documents('api::product-listing.product-listing').findMany({
+          filters: { 
+            product: productId,
+            isActive: true 
+          },
+          sort: { createdAt: 'asc' }
+        });
+        productListing = listings.length > 0 ? listings[0] : null;
+      }
+
+      if (!productListing) {
+        return ctx.notFound('Product listing not found or inactive');
+      }
+
+      // Validate base product exists and is active
       const product = await strapi.documents('api::product.product').findOne({
         documentId: productId,
         filters: { status: 'active' }
@@ -92,14 +115,6 @@ export default factories.createCoreController('api::cart.cart', ({ strapi }) => 
 
       if (!product) {
         return ctx.notFound('Product not found or inactive');
-      }
-
-      // Get product listing if provided
-      let productListing = null;
-      if (productListingId) {
-        productListing = await strapi.documents('api::product-listing.product-listing').findOne({
-          documentId: productListingId,
-        });
       }
 
       // Get variant if provided
@@ -115,7 +130,7 @@ export default factories.createCoreController('api::cart.cart', ({ strapi }) => 
       const existingItem = await strapi.documents('api::cart-item.cart-item').findFirst({
         filters: {
           cart: cart.documentId,
-          product: productId,
+          productListing: productListing.documentId,
           variant: variantId || null
         }
       });
@@ -136,14 +151,14 @@ export default factories.createCoreController('api::cart.cart', ({ strapi }) => 
         });
       } else {
         // Create new cart item
-        const price = variant?.price || product.basePrice || 0;
+        const price = variant?.price || productListing.basePrice || 0;
         const total = price * quantity;
 
         cartItem = await strapi.documents('api::cart-item.cart-item').create({
           data: {
             cart: cart.documentId,
             product: productId,
-            productListing: productListingId || null,
+            productListing: productListing.documentId,
             variant: variantId || null,
             quantity,
             price,

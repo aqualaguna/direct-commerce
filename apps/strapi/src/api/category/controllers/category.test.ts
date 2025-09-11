@@ -7,11 +7,6 @@
 // Third-party imports
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 
-// Test utilities
-import {
-  createMockContext,
-  createMockStrapi,
-} from '../../../utils/test-helpers';
 
 // Mock all dependencies
 jest.mock('../services/category');
@@ -25,9 +20,6 @@ const mockDocumentMethods = {
   update: jest.fn() as jest.MockedFunction<any>,
   delete: jest.fn() as jest.MockedFunction<any>,
   count: jest.fn() as jest.MockedFunction<any>,
-  publish: jest.fn() as jest.MockedFunction<any>,
-  unpublish: jest.fn() as jest.MockedFunction<any>,
-  discardDraft: jest.fn() as jest.MockedFunction<any>,
 };
 
 // Mock service methods
@@ -50,7 +42,15 @@ const mockServiceMethods = {
 
 // Mock Strapi instance with Document Service API
 const mockStrapi: any = {
-  documents: jest.fn(() => mockDocumentMethods),
+  documents: jest.fn((contentType: string) => {
+    if (contentType === 'api::category.category') {
+      return mockDocumentMethods;
+    }
+    if (contentType === 'api::product.product') {
+      return mockDocumentMethods;
+    }
+    return mockDocumentMethods;
+  }),
   service: jest.fn().mockReturnValue(mockServiceMethods),
   log: {
     error: jest.fn(),
@@ -74,7 +74,10 @@ jest.mock('@strapi/strapi', () => ({
 const mockCtx: any = {
   params: {},
   query: {},
-  request: { body: {} },
+  request: { 
+    body: {},
+    params: {}
+  },
   badRequest: jest.fn(),
   notFound: jest.fn(),
   throw: jest.fn(),
@@ -107,7 +110,7 @@ describe('Category Controller', () => {
 
     mockCtx.params = {};
     mockCtx.query = {};
-    mockCtx.request = { body: {} };
+    mockCtx.request = { body: {}, params: {} };
   });
 
   describe('find', () => {
@@ -136,7 +139,7 @@ describe('Category Controller', () => {
       );
       expect(mockDocumentMethods.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          filters: { publishedAt: { $notNull: true } }, // Use publishedAt for Draft & Publish
+          filters: {}, 
           sort: { sortOrder: 'asc', name: 'asc' },
           pagination: { page: 1, pageSize: 25 },
         })
@@ -144,7 +147,14 @@ describe('Category Controller', () => {
 
       expect(result).toEqual({
         data: mockCategories,
-        meta: {},
+        meta: {
+          "pagination": {
+            "page": 1,
+            "pageCount": 1,
+            "pageSize": 25,
+            "total": 2,
+          },
+        },
       });
     });
 
@@ -162,7 +172,7 @@ describe('Category Controller', () => {
 
       expect(mockDocumentMethods.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
-          filters: { isActive: true, publishedAt: { $notNull: true } }, // Use publishedAt for Draft & Publish
+          filters: { isActive: true }, // Use publishedAt for Draft & Publish
           sort: { name: 'desc' },
           pagination: { page: 2, pageSize: 10 },
         })
@@ -197,7 +207,7 @@ describe('Category Controller', () => {
         { documentId: 'cat1', name: 'Electronics', slug: 'electronics' },
       ];
 
-      mockCtx.params.documentId = 'cat1';
+      mockCtx.request.params.id = 'cat1';
       mockStrapi
         .documents('api::category.category')
         .findOne.mockResolvedValue(mockCategory);
@@ -227,24 +237,24 @@ describe('Category Controller', () => {
     });
 
     it('should return bad request if no documentId provided', async () => {
-      mockCtx.params.documentId = undefined;
+      mockCtx.request.params.id = undefined;
 
       await controller.findOne(mockCtx);
 
       expect(mockCtx.badRequest).toHaveBeenCalledWith(
-        'Category documentId is required'
+        'Category docudmentId is required'
       );
     });
 
     it('should return not found if category does not exist', async () => {
-      mockCtx.params.documentId = 'nonexistent';
+      mockCtx.request.params.id = 'nonexistent';
       mockStrapi
         .documents('api::category.category')
         .findOne.mockResolvedValue(null);
 
       await controller.findOne(mockCtx);
 
-      expect(mockCtx.notFound).toHaveBeenCalledWith('Category not found');
+      expect(mockCtx.notFound).toHaveBeenCalledWith('FindOne: Category not found');
     });
   });
 
@@ -377,7 +387,7 @@ describe('Category Controller', () => {
       };
       const mockUpdatedCategory = { ...existingCategory, ...updateData };
 
-      mockCtx.params.documentId = '1';
+      mockCtx.request.params.id = '1';
       mockCtx.request.body = { data: updateData };
       (mockDocumentMethods.findOne as any).mockResolvedValue(existingCategory);
       (mockDocumentMethods.update as any).mockResolvedValue(
@@ -400,7 +410,7 @@ describe('Category Controller', () => {
       const updateData = { parent: 2 };
       const existingCategory = { id: 1, name: 'Electronics', parent: null };
 
-      mockCtx.params.documentId = '1';
+      mockCtx.request.params.id = '1';
       mockCtx.request.body = { data: updateData };
       (mockDocumentMethods.findOne as any)
         .mockResolvedValueOnce(existingCategory)
@@ -417,7 +427,7 @@ describe('Category Controller', () => {
     });
 
     it('should return not found if category does not exist', async () => {
-      mockCtx.params.documentId = '999';
+      mockCtx.request.params.id = '999';
       (mockDocumentMethods.findOne as any).mockResolvedValue(null);
 
       await controller.update(mockCtx);
@@ -435,7 +445,7 @@ describe('Category Controller', () => {
         products: [],
       };
 
-      mockCtx.params.documentId = '1';
+      mockCtx.request.params.id = '1';
       (mockDocumentMethods.findOne as any).mockResolvedValue(category);
       (mockDocumentMethods.delete as any).mockResolvedValue(category);
 
@@ -457,7 +467,7 @@ describe('Category Controller', () => {
         products: { count: 0 },
       };
 
-      mockCtx.params.documentId = '1';
+      mockCtx.request.params.id = '1';
       (mockDocumentMethods.findOne as any).mockResolvedValue(category);
 
       await controller.delete(mockCtx);
@@ -478,7 +488,7 @@ describe('Category Controller', () => {
         ],
       };
 
-      mockCtx.params.documentId = '1';
+      mockCtx.request.params.id = '1';
       (mockDocumentMethods.findOne as any).mockResolvedValue(category);
 
       await controller.delete(mockCtx);

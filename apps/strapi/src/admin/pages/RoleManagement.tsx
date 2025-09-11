@@ -34,7 +34,6 @@ interface User {
   username: string;
   email: string;
   role: string;
-  roleAssignedBy?: number;
   roleAssignedAt?: string;
 }
 
@@ -338,7 +337,7 @@ const RoleManagement: React.FC = () => {
                           {user.role}
                         </Typography>
                       </TableCell>
-                      <TableCell>{user.roleAssignedBy || '-'}</TableCell>
+                      <TableCell>-</TableCell>
                       <TableCell>
                         {user.roleAssignedAt
                           ? new Date(user.roleAssignedAt).toLocaleDateString()

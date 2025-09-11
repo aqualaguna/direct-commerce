@@ -9,12 +9,12 @@ export default (plugin) => {
         .query('plugin::users-permissions.user')
         .findOne({
           where: {
+            provider: 'local',
             $or: [
               { email: identifier.toLowerCase() },
               { username: identifier },
             ],
           },
-          populate: ['role'],
         });
 
       if (!user) {
@@ -39,12 +39,13 @@ export default (plugin) => {
         .plugin('users-permissions')
         .service('permissionInheritance');
       
-      const permissions = await permissionInheritanceService.getRolePermissions(user.role);
+      const userRole = user.role || 'customer';
+      const permissions = await permissionInheritanceService.getRolePermissions(userRole);
       user.permissions = permissions;
 
       const jwt = strapi.plugin('users-permissions').service('jwt').issue({
         id: user.id,
-        role: user.role,
+        role: userRole,
         permissions: permissions,
       });
 
@@ -58,7 +59,7 @@ export default (plugin) => {
           id: user.id,
           username: user.username,
           email: user.email,
-          role: user.role,
+          role: userRole,
           permissions: permissions,
         },
       };
@@ -94,7 +95,7 @@ export default (plugin) => {
       const user = await strapi
         .query('plugin::users-permissions.user')
         .findOne({
-          where: { id: userId },
+          where: { documentId: userId },
         });
 
       if (!user) {
@@ -105,7 +106,7 @@ export default (plugin) => {
       const assigner = await strapi
         .query('plugin::users-permissions.user')
         .findOne({
-          where: { id: assignedBy },
+          where: { documentId: assignedBy },
         });
 
       if (!assigner) {
@@ -131,10 +132,9 @@ export default (plugin) => {
       const updatedUser = await strapi
         .query('plugin::users-permissions.user')
         .update({
-          where: { id: userId },
+          where: { documentId: userId },
           data: {
             role: newRole,
-            roleAssignedBy: assignedBy,
             roleAssignedAt: new Date(),
           },
         });
@@ -149,7 +149,7 @@ export default (plugin) => {
       const user = await strapi
         .query('plugin::users-permissions.user')
         .findOne({
-          where: { id: userId },
+          where: { documentId: userId },
         });
 
       if (!user) {
@@ -160,7 +160,7 @@ export default (plugin) => {
       const revoker = await strapi
         .query('plugin::users-permissions.user')
         .findOne({
-          where: { id: revokedBy },
+          where: { documentId: revokedBy },
         });
 
       if (!revoker) {
@@ -180,10 +180,9 @@ export default (plugin) => {
       const updatedUser = await strapi
         .query('plugin::users-permissions.user')
         .update({
-          where: { id: userId },
+          where: { documentId: userId },
           data: {
             role: 'customer',
-            roleAssignedBy: revokedBy,
             roleAssignedAt: new Date(),
           },
         });
@@ -227,7 +226,7 @@ async function trackLoginAttempt(ctx, user, success, errorMessage, sessionDurati
     
     await strapi.documents('api::user-activity.user-activity').create({
       data: {
-        user: user ? user.id : null,
+        user: user ? user.documentId : null,
         activityType: 'login',
         activityData: {
           endpoint: '/api/auth/local',
@@ -264,7 +263,7 @@ async function trackActivity({ user, activityType, ctx, success, errorMessage })
     
     await strapi.documents('api::user-activity.user-activity').create({
       data: {
-        user: user.id,
+        user: user.documentId,
         activityType,
         activityData: {
           endpoint: ctx.request.url,

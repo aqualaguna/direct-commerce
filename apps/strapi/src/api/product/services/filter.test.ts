@@ -1,7 +1,7 @@
 /**
  * Product filter service tests
  *
- * Tests for product filtering functionality including category, price, and attribute filtering
+ * Tests for product filtering functionality including category, and attribute filtering
  */
 
 // Create persistent mock objects for documents API
@@ -13,9 +13,6 @@ const mockDocumentsAPI = {
   update: jest.fn() as jest.MockedFunction<any>,
   delete: jest.fn() as jest.MockedFunction<any>,
   count: jest.fn() as jest.MockedFunction<any>,
-  publish: jest.fn() as jest.MockedFunction<any>,
-  unpublish: jest.fn() as jest.MockedFunction<any>,
-  discardDraft: jest.fn() as jest.MockedFunction<any>,
 };
 
 const mockStrapi = {
@@ -164,55 +161,6 @@ describe('Product Filter Service', () => {
     });
   });
 
-  describe('applyPriceFilter', () => {
-    it('should return original filters when no price range provided', () => {
-      const originalFilters = { status: 'active' };
-
-      const result = filterService.applyPriceFilter(originalFilters);
-
-      expect(result).toEqual(originalFilters);
-    });
-
-    it('should apply minimum price filter', () => {
-      const originalFilters = { status: 'active' };
-
-      const result = filterService.applyPriceFilter(originalFilters, {
-        min: 10,
-      });
-
-      expect(result).toEqual({
-        status: 'active',
-        price: { $gte: 10 },
-      });
-    });
-
-    it('should apply maximum price filter', () => {
-      const originalFilters = { status: 'active' };
-
-      const result = filterService.applyPriceFilter(originalFilters, {
-        max: 100,
-      });
-
-      expect(result).toEqual({
-        status: 'active',
-        price: { $lte: 100 },
-      });
-    });
-
-    it('should apply price range filter', () => {
-      const originalFilters = { status: 'active' };
-
-      const result = filterService.applyPriceFilter(originalFilters, {
-        min: 10,
-        max: 100,
-      });
-
-      expect(result).toEqual({
-        status: 'active',
-        price: { $gte: 10, $lte: 100 },
-      });
-    });
-  });
 
   describe('applyAttributeFilters', () => {
     it('should return original filters when no attributes provided', () => {
@@ -257,7 +205,7 @@ describe('Product Filter Service', () => {
 
     it('should apply boolean attribute filters', () => {
       const originalFilters = { status: 'active' };
-      const attributes = { featured: true, onSale: false };
+      const attributes = { onSale: false };
 
       const result = filterService.applyAttributeFilters(
         originalFilters,
@@ -266,7 +214,6 @@ describe('Product Filter Service', () => {
 
       expect(result).toEqual({
         status: 'active',
-        featured: true,
         onSale: false,
       });
     });
@@ -340,24 +287,6 @@ describe('Product Filter Service', () => {
       expect(result).toEqual({});
     });
 
-    it('should validate price range', () => {
-      const params = { minPrice: '10.99', maxPrice: '99.99' };
-
-      const result = filterService.validateFilterParams(params);
-
-      expect(result).toEqual({
-        priceRange: { min: 10.99, max: 99.99 },
-      });
-    });
-
-    it('should throw error for invalid price range', () => {
-      const params = { minPrice: '100', maxPrice: '50' };
-
-      expect(() => filterService.validateFilterParams(params)).toThrow(
-        'Minimum price cannot be greater than maximum price'
-      );
-    });
-
     it('should validate inventory filters', () => {
       const params = { inStockOnly: 'true', minStock: '5' };
 
@@ -392,10 +321,9 @@ describe('Product Filter Service', () => {
 
   describe('buildFilters', () => {
     it('should build complete filter object', async () => {
-      const baseFilters = { status: 'active', publishedAt: { $notNull: true } };
+      const baseFilters = { status: 'active' };
       const filterParams = {
         categoryId: 1,
-        priceRange: { min: 10, max: 100 },
         attributes: { color: 'red' },
         inStockOnly: true,
       };
@@ -409,9 +337,7 @@ describe('Product Filter Service', () => {
 
       expect(result).toEqual({
         status: 'active',
-        publishedAt: { $notNull: true },
         category: { documentId: { $in: ['1'] } },
-        price: { $gte: 10, $lte: 100 },
         color: { $containsi: 'red' },
         inventory: { $gt: 0 },
       });

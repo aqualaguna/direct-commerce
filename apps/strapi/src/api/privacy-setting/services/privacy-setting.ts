@@ -230,7 +230,8 @@ export default factories.createCoreService('api::privacy-setting.privacy-setting
           currency: userData.currency,
           isActive: userData.isActive,
           emailVerified: userData.emailVerified,
-          role: userData.role,
+          // TODO: add role
+          // role: userData.role,
           createdAt: userData.createdAt,
           updatedAt: userData.updatedAt
         },

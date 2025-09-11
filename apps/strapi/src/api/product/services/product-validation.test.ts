@@ -9,14 +9,11 @@ describe('Product Validation Service', () => {
   describe('validateBusinessRules', () => {
     it('should pass validation for valid product data', async () => {
       const validProduct = {
-        title: 'Test Product',
+        name: 'Test Product',
+        brand: 'Test Brand',
         description: 'Test description',
-        shortDescription: 'Short desc',
-        price: 29.99,
         sku: 'TEST-001',
         inventory: 10,
-        isActive: true,
-        featured: false,
       };
 
       const result =
@@ -26,29 +23,11 @@ describe('Product Validation Service', () => {
       expect(result.errors).toHaveLength(0);
     });
 
-    it('should fail validation for invalid price', async () => {
-      const invalidProduct = {
-        title: 'Test Product',
-        description: 'Test description',
-        shortDescription: 'Short desc',
-        price: -10,
-        sku: 'TEST-001',
-        inventory: 10,
-      };
-
-      const result =
-        await productValidationService.validateBusinessRules(invalidProduct);
-
-      expect(result.isValid).toBe(false);
-      expect(result.errors).toContain('Price must be greater than 0');
-    });
-
     it('should fail validation for invalid inventory', async () => {
       const invalidProduct = {
-        title: 'Test Product',
+        name: 'Test Product',
+        brand: 'Test Brand',
         description: 'Test description',
-        shortDescription: 'Short desc',
-        price: 29.99,
         sku: 'TEST-001',
         inventory: -5,
       };
@@ -62,10 +41,9 @@ describe('Product Validation Service', () => {
 
     it('should fail validation for invalid SKU format', async () => {
       const invalidProduct = {
-        title: 'Test Product',
+        name: 'Test Product',
+        brand: 'Test Brand',
         description: 'Test description',
-        shortDescription: 'Short desc',
-        price: 29.99,
         sku: 'TEST@001',
         inventory: 10,
       };
@@ -77,40 +55,6 @@ describe('Product Validation Service', () => {
       expect(result.errors).toContain(
         'SKU can only contain letters, numbers, hyphens, and underscores'
       );
-    });
-  });
-
-  describe('priceRule', () => {
-    it('should pass for valid price', async () => {
-      const data = { price: 29.99 };
-      const result = await productValidationService.priceRule(data);
-
-      expect(result.isValid).toBe(true);
-      expect(result.errors).toHaveLength(0);
-    });
-
-    it('should fail for negative price', async () => {
-      const data = { price: -10 };
-      const result = await productValidationService.priceRule(data);
-
-      expect(result.isValid).toBe(false);
-      expect(result.errors).toContain('Price must be greater than 0');
-    });
-
-    it('should fail for zero price', async () => {
-      const data = { price: 0 };
-      const result = await productValidationService.priceRule(data);
-
-      expect(result.isValid).toBe(false);
-      expect(result.errors).toContain('Price must be greater than 0');
-    });
-
-    it('should fail for price too high', async () => {
-      const data = { price: 1000000 };
-      const result = await productValidationService.priceRule(data);
-
-      expect(result.isValid).toBe(false);
-      expect(result.errors).toContain('Price cannot exceed 999,999.99');
     });
   });
 
@@ -140,7 +84,7 @@ describe('Product Validation Service', () => {
     });
 
     it('should warn for active product with zero inventory', async () => {
-      const data = { inventory: 0, isActive: true };
+      const data = { inventory: 0 };
       const result = await productValidationService.inventoryRule(data);
 
       expect(result.isValid).toBe(false);
@@ -194,43 +138,171 @@ describe('Product Validation Service', () => {
     });
   });
 
-  describe('pricingRule', () => {
-    it('should pass for valid pricing', async () => {
-      const data = { price: 29.99, comparePrice: 39.99 };
-      const result = await productValidationService.pricingRule(data);
+  describe('nameRule', () => {
+    it('should pass validation for valid name', async () => {
+      const validProduct = {
+        name: 'Valid Product Name',
+        brand: 'Test Brand',
+        description: 'Test description',
+        sku: 'TEST-001',
+        inventory: 10,
+      };
+
+      const result = await productValidationService.nameRule(validProduct);
 
       expect(result.isValid).toBe(true);
       expect(result.errors).toHaveLength(0);
     });
 
-    it('should fail when compare price equals regular price', async () => {
-      const data = { price: 29.99, comparePrice: 29.99 };
-      const result = await productValidationService.pricingRule(data);
+    it('should fail validation for empty name', async () => {
+      const invalidProduct = {
+        name: '',
+        brand: 'Test Brand',
+        description: 'Test description',
+        sku: 'TEST-001',
+        inventory: 10,
+      };
+
+      const result = await productValidationService.nameRule(invalidProduct);
 
       expect(result.isValid).toBe(false);
-      expect(result.errors).toContain(
-        'Compare price must be greater than regular price'
-      );
+      expect(result.errors).toContain('Name is required and must be a string');
     });
 
-    it('should fail when compare price is less than regular price', async () => {
-      const data = { price: 39.99, comparePrice: 29.99 };
-      const result = await productValidationService.pricingRule(data);
+    it('should fail validation for name too short', async () => {
+      const invalidProduct = {
+        name: 'A',
+        brand: 'Test Brand',
+        description: 'Test description',
+        sku: 'TEST-001',
+        inventory: 10,
+      };
+
+      const result = await productValidationService.nameRule(invalidProduct);
 
       expect(result.isValid).toBe(false);
-      expect(result.errors).toContain(
-        'Compare price must be greater than regular price'
-      );
+      expect(result.errors).toContain('Name must be at least 2 characters long');
     });
 
-    it('should fail for unreasonable price difference', async () => {
-      const data = { price: 10, comparePrice: 100 };
-      const result = await productValidationService.pricingRule(data);
+    it('should fail validation for name too long', async () => {
+      const invalidProduct = {
+        name: 'A'.repeat(256),
+        brand: 'Test Brand',
+        description: 'Test description',
+        sku: 'TEST-001',
+        inventory: 10,
+      };
+
+      const result = await productValidationService.nameRule(invalidProduct);
 
       expect(result.isValid).toBe(false);
-      expect(result.errors).toContain(
-        'Compare price difference seems too large'
-      );
+      expect(result.errors).toContain('Name must be 255 characters or less');
+    });
+
+    it('should fail validation for invalid characters in name', async () => {
+      const invalidProduct = {
+        name: 'Invalid@Product#Name',
+        brand: 'Test Brand',
+        description: 'Test description',
+        sku: 'TEST-001',
+        inventory: 10,
+      };
+
+      const result = await productValidationService.nameRule(invalidProduct);
+
+      expect(result.isValid).toBe(false);
+      expect(result.errors).toContain('Name can only contain letters, numbers, spaces, hyphens, apostrophes, ampersands, and periods');
+    });
+  });
+
+  describe('brandRule', () => {
+    it('should pass validation for valid brand', async () => {
+      const validProduct = {
+        name: 'Test Product',
+        brand: 'Valid Brand Name',
+        description: 'Test description',
+        sku: 'TEST-001',
+        inventory: 10,
+      };
+
+      const result = await productValidationService.brandRule(validProduct);
+
+      expect(result.isValid).toBe(true);
+      expect(result.errors).toHaveLength(0);
+    });
+
+    it('should pass validation for null brand', async () => {
+      const validProduct = {
+        name: 'Test Product',
+        brand: null,
+        description: 'Test description',
+        sku: 'TEST-001',
+        inventory: 10,
+      };
+
+      const result = await productValidationService.brandRule(validProduct);
+
+      expect(result.isValid).toBe(true);
+      expect(result.errors).toHaveLength(0);
+    });
+
+    it('should pass validation for undefined brand', async () => {
+      const validProduct = {
+        name: 'Test Product',
+        description: 'Test description',
+        sku: 'TEST-001',
+        inventory: 10,
+      };
+
+      const result = await productValidationService.brandRule(validProduct);
+
+      expect(result.isValid).toBe(true);
+      expect(result.errors).toHaveLength(0);
+    });
+
+    it('should fail validation for brand too long', async () => {
+      const invalidProduct = {
+        name: 'Test Product',
+        brand: 'A'.repeat(101),
+        description: 'Test description',
+        sku: 'TEST-001',
+        inventory: 10,
+      };
+
+      const result = await productValidationService.brandRule(invalidProduct);
+
+      expect(result.isValid).toBe(false);
+      expect(result.errors).toContain('Brand must be 100 characters or less');
+    });
+
+    it('should fail validation for brand too short', async () => {
+      const invalidProduct = {
+        name: 'Test Product',
+        brand: 'A',
+        description: 'Test description',
+        sku: 'TEST-001',
+        inventory: 10,
+      };
+
+      const result = await productValidationService.brandRule(invalidProduct);
+
+      expect(result.isValid).toBe(false);
+      expect(result.errors).toContain('Brand must be at least 2 characters long if provided');
+    });
+
+    it('should fail validation for invalid characters in brand', async () => {
+      const invalidProduct = {
+        name: 'Test Product',
+        brand: 'Invalid@Brand#Name',
+        description: 'Test description',
+        sku: 'TEST-001',
+        inventory: 10,
+      };
+
+      const result = await productValidationService.brandRule(invalidProduct);
+
+      expect(result.isValid).toBe(false);
+      expect(result.errors).toContain('Brand can only contain letters, numbers, spaces, hyphens, apostrophes, ampersands, and periods');
     });
   });
 
@@ -300,101 +372,21 @@ describe('Product Validation Service', () => {
     });
   });
 
-  describe('validateSEOFields', () => {
-    it('should pass for valid SEO data', async () => {
-      const seoData = {
-        metaTitle: 'Valid Meta Title',
-        metaDescription:
-          'This is a valid meta description that is long enough to be meaningful.',
-        keywords: 'keyword1, keyword2, keyword3',
-      };
-
-      const result = await productValidationService.validateSEOFields(seoData);
-
-      expect(result.isValid).toBe(true);
-      expect(result.errors).toHaveLength(0);
-    });
-
-    it('should fail for meta title too short', async () => {
-      const seoData = {
-        metaTitle: 'Short',
-      };
-
-      const result = await productValidationService.validateSEOFields(seoData);
-
-      expect(result.isValid).toBe(false);
-      expect(result.errors).toContain(
-        'Meta title should be at least 10 characters'
-      );
-    });
-
-    it('should fail for meta title too long', async () => {
-      const seoData = {
-        metaTitle: 'A'.repeat(61),
-      };
-
-      const result = await productValidationService.validateSEOFields(seoData);
-
-      expect(result.isValid).toBe(false);
-      expect(result.errors).toContain(
-        'Meta title should be 60 characters or less'
-      );
-    });
-
-    it('should fail for meta description too short', async () => {
-      const seoData = {
-        metaDescription: 'Short',
-      };
-
-      const result = await productValidationService.validateSEOFields(seoData);
-
-      expect(result.isValid).toBe(false);
-      expect(result.errors).toContain(
-        'Meta description should be at least 50 characters'
-      );
-    });
-
-    it('should fail for meta description too long', async () => {
-      const seoData = {
-        metaDescription: 'A'.repeat(161),
-      };
-
-      const result = await productValidationService.validateSEOFields(seoData);
-
-      expect(result.isValid).toBe(false);
-      expect(result.errors).toContain(
-        'Meta description should be 160 characters or less'
-      );
-    });
-
-    it('should fail for too many keywords', async () => {
-      const seoData = {
-        keywords: 'k1, k2, k3, k4, k5, k6, k7, k8, k9, k10, k11',
-      };
-
-      const result = await productValidationService.validateSEOFields(seoData);
-
-      expect(result.isValid).toBe(false);
-      expect(result.errors).toContain('Keywords should not exceed 10 items');
-    });
-  });
 
   describe('validateBulkData', () => {
     it('should pass for valid bulk data', async () => {
       const bulkData = [
         {
-          title: 'Product 1',
+          name: 'Product 1',
+          brand: 'Brand A',
           description: 'Description 1',
-          shortDescription: 'Short 1',
-          price: 29.99,
           sku: 'SKU-001',
           inventory: 10,
         },
         {
-          title: 'Product 2',
+          name: 'Product 2',
+          brand: 'Brand B',
           description: 'Description 2',
-          shortDescription: 'Short 2',
-          price: 39.99,
           sku: 'SKU-002',
           inventory: 5,
         },
@@ -428,10 +420,9 @@ describe('Product Validation Service', () => {
 
     it('should fail for too many products', async () => {
       const bulkData = Array(1001).fill({
-        title: 'Product',
+        name: 'Product',
+        brand: 'Brand',
         description: 'Description',
-        shortDescription: 'Short',
-        price: 29.99,
         sku: 'SKU',
         inventory: 10,
       });
@@ -444,32 +435,5 @@ describe('Product Validation Service', () => {
       );
     });
 
-    it('should fail for invalid products in bulk data', async () => {
-      const bulkData = [
-        {
-          title: 'Product 1',
-          description: 'Description 1',
-          shortDescription: 'Short 1',
-          price: 29.99,
-          sku: 'SKU-001',
-          inventory: 10,
-        },
-        {
-          title: 'Product 2',
-          description: 'Description 2',
-          shortDescription: 'Short 2',
-          price: -10, // Invalid price
-          sku: 'SKU-002',
-          inventory: 5,
-        },
-      ];
-
-      const result = await productValidationService.validateBulkData(bulkData);
-
-      expect(result.isValid).toBe(false);
-      expect(result.errors).toContain(
-        'Product 2: Price must be greater than 0'
-      );
-    });
   });
 });

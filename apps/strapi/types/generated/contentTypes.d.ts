@@ -681,7 +681,7 @@ export interface ApiCategoryCategory extends Struct.CollectionTypeSchema {
   };
   options: {
     comment: 'Category content type for product organization';
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
     children: Schema.Attribute.Relation<'oneToMany', 'api::category.category'>;
@@ -707,7 +707,9 @@ export interface ApiCategoryCategory extends Struct.CollectionTypeSchema {
     products: Schema.Attribute.Relation<'oneToMany', 'api::product.product'>;
     publishedAt: Schema.Attribute.DateTime;
     seo: Schema.Attribute.Component<'shared.seo', false>;
-    slug: Schema.Attribute.UID<'name'> & Schema.Attribute.Required;
+    slug: Schema.Attribute.UID<'name'> &
+      Schema.Attribute.Required &
+      Schema.Attribute.Unique;
     sortOrder: Schema.Attribute.Integer & Schema.Attribute.DefaultTo<0>;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
@@ -2593,28 +2595,21 @@ export interface ApiProductProduct extends Struct.CollectionTypeSchema {
   };
   options: {
     comment: 'Base product entity - website-facing attributes moved to ProductListing';
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
-    basePrice: Schema.Attribute.Decimal &
-      Schema.Attribute.Required &
-      Schema.Attribute.SetMinMax<
-        {
-          min: 0;
-        },
-        number
-      >;
+    brand: Schema.Attribute.String &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 100;
+      }>;
     category: Schema.Attribute.Relation<'manyToOne', 'api::category.category'>;
-    comparePrice: Schema.Attribute.Decimal &
-      Schema.Attribute.SetMinMax<
-        {
-          min: 0;
-        },
-        number
-      >;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+    description: Schema.Attribute.String &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 500;
+      }>;
     inventory: Schema.Attribute.Integer &
       Schema.Attribute.Required &
       Schema.Attribute.SetMinMax<
@@ -2628,13 +2623,17 @@ export interface ApiProductProduct extends Struct.CollectionTypeSchema {
       'oneToOne',
       'api::inventory.inventory'
     >;
-    isActive: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
       'api::product.product'
     > &
       Schema.Attribute.Private;
+    name: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 255;
+      }>;
     productListings: Schema.Attribute.Relation<
       'oneToMany',
       'api::product-listing.product-listing'
@@ -3565,7 +3564,10 @@ export interface PluginUsersPermissionsUser
       Schema.Attribute.SetMinMaxLength<{
         maxLength: 500;
       }>;
+    blocked: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
     carts: Schema.Attribute.Relation<'oneToMany', 'api::cart.cart'>;
+    confirmationToken: Schema.Attribute.String;
+    confirmed: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -3612,6 +3614,7 @@ export interface PluginUsersPermissionsUser
       Schema.Attribute.SetMinMaxLength<{
         maxLength: 255;
       }>;
+    password: Schema.Attribute.Password;
     phone: Schema.Attribute.String &
       Schema.Attribute.SetMinMaxLength<{
         maxLength: 20;
@@ -3625,17 +3628,13 @@ export interface PluginUsersPermissionsUser
       'api::privacy-setting.privacy-setting'
     >;
     profilePicture: Schema.Attribute.Media<'images'>;
+    provider: Schema.Attribute.String & Schema.Attribute.DefaultTo<'local'>;
     publishedAt: Schema.Attribute.DateTime;
-    role: Schema.Attribute.Enumeration<
-      ['customer', 'admin', 'manager', 'support', 'moderator']
-    > &
-      Schema.Attribute.DefaultTo<'customer'>;
-    roleAssignedAt: Schema.Attribute.DateTime;
-    roleAssignedBy: Schema.Attribute.Relation<
+    resetPasswordToken: Schema.Attribute.String;
+    role: Schema.Attribute.Relation<
       'manyToOne',
-      'plugin::users-permissions.user'
+      'plugin::users-permissions.role'
     >;
-    roleExpiresAt: Schema.Attribute.DateTime;
     security_events: Schema.Attribute.Relation<
       'oneToMany',
       'api::security-event.security-event'

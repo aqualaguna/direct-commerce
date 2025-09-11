@@ -42,21 +42,31 @@
       "type": "boolean",
       "default": false
     },
-    "role": {
-      "type": "enumeration",
-      "enum": ["customer", "admin", "manager", "support", "moderator"],
-      "default": "customer"
+    "provider": {
+      "type": "string",
+      "default": "local"
     },
-    "roleAssignedBy": {
+    "password": {
+      "type": "password"
+    },
+    "confirmed": {
+      "type": "boolean",
+      "default": false
+    },
+    "blocked": {
+      "type": "boolean",
+      "default": false
+    },
+    "resetPasswordToken": {
+      "type": "string"
+    },
+    "confirmationToken": {
+      "type": "string"
+    },
+    "role": {
       "type": "relation",
       "relation": "manyToOne",
-      "target": "plugin::users-permissions.user"
-    },
-    "roleAssignedAt": {
-      "type": "datetime"
-    },
-    "roleExpiresAt": {
-      "type": "datetime"
+      "target": "plugin::users-permissions.role"
     },
     "profilePicture": {
       "type": "media",

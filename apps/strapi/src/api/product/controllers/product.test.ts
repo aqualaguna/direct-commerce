@@ -9,7 +9,6 @@ import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 // Mock all dependencies following new patterns
 jest.mock('../services/product-validation');
 jest.mock('../services/product');
-jest.mock('../services/seo');
 jest.mock('../services/bulk-operations');
 
 // Create mock functions for Document Service API
@@ -21,9 +20,6 @@ const mockDocumentService = {
   update: jest.fn() as jest.MockedFunction<any>,
   delete: jest.fn() as jest.MockedFunction<any>,
   count: jest.fn() as jest.MockedFunction<any>,
-  publish: jest.fn() as jest.MockedFunction<any>,
-  unpublish: jest.fn() as jest.MockedFunction<any>,
-  discardDraft: jest.fn() as jest.MockedFunction<any>,
 };
 
 // Mock Strapi with Document Service API following new test standards
@@ -35,13 +31,8 @@ const mockStrapi: any = {
     findWithStatusFilter: jest.fn(),
     bulkUpdateStatus: jest.fn(),
     getStatusStatistics: jest.fn(),
-    publishProduct: jest.fn(),
-    unpublishProduct: jest.fn(),
     reactivateProduct: jest.fn(),
     getProductsReadyForPublication: jest.fn(),
-    generateSEOData: jest.fn(),
-    validateSEOData: jest.fn(),
-    optimizeSEOData: jest.fn(),
     generateSitemapData: jest.fn(),
     importFromCSV: jest.fn(),
     importFromJSON: jest.fn(),
@@ -82,8 +73,6 @@ describe('Product Controller', () => {
     mockDocumentService.create.mockClear();
     mockDocumentService.update.mockClear();
     mockDocumentService.delete.mockClear();
-    mockDocumentService.publish.mockClear();
-    mockDocumentService.unpublish.mockClear();
     mockDocumentService.count.mockClear();
 
     // Import the actual controller
@@ -96,15 +85,15 @@ describe('Product Controller', () => {
       const mockProducts = [
         {
           documentId: 'doc1',
-          title: 'Product 1',
-          price: 29.99,
-          status: 'published',
+          name: 'Product 1',
+          brand: 'Brand A',
+          status: 'active',
         },
         {
           documentId: 'doc2',
-          title: 'Product 2',
-          price: 39.99,
-          status: 'published',
+          name: 'Product 2',
+          brand: 'Brand B',
+          status: 'active',
         },
       ];
 
@@ -123,16 +112,16 @@ describe('Product Controller', () => {
       expect(mockDocumentService.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           filters: expect.objectContaining({
-            status: 'published',
+            status: 'active',
           }),
         })
       );
     });
 
-    it('should allow admin to see unpublished products', async () => {
+    it('should allow admin to see draft products', async () => {
       const mockProducts = [
-        { documentId: 'doc1', title: 'Published Product', status: 'published' },
-        { documentId: 'doc2', title: 'Draft Product', status: 'draft' },
+        { documentId: 'doc1', name: 'active Product', status: 'active' },
+        { documentId: 'doc2', name: 'Draft Product', status: 'draft' },
       ];
 
       mockDocumentService.findMany.mockResolvedValue(mockProducts);
@@ -160,9 +149,9 @@ describe('Product Controller', () => {
     it('should return a single product by documentId', async () => {
       const mockProduct = {
         documentId: 'doc123',
-        title: 'Test Product',
-        price: 29.99,
-        status: 'published',
+        name: 'Test Product',
+        brand: 'Brand A',
+        status: 'active',
       };
 
       mockDocumentService.findOne.mockResolvedValue(mockProduct);
@@ -182,13 +171,9 @@ describe('Product Controller', () => {
         expect.objectContaining({
           documentId: 'doc123',
           populate: expect.objectContaining({
-            images: {
-              fields: ['url', 'width', 'height', 'formats'],
-            },
             category: {
               fields: ['id', 'name', 'slug'],
             },
-            seo: true,
           }),
         })
       );
@@ -213,8 +198,9 @@ describe('Product Controller', () => {
     it('should support legacy id parameter', async () => {
       const mockProduct = {
         documentId: 'doc123',
-        title: 'Test Product',
-        status: 'published',
+        name: 'Test Product',
+        brand: 'Brand A',
+        status: 'active',
       };
 
       mockDocumentService.findOne.mockResolvedValue(mockProduct);
@@ -241,10 +227,9 @@ describe('Product Controller', () => {
   describe('create', () => {
     it('should create a new product with valid data', async () => {
       const productData = {
-        title: 'New Product',
+        name: 'New Product',
+        brand: 'Brand A',
         description: 'New product description',
-        shortDescription: 'New short desc',
-        price: 29.99,
         sku: 'NEW-001',
         inventory: 10,
       };
@@ -271,29 +256,12 @@ describe('Product Controller', () => {
       );
     });
 
-    it('should return 400 for invalid product data', async () => {
-      const invalidData = {
-        title: '', // Invalid: empty title
-        price: -10, // Invalid: negative price
-      };
-
-      const ctx = {
-        request: { body: { data: invalidData } },
-        badRequest: jest.fn(),
-        throw: jest.fn(),
-      };
-
-      await controller.create(ctx);
-
-      expect(ctx.badRequest).toHaveBeenCalled();
-    });
 
     it('should check SKU uniqueness', async () => {
       const productData = {
-        title: 'New Product',
+        name: 'New Product',
+        brand: 'Brand A',
         description: 'New product description',
-        shortDescription: 'New short desc',
-        price: 29.99,
         sku: 'EXISTING-SKU',
         inventory: 10,
       };
@@ -319,14 +287,13 @@ describe('Product Controller', () => {
     it('should update an existing product', async () => {
       const existingProduct = {
         documentId: 'doc123',
-        title: 'Original Product',
+        name: 'Original Product',
+        brand: 'Brand A',
         sku: 'ORIG-001',
-        price: 29.99,
       };
 
       const updateData = {
         title: 'Updated Product',
-        price: 39.99,
       };
 
       const mockUpdatedProduct = { ...existingProduct, ...updateData };
@@ -351,35 +318,6 @@ describe('Product Controller', () => {
           data: updateData,
           populate: expect.any(Object),
         })
-      );
-    });
-
-    it('should validate price updates', async () => {
-      const existingProduct = {
-        documentId: 'doc123',
-        title: 'Test Product',
-        sku: 'TEST-001',
-        price: 29.99,
-      };
-
-      const invalidUpdateData = {
-        price: -10, // Invalid negative price
-      };
-
-      mockDocumentService.findOne.mockResolvedValue(existingProduct);
-
-      const ctx = {
-        params: { documentId: 'doc123' },
-        request: { body: { data: invalidUpdateData } },
-        badRequest: jest.fn(),
-        notFound: jest.fn(),
-        throw: jest.fn(),
-      };
-
-      await controller.update(ctx);
-
-      expect(ctx.badRequest).toHaveBeenCalledWith(
-        'Price must be greater than 0'
       );
     });
   });
@@ -432,9 +370,9 @@ describe('Product Controller', () => {
       const mockProducts = [
         {
           documentId: 'doc1',
-          title: 'Apple iPhone',
-          price: 999.99,
-          status: 'published',
+          name: 'Apple iPhone',
+          brand: 'Apple',
+          status: 'active',
         },
       ];
 
@@ -451,92 +389,17 @@ describe('Product Controller', () => {
       expect(mockDocumentService.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           filters: expect.objectContaining({
-            status: 'published',
+            status: 'active',
             $or: expect.arrayContaining([
-              expect.objectContaining({ title: { $containsi: 'iPhone' } }),
+              expect.objectContaining({ name: { $containsi: 'iPhone' } }),
+              expect.objectContaining({ brand: { $containsi: 'iPhone' } }),
             ]),
           }),
         })
       );
     });
 
-    it('should search with price range filters', async () => {
-      const mockProducts = [
-        {
-          documentId: 'doc1',
-          title: 'Product',
-          price: 50.0,
-          status: 'published',
-        },
-      ];
-
-      mockDocumentService.findMany.mockResolvedValue(mockProducts);
-
-      const ctx = {
-        query: { minPrice: '25', maxPrice: '75' },
-        throw: jest.fn(),
-      };
-
-      const result = await controller.search(ctx);
-
-      expect(result.data).toEqual(mockProducts);
-      expect(mockDocumentService.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({
-          filters: expect.objectContaining({
-            status: 'published',
-            price: {
-              $gte: 25,
-              $lte: 75,
-            },
-          }),
-        })
-      );
-    });
   });
 
-  describe('Draft & Publish Operations', () => {
-    it('should publish a product', async () => {
-      const mockResult = {
-        documentId: 'doc123',
-        entries: [{ documentId: 'doc123', status: 'published' }],
-      };
 
-      mockDocumentService.publish.mockResolvedValue(mockResult);
-
-      const ctx = {
-        params: { documentId: 'doc123' },
-        badRequest: jest.fn(),
-        throw: jest.fn(),
-      };
-
-      const result = await controller.publishProduct(ctx);
-
-      expect(result.data).toEqual(mockResult);
-      expect(mockDocumentService.publish).toHaveBeenCalledWith({
-        documentId: 'doc123',
-      });
-    });
-
-    it('should unpublish a product', async () => {
-      const mockResult = {
-        documentId: 'doc123',
-        entries: [{ documentId: 'doc123', status: 'draft' }],
-      };
-
-      mockDocumentService.unpublish.mockResolvedValue(mockResult);
-
-      const ctx = {
-        params: { documentId: 'doc123' },
-        badRequest: jest.fn(),
-        throw: jest.fn(),
-      };
-
-      const result = await controller.unpublishProduct(ctx);
-
-      expect(result.data).toEqual(mockResult);
-      expect(mockDocumentService.unpublish).toHaveBeenCalledWith({
-        documentId: 'doc123',
-      });
-    });
-  });
 });

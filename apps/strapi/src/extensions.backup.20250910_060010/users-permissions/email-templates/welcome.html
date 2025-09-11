@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to Ecommerce Platform!</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 8px;
+            padding: 40px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #3b82f6;
+            margin-bottom: 10px;
+        }
+        .title {
+            font-size: 28px;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 20px;
+        }
+        .content {
+            margin-bottom: 30px;
+        }
+        .message {
+            font-size: 16px;
+            color: #4b5563;
+            margin-bottom: 20px;
+        }
+        .button {
+            display: inline-block;
+            background-color: #10b981;
+            color: #ffffff;
+            text-decoration: none;
+            padding: 12px 30px;
+            border-radius: 6px;
+            font-weight: 500;
+            text-align: center;
+            margin: 20px 0;
+        }
+        .button:hover {
+            background-color: #059669;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #e5e7eb;
+            color: #6b7280;
+            font-size: 14px;
+        }
+        .features {
+            background-color: #f0f9ff;
+            border: 1px solid #bae6fd;
+            border-radius: 6px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .feature {
+            margin-bottom: 15px;
+            padding-left: 25px;
+            position: relative;
+        }
+        .feature:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            top: 0;
+            color: #10b981;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        .link {
+            color: #3b82f6;
+            text-decoration: none;
+        }
+        .link:hover {
+            text-decoration: underline;
+        }
+        .highlight {
+            background-color: #fef3c7;
+            border: 1px solid #f59e0b;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 20px 0;
+            color: #92400e;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">Ecommerce Platform</div>
+            <h1 class="title">Welcome to Ecommerce Platform!</h1>
+        </div>
+        
+        <div class="content">
+            <p class="message">
+                Hello <strong>{{ user.username }}</strong>,
+            </p>
+            
+            <p class="message">
+                🎉 Welcome to Ecommerce Platform! Your account has been successfully created and verified. You're now ready to start shopping and enjoying all the features we have to offer.
+            </p>
+            
+            <div style="text-align: center;">
+                <a href="{{ shop_url }}" class="button">
+                    Start Shopping
+                </a>
+            </div>
+            
+            <div class="features">
+                <h3 style="margin-top: 0; color: #0369a1;">What you can do now:</h3>
+                <div class="feature">Browse our extensive product catalog</div>
+                <div class="feature">Add items to your wishlist</div>
+                <div class="feature">Save your shipping addresses</div>
+                <div class="feature">Track your order history</div>
+                <div class="feature">Receive personalized recommendations</div>
+                <div class="feature">Get exclusive member-only deals</div>
+            </div>
+            
+            <div class="highlight">
+                <strong>💡 Pro Tip:</strong> Complete your profile with additional information to get the most personalized shopping experience and faster checkout.
+            </div>
+            
+            <p class="message">
+                If you have any questions or need assistance, our customer support team is here to help. You can reach us at <a href="mailto:support@example.com" class="link">support@example.com</a> or through our live chat.
+            </p>
+            
+            <p class="message">
+                Happy shopping!<br>
+                The Ecommerce Platform Team
+            </p>
+        </div>
+        
+        <div class="footer">
+            <p>
+                This email was sent to {{ user.email }}. If you have any questions, please contact our support team.
+            </p>
+            <p>
+                <strong>Quick Links:</strong><br>
+                <a href="{{ shop_url }}" class="link">Shop Now</a> | 
+                <a href="{{ account_url }}" class="link">My Account</a> | 
+                <a href="{{ help_url }}" class="link">Help Center</a>
+            </p>
+            <p>
+                &copy; 2025 Ecommerce Platform. All rights reserved.
+            </p>
+        </div>
+    </div>
+</body>
+</html>

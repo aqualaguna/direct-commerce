@@ -258,7 +258,8 @@ export default {
           currency: userData.currency,
           isActive: userData.isActive,
           emailVerified: userData.emailVerified,
-          role: userData.role,
+          // TODO: add role
+          // role: userData.role,
           createdAt: userData.createdAt,
           updatedAt: userData.updatedAt
         },

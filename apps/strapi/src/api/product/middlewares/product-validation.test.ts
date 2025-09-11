@@ -46,12 +46,8 @@ describe('Product Validation Middleware', () => {
         data: {
           title: 'Test Product',
           description: 'Test description',
-          shortDescription: 'Short desc',
-          price: 99.99,
           sku: 'TEST-001',
           inventory: 10,
-          isActive: true,
-          featured: false,
         },
       };
 
@@ -91,14 +87,6 @@ describe('Product Validation Middleware', () => {
               message: 'description is required',
             }),
             expect.objectContaining({
-              field: 'shortDescription',
-              message: 'shortDescription is required',
-            }),
-            expect.objectContaining({
-              field: 'price',
-              message: 'price is required',
-            }),
-            expect.objectContaining({
               field: 'sku',
               message: 'sku is required',
             }),
@@ -118,8 +106,6 @@ describe('Product Validation Middleware', () => {
         data: {
           title: 123,
           description: 'Test description',
-          shortDescription: 'Short desc',
-          price: 99.99,
           sku: 'TEST-001',
           inventory: 10,
         },
@@ -145,8 +131,6 @@ describe('Product Validation Middleware', () => {
         data: {
           title: '   ',
           description: 'Test description',
-          shortDescription: 'Short desc',
-          price: 99.99,
           sku: 'TEST-001',
           inventory: 10,
         },
@@ -172,8 +156,6 @@ describe('Product Validation Middleware', () => {
         data: {
           title: 'a'.repeat(256),
           description: 'Test description',
-          shortDescription: 'Short desc',
-          price: 99.99,
           sku: 'TEST-001',
           inventory: 10,
         },
@@ -195,97 +177,12 @@ describe('Product Validation Middleware', () => {
     });
   });
 
-  describe('Price Validation', () => {
-    it('should validate price is a number', async () => {
-      mockContext.request.body = {
-        data: {
-          title: 'Test Product',
-          description: 'Test description',
-          shortDescription: 'Short desc',
-          price: 'invalid',
-          sku: 'TEST-001',
-          inventory: 10,
-        },
-      };
-
-      await middleware(mockContext, mockNext);
-
-      expect(mockContext.badRequest).toHaveBeenCalledWith(
-        'Validation failed',
-        expect.objectContaining({
-          errors: expect.arrayContaining([
-            expect.objectContaining({
-              field: 'price',
-              message: 'Price must be a number',
-            }),
-          ]),
-        })
-      );
-    });
-
-    it('should validate price is positive', async () => {
-      mockContext.request.body = {
-        data: {
-          title: 'Test Product',
-          description: 'Test description',
-          shortDescription: 'Short desc',
-          price: -10,
-          sku: 'TEST-001',
-          inventory: 10,
-        },
-      };
-
-      await middleware(mockContext, mockNext);
-
-      expect(mockContext.badRequest).toHaveBeenCalledWith(
-        'Validation failed',
-        expect.objectContaining({
-          errors: expect.arrayContaining([
-            expect.objectContaining({
-              field: 'price',
-              message: 'Price must be greater than 0',
-            }),
-          ]),
-        })
-      );
-    });
-
-    it('should validate price maximum', async () => {
-      mockContext.request.body = {
-        data: {
-          title: 'Test Product',
-          description: 'Test description',
-          shortDescription: 'Short desc',
-          price: 1000000,
-          sku: 'TEST-001',
-          inventory: 10,
-        },
-      };
-
-      await middleware(mockContext, mockNext);
-
-      expect(mockContext.badRequest).toHaveBeenCalledWith(
-        'Validation failed',
-        expect.objectContaining({
-          errors: expect.arrayContaining([
-            expect.objectContaining({
-              field: 'price',
-              message: 'Price cannot exceed 999,999.99',
-            }),
-          ]),
-        })
-      );
-    });
-  });
-
   describe('SKU Validation', () => {
     it('should validate SKU format', async () => {
       mockContext.request.body = {
         data: {
           title: 'Test Product',
           description: 'Test description',
-          shortDescription: 'Short desc',
-          price: 99.99,
           sku: 'invalid sku!',
           inventory: 10,
         },
@@ -316,8 +213,6 @@ describe('Product Validation Middleware', () => {
         data: {
           title: 'Test Product',
           description: 'Test description',
-          shortDescription: 'Short desc',
-          price: 99.99,
           sku: 'EXISTING-SKU',
           inventory: 10,
         },
@@ -352,8 +247,6 @@ describe('Product Validation Middleware', () => {
         data: {
           title: 'Test Product',
           description: 'Test description',
-          shortDescription: 'Short desc',
-          price: 99.99,
           sku: 'EXISTING-SKU',
           inventory: 10,
         },
@@ -383,8 +276,6 @@ describe('Product Validation Middleware', () => {
         data: {
           title: 'Test Product',
           description: 'Test description',
-          shortDescription: 'Short desc',
-          price: 99.99,
           sku: 'TEST-001',
           inventory: 10.5,
         },
@@ -410,8 +301,6 @@ describe('Product Validation Middleware', () => {
         data: {
           title: 'Test Product',
           description: 'Test description',
-          shortDescription: 'Short desc',
-          price: 99.99,
           sku: 'TEST-001',
           inventory: -5,
         },
@@ -441,8 +330,6 @@ describe('Product Validation Middleware', () => {
         data: {
           title: 'Test Product',
           description: 'Test description',
-          shortDescription: 'Short desc',
-          price: 99.99,
           sku: 'TEST-001',
           inventory: 10,
           category: 999,
@@ -473,8 +360,6 @@ describe('Product Validation Middleware', () => {
         data: {
           title: 'Test Product',
           description: 'Test description',
-          shortDescription: 'Short desc',
-          price: 99.99,
           sku: 'TEST-001',
           inventory: 10,
           category: 999,
@@ -497,63 +382,6 @@ describe('Product Validation Middleware', () => {
     });
   });
 
-  describe('Boolean Field Validation', () => {
-    it('should validate isActive is boolean', async () => {
-      mockContext.request.body = {
-        data: {
-          title: 'Test Product',
-          description: 'Test description',
-          shortDescription: 'Short desc',
-          price: 99.99,
-          sku: 'TEST-001',
-          inventory: 10,
-          isActive: 'true',
-        },
-      };
-
-      await middleware(mockContext, mockNext);
-
-      expect(mockContext.badRequest).toHaveBeenCalledWith(
-        'Validation failed',
-        expect.objectContaining({
-          errors: expect.arrayContaining([
-            expect.objectContaining({
-              field: 'isActive',
-              message: 'isActive must be a boolean',
-            }),
-          ]),
-        })
-      );
-    });
-
-    it('should validate featured is boolean', async () => {
-      mockContext.request.body = {
-        data: {
-          title: 'Test Product',
-          description: 'Test description',
-          shortDescription: 'Short desc',
-          price: 99.99,
-          sku: 'TEST-001',
-          inventory: 10,
-          featured: 1,
-        },
-      };
-
-      await middleware(mockContext, mockNext);
-
-      expect(mockContext.badRequest).toHaveBeenCalledWith(
-        'Validation failed',
-        expect.objectContaining({
-          errors: expect.arrayContaining([
-            expect.objectContaining({
-              field: 'featured',
-              message: 'featured must be a boolean',
-            }),
-          ]),
-        })
-      );
-    });
-  });
 
   describe('Error Handling', () => {
     it('should handle middleware errors gracefully', async () => {
@@ -565,8 +393,6 @@ describe('Product Validation Middleware', () => {
         data: {
           title: 'Test Product',
           description: 'Test description',
-          shortDescription: 'Short desc',
-          price: 99.99,
           sku: 'TEST-001',
           inventory: 10,
         },
@@ -597,8 +423,6 @@ describe('Product Validation Middleware', () => {
         data: {
           title: 'Test Product',
           description: 'Test description',
-          shortDescription: 'Short desc',
-          price: 99.99,
           sku: 'TEST-001',
           inventory: 10,
         },
@@ -615,33 +439,4 @@ describe('Product Validation Middleware', () => {
     });
   });
 
-  describe('Compare Price Validation', () => {
-    it('should validate compare price is greater than regular price', async () => {
-      mockContext.request.body = {
-        data: {
-          title: 'Test Product',
-          description: 'Test description',
-          shortDescription: 'Short desc',
-          price: 100,
-          comparePrice: 90,
-          sku: 'TEST-001',
-          inventory: 10,
-        },
-      };
-
-      await middleware(mockContext, mockNext);
-
-      expect(mockContext.badRequest).toHaveBeenCalledWith(
-        'Validation failed',
-        expect.objectContaining({
-          errors: expect.arrayContaining([
-            expect.objectContaining({
-              field: 'comparePrice',
-              message: 'Compare price must be greater than regular price',
-            }),
-          ]),
-        })
-      );
-    });
-  });
 });

@@ -8,7 +8,7 @@
     "description": "Base product entity - source of truth for product data"
   },
   "options": {
-    "draftAndPublish": true,
+    "draftAndPublish": false,
     "comment": "Base product entity - website-facing attributes moved to ProductListing"
   },
   "attributes": {
@@ -18,24 +18,24 @@
       "unique": true,
       "maxLength": 100
     },
-    "basePrice": {
-      "type": "decimal",
+    "name": {
+      "type": "string",
       "required": true,
-      "min": 0
+      "maxLength": 255
     },
-    "comparePrice": {
-      "type": "decimal",
-      "min": 0
+    "brand": {
+      "type": "string",
+      "maxLength": 100
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 500
     },
     "inventory": {
       "type": "integer",
       "required": true,
       "min": 0,
       "default": 0
-    },
-    "isActive": {
-      "type": "boolean",
-      "default": true
     },
     "status": {
       "type": "enumeration",

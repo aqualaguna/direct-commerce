@@ -12,13 +12,8 @@ interface ValidationError {
 interface ProductData {
   title?: string;
   description?: string;
-  shortDescription?: string;
-  price?: number;
-  comparePrice?: number;
   sku?: string;
   inventory?: number;
-  isActive?: boolean;
-  featured?: boolean;
   category?: number;
 }
 
@@ -37,8 +32,6 @@ export default (config: any, { strapi }: { strapi: any }) => {
       const requiredFields = [
         'title',
         'description',
-        'shortDescription',
-        'price',
         'sku',
         'inventory',
       ];
@@ -82,61 +75,6 @@ export default (config: any, { strapi }: { strapi: any }) => {
           errors.push({
             field: 'description',
             message: 'Description cannot be empty',
-          });
-        }
-      }
-
-      // Short description validation
-      if (data.shortDescription) {
-        if (typeof data.shortDescription !== 'string') {
-          errors.push({
-            field: 'shortDescription',
-            message: 'Short description must be a string',
-          });
-        } else if (data.shortDescription.length > 500) {
-          errors.push({
-            field: 'shortDescription',
-            message: 'Short description must be 500 characters or less',
-          });
-        }
-      }
-
-      // Price validation
-      if (data.price !== undefined) {
-        if (typeof data.price !== 'number') {
-          errors.push({
-            field: 'price',
-            message: 'Price must be a number',
-          });
-        } else if (data.price <= 0) {
-          errors.push({
-            field: 'price',
-            message: 'Price must be greater than 0',
-          });
-        } else if (data.price > 999999.99) {
-          errors.push({
-            field: 'price',
-            message: 'Price cannot exceed 999,999.99',
-          });
-        }
-      }
-
-      // Compare price validation
-      if (data.comparePrice !== undefined) {
-        if (typeof data.comparePrice !== 'number') {
-          errors.push({
-            field: 'comparePrice',
-            message: 'Compare price must be a number',
-          });
-        } else if (data.comparePrice <= 0) {
-          errors.push({
-            field: 'comparePrice',
-            message: 'Compare price must be greater than 0',
-          });
-        } else if (data.price && data.comparePrice <= data.price) {
-          errors.push({
-            field: 'comparePrice',
-            message: 'Compare price must be greater than regular price',
           });
         }
       }
@@ -188,21 +126,6 @@ export default (config: any, { strapi }: { strapi: any }) => {
             message: 'Inventory cannot exceed 999,999',
           });
         }
-      }
-
-      // Boolean field validation
-      if (data.isActive !== undefined && typeof data.isActive !== 'boolean') {
-        errors.push({
-          field: 'isActive',
-          message: 'isActive must be a boolean',
-        });
-      }
-
-      if (data.featured !== undefined && typeof data.featured !== 'boolean') {
-        errors.push({
-          field: 'featured',
-          message: 'featured must be a boolean',
-        });
       }
 
       // Category validation

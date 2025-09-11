@@ -1,6 +1,15 @@
 export default {
   testEnvironment: 'node',
   testMatch: ['**/*.test.ts', '**/*.test.js', '**/*.spec.ts', '**/*.spec.js'],
+  testPathIgnorePatterns: [
+    '/node_modules/',
+    '.tmp',
+    '.cache',
+    '/dist/',
+    '/build/',
+    '/.strapi/',
+    '.*\\.integration\\.test\\.(ts|js)$',
+  ],
   transform: {
     '^.+\\.ts$': [
       'ts-jest',
@@ -39,14 +48,6 @@ export default {
   verbose: true,
   clearMocks: true,
   restoreMocks: true,
-  testPathIgnorePatterns: [
-    '/node_modules/',
-    '.tmp',
-    '.cache',
-    '/dist/',
-    '/build/',
-    '/.strapi/',
-  ],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
   },

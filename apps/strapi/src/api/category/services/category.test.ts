@@ -104,7 +104,9 @@ describe('Category Service', () => {
       expect(mockDocumentMethods.findMany).toHaveBeenCalledWith({
         filters: {
           name: { $eqi: 'Laptops' },
-          parent: 'cat1',
+          parent: {
+            documentId: 'cat1',
+          },
         },
         pagination: { limit: 1 },
       });
@@ -200,7 +202,7 @@ describe('Category Service', () => {
       const result = await service.getNextSortOrder(1);
 
       expect(mockDocumentMethods.findMany).toHaveBeenCalledWith({
-        filters: { parent: 1 },
+        filters: { parent: { documentId: 1 } },
         sort: { sortOrder: 'desc' },
         pagination: { limit: 1 },
       });
@@ -459,7 +461,6 @@ describe('Category Service', () => {
         expect.objectContaining({
           filters: {
             isActive: true,
-            publishedAt: { $notNull: true },
           },
         })
       );
@@ -483,7 +484,6 @@ describe('Category Service', () => {
         expect.objectContaining({
           filters: {
             isActive: false,
-            publishedAt: { $notNull: true },
             parent: 1,
           },
         })

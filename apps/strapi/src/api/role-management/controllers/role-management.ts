@@ -32,7 +32,6 @@ export default {
           username: updatedUser.username,
           email: updatedUser.email,
           role: updatedUser.role,
-          roleAssignedBy: updatedUser.roleAssignedBy,
           roleAssignedAt: updatedUser.roleAssignedAt,
         },
       };
@@ -68,7 +67,6 @@ export default {
           username: updatedUser.username,
           email: updatedUser.email,
           role: updatedUser.role,
-          roleAssignedBy: updatedUser.roleAssignedBy,
           roleAssignedAt: updatedUser.roleAssignedAt,
         },
       };
