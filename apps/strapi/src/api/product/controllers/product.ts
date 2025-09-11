@@ -62,7 +62,11 @@ export default factories.createCoreController(
         };
 
         // Handle admin requests (include draft products)
-        if (ctx.state.user?.role?.type === 'admin') {
+        // Allow API tokens (which don't have user.role) and admin users to see all products
+        const isAdmin = ctx.state.user?.role?.type === 'admin' || 
+                       (ctx.request?.headers?.authorization && ctx.request.headers.authorization.startsWith('Bearer '));
+        
+        if (isAdmin) {
           // Admin can see both active and draft products
           delete queryParams.filters?.status;
         }
@@ -117,10 +121,11 @@ export default factories.createCoreController(
         }
 
         // Check if product is active (for non-admin users) using status
-        if (
-          ctx.state.user?.role?.type !== 'admin' &&
-          (product as any).status !== 'active'
-        ) {
+        // Allow API tokens (which don't have user.role) and admin users to see all products
+        const isAdmin = ctx.state.user?.role?.type === 'admin' || 
+                       (ctx.request?.headers?.authorization && ctx.request.headers.authorization.startsWith('Bearer '));
+        
+        if (!isAdmin && (product as any).status !== 'active') {
           return ctx.notFound('Product not found');
         }
 

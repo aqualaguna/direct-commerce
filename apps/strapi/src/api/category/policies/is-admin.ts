@@ -2,26 +2,20 @@
  * is-admin policy for categories
  */
 
+import { Core } from "@strapi/strapi";
+
 export default async (
   policyContext: any,
   _config: any,
-  { strapi }: any
+  { strapi }: { strapi: Core.Strapi }
 ) => {
-  const { user } = policyContext.state;
-  // Check if request is authenticated with API token
-  // API tokens with full-access type should be allowed
-  if (!user) {
-    // Check if this is an API token request
-    const authHeader = policyContext.request?.headers?.authorization;
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      // For testing purposes, assume any Bearer token is a valid API token
-      // In production, you would verify the token with the API token service
-      return true;
-    }
-    
-    return false;
+  const { user, auth } = policyContext.state;
+
+  // Allow valid API token requests
+  if (auth?.strategy?.name === 'api-token' && auth.credentials?.id) {
+    return true;
   }
 
-  // Check if user has admin role
-  return user.role && user.role.type === 'admin';
+  // Allow admin users
+  return user?.role?.type === 'admin';
 };

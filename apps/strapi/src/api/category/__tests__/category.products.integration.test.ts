@@ -66,21 +66,23 @@ describe('Category Product Management Integration Tests', () => {
       expect([200, 201]).toContain(categoryResponse.status);
       testCategoryId = categoryResponse.body.data.documentId;
 
-      // Create test products (assuming product API exists)
+      // Create test products (using correct product schema) - without category initially
       const testProducts = [
         { 
           sku: `TEST-PROD-1-${timestamp}`, 
-          basePrice: 10.99, 
+          name: `Test Product 1 ${timestamp}`,
+          description: 'This is a test product for category testing',
+          brand: 'Test Brand',
           inventory: 10,
-          status: 'active',
-          category: testCategoryId 
+          status: 'active'
         },
         { 
           sku: `TEST-PROD-2-${timestamp}`, 
-          basePrice: 19.99, 
+          name: `Test Product 2 ${timestamp}`,
+          description: 'This is another test product for category testing',
+          brand: 'Test Brand',
           inventory: 5,
-          status: 'active',
-          category: testCategoryId 
+          status: 'active'
         }
       ];
 
@@ -92,11 +94,30 @@ describe('Category Product Management Integration Tests', () => {
             .send({ data: product })
             .timeout(10000);
 
+
           if (productResponse.status === 200 || productResponse.status === 201) {
             testProductIds.push(productResponse.body.data.documentId);
+          } else {
+            console.warn(`Failed to create product ${product.sku}:`, productResponse.body);
           }
         } catch (error) {
           console.warn('Failed to create test product:', error);
+        }
+      }
+
+      if (testProductIds.length === 0) {
+        console.warn('No test products were created successfully. Category product tests may be skipped.');
+      } else {
+        // Assign products to the category for testing
+        try {
+          await request(SERVER_URL)
+            .post(`/api/categories/${testCategoryId}/products/assign`)
+            .set('Authorization', `Bearer ${adminToken}`)
+            .send({ productIds: testProductIds })
+            .timeout(10000);
+          
+        } catch (error) {
+          console.warn('Failed to assign products to category initially:', error);
         }
       }
     });

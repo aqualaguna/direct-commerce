@@ -390,7 +390,7 @@ export default factories.createCoreService(
             documentId: String(categoryId),
             populate: {
               products: {
-                fields: ['id', 'status', 'isActive', 'inventory', 'basePrice'] as any,
+                fields: ['id', 'status', 'inventory'] as any,
               },
               children: {
                 fields: ['id', 'name'] as any,
@@ -411,29 +411,18 @@ export default factories.createCoreService(
           categoryName: category.name,
           totalProducts: products.length,
           activeProducts: products.filter(
-            (p: any) => p.isActive === true && p.status === 'published'
+            (p: any) => p.status === 'active'
           ).length,
           draftProducts: products.filter((p: any) => p.status === 'draft')
             .length,
           inactiveProducts: products.filter(
-            (p: any) => !p.isActive || p.status === 'inactive'
+            (p: any) => p.status === 'inactive'
           ).length,
           outOfStockProducts: products.filter((p: any) => p.inventory === 0)
             .length,
           lowStockProducts: products.filter(
             (p: any) => p.inventory > 0 && p.inventory <= 10
           ).length,
-          totalValue: products.reduce(
-            (sum: number, p: any) => sum + (parseFloat(p.basePrice) || 0),
-            0
-          ),
-          averagePrice:
-            products.length > 0
-              ? products.reduce(
-                  (sum: number, p: any) => sum + (parseFloat(p.basePrice) || 0),
-                  0
-                ) / products.length
-              : 0,
           childCategories: categoryData.children
             ? categoryData.children.length
             : 0,

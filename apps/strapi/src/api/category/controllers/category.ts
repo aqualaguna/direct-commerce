@@ -669,14 +669,18 @@ export default factories.createCoreController(
         }
 
         // Update all specified products to remove them from this category using Document Service API
-        const updatePromises = productIds.map(productDocumentId =>
-          strapi.documents('api::product.product').update({
-            documentId: productDocumentId,
-            data: { category: null },
-          })
-        );
-
-        await Promise.all(updatePromises);
+        // Update sequentially to avoid transaction conflicts
+        for (const productDocumentId of productIds) {
+          try {
+            await strapi.documents('api::product.product').update({
+              documentId: productDocumentId,
+              data: { category: null },
+            });
+          } catch (error) {
+            strapi.log.error(`Error updating product ${productDocumentId}:`, error);
+            throw error;
+          }
+        }
 
         return {
           data: {
