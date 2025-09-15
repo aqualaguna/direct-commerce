@@ -162,25 +162,14 @@ apps/strapi/src/api/
 │   ├── controllers/
 │   ├── services/
 │   └── routes/
-├── category/
-│   ├── __tests__/
-│   │   ├── category.integration.test.ts
-│   │   └── category.unit.test.ts
-│   ├── controllers/
-│   ├── services/
-│   └── routes/
-├── product-listing/
-│   ├── __tests__/
-│   │   └── product-listing.integration.test.ts
-├── product-listing-variant/
-│   ├── __tests__/
-│   │   └── product-listing-variant.integration.test.ts
-├── option-group/
-│   ├── __tests__/
-│   │   └── option-group.integration.test.ts
-└── option-value/
+└── category/
     ├── __tests__/
-    │   └── option-value.integration.test.ts
+    │   ├── category.integration.test.ts
+    │   └── category.unit.test.ts
+    ├── controllers/
+    ├── services/
+    └── routes/
+
 ```
 
 ### Testing Requirements
@@ -258,18 +247,15 @@ Claude Sonnet 4
 - ✅ All tests follow established testing standards and use Strapi 5 Document Service API
 - ✅ Test coverage includes CRUD operations, relationships, validation, and edge cases
 - ✅ Integration with existing test infrastructure from Story X.1
+- ✅ Fixed user integration test to use supertest pattern matching product integration test
 
 ### File List
 **New Files Created:**
 - `apps/strapi/src/api/product/__tests__/product.integration.test.ts` - Comprehensive product integration tests covering CRUD operations, status transitions, validation, relationships, search/filtering, and bulk operations
 - `apps/strapi/src/api/category/__tests__/category.integration.test.ts` - Comprehensive category integration tests covering CRUD operations, hierarchy management, validation, product associations, and bulk operations
-- `apps/strapi/src/api/product-listing/__tests__/product-listing.integration.test.ts` - Product listing integration tests covering CRUD operations, relationships with products/categories, variant management, validation, and bulk operations
-- `apps/strapi/src/api/product-listing-variant/__tests__/product-listing-variant.integration.test.ts` - Product listing variant integration tests covering CRUD operations, relationships, validation, inventory management, and bulk operations
-- `apps/strapi/src/api/option-group/__tests__/option-group.integration.test.ts` - Option group integration tests covering CRUD operations, relationships with option values, validation, and bulk operations
-- `apps/strapi/src/api/option-value/__tests__/option-value.integration.test.ts` - Option value integration tests covering CRUD operations, relationships with option groups, validation, and bulk operations
 
 **Modified Files:**
-- None - All tests use existing test infrastructure from Story X.1
+- `apps/strapi/src/api/user/__tests__/user.integration.test.ts` - Fixed user integration test to follow the same pattern as product integration test using supertest for HTTP requests instead of custom test framework
 
 ## QA Results
 *To be populated by QA Agent after implementation review*

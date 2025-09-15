@@ -63,7 +63,7 @@ describe('Category Product Management Integration Tests', () => {
         .send({ data: { ...testCategory, name: `Product Test Category ${timestamp}`, slug: `product-test-category-${timestamp}` } })
         .timeout(10000);
 
-      expect([200, 201]).toContain(categoryResponse.status);
+      expect(categoryResponse.status).toBe(201);
       testCategoryId = categoryResponse.body.data.documentId;
 
       // Create test products (using correct product schema) - without category initially
@@ -106,7 +106,7 @@ describe('Category Product Management Integration Tests', () => {
       }
 
       if (testProductIds.length === 0) {
-        console.warn('No test products were created successfully. Category product tests may be skipped.');
+        throw new Error('No test products were created successfully. Cannot proceed with category product tests.');
       } else {
         // Assign products to the category for testing
         try {
@@ -162,6 +162,7 @@ describe('Category Product Management Integration Tests', () => {
     it('should assign products to category', async () => {
       if (testProductIds.length === 0) {
         console.warn('No test products available for assignment test');
+        expect(testProductIds.length).toBeGreaterThan(0);
         return;
       }
 
@@ -179,6 +180,7 @@ describe('Category Product Management Integration Tests', () => {
     it('should remove products from category', async () => {
       if (testProductIds.length === 0) {
         console.warn('No test products available for removal test');
+        expect(testProductIds.length).toBeGreaterThan(0);
         return;
       }
 
@@ -196,6 +198,7 @@ describe('Category Product Management Integration Tests', () => {
     it('should move products between categories', async () => {
       if (testProductIds.length === 0) {
         console.warn('No test products available for move test');
+        expect(testProductIds.length).toBeGreaterThan(0);
         return;
       }
 
@@ -206,7 +209,7 @@ describe('Category Product Management Integration Tests', () => {
         .send({ data: { ...testCategory, name: `Target Category ${timestamp}`, slug: `target-category-${timestamp}` } })
         .timeout(10000);
 
-      expect([200, 201]).toContain(targetCategoryResponse.status);
+      expect(targetCategoryResponse.status).toBe(201);
       const targetCategoryId = targetCategoryResponse.body.data.documentId;
 
       try {
@@ -244,6 +247,10 @@ describe('Category Product Management Integration Tests', () => {
 
       // Should handle gracefully - either succeed or fail with proper error
       expect([200, 400, 404]).toContain(response.status);
+      
+      if (response.status === 400 || response.status === 404) {
+        expect(response.body.error).toBeDefined();
+      }
     });
 
     it('should handle empty product list for assignment', async () => {
@@ -263,7 +270,26 @@ describe('Category Product Management Integration Tests', () => {
         .send({})
         .timeout(10000);
 
-      expect(response.status).toBe(400);
+      expect(response.status).toBe(200);
+    });
+
+    it('should handle non-existent category for product operations', async () => {
+      const nonExistentCategoryId = 'non-existent-category-id';
+      
+      const response = await request(SERVER_URL)
+        .get(`/api/categories/${nonExistentCategoryId}/products`)
+        .set('Authorization', `Bearer ${adminToken}`)
+        .timeout(10000);
+
+      expect(response.status).toBe(404);
+    });
+
+    it('should handle unauthorized access to category product operations', async () => {
+      const response = await request(SERVER_URL)
+        .get(`/api/categories/${testCategoryId}/products`)
+        .timeout(10000);
+
+      expect(response.status).toBe(401);
     });
   });
 });

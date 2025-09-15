@@ -1,8 +1,8 @@
 'use strict'
 
-import { Strapi } from '@strapi/strapi'
+import { Core } from '@strapi/strapi'
 
-export default ({ strapi }: { strapi: Strapi }) => ({
+export default ({ strapi }: { strapi: Core.Strapi }) => ({
   async getSecurityAnalytics(params: any) {
     try {
       const { startDate, endDate, severity, eventType } = params

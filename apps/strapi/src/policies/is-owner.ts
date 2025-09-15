@@ -1,7 +1,6 @@
 export default (policyContext, config, { strapi }) => {
   const { user } = policyContext.state;
   const { id } = policyContext.params;
-
   if (!user) {
     return false;
   }

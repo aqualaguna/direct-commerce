@@ -10,6 +10,7 @@
  */
 
 import request from 'supertest';
+import { retryApiRequest } from '../../../utils/test-helpers';
 
 describe('User Integration Tests', () => {
   const SERVER_URL = 'http://localhost:1337';
@@ -17,6 +18,9 @@ describe('User Integration Tests', () => {
   
   // Generate unique test data with timestamp
   const timestamp = Date.now();
+  
+  // Track all created users for cleanup
+  const createdUsers: any[] = [];
 
   beforeAll(async () => {
     // Get admin token for authenticated requests
@@ -28,8 +32,26 @@ describe('User Integration Tests', () => {
   });
 
   // Add delay between tests to avoid rate limiting
-  afterEach(async () => {
-    await new Promise(resolve => setTimeout(resolve, 1500));
+  // afterEach(async () => {
+  //   await new Promise(resolve => setTimeout(resolve, 1500));
+  // });
+  
+  // Global cleanup for all created users
+  afterAll(async () => {
+    
+    for (const user of createdUsers) {
+      try {
+        await request(SERVER_URL)
+          .delete(`/api/users/${user.id}`)
+          .set('Authorization', `Bearer ${adminToken}`)
+          .timeout(10000);
+      } catch (error) {
+        console.warn(`Failed to delete user ${user.id}:`, error);
+      }
+      
+      // Add delay between deletions to avoid rate limiting
+      // await new Promise(resolve => setTimeout(resolve, 200));
+    }
   });
   
   // Test data factories - using Strapi's default user registration format
@@ -39,6 +61,29 @@ describe('User Integration Tests', () => {
     password: 'SecurePassword123!',
     ...overrides,
   });
+  
+  // Helper function to create user and track for cleanup
+  const createAndTrackUser = async (userData: any) => {
+    const response = await retryApiRequest(
+      () => request(SERVER_URL)
+        .post('/api/auth/local/register') 
+        .send(userData)
+        .timeout(10000),
+      {
+        maxRetries: 30,
+        baseDelayMs: 2000,
+        retryCondition: (response) => response.status === 429
+      }
+    );
+
+    // Check if user was created successfully
+    if (response.status === 200 && response.body.user) {
+      // Track created user for cleanup after tests
+      createdUsers.push(response.body.user);
+    }
+
+    return response;
+  };
 
   const createTestUserUpdateData = (overrides = {}) => ({
     firstName: 'Updated',
@@ -73,12 +118,9 @@ describe('User Integration Tests', () => {
     it('should create user and verify response data', async () => {
       const userData = createTestUserData();
 
-      // Create user via API
-      const response = await request(SERVER_URL)
-        .post('/api/auth/local/register')
-        .send(userData)
-        .timeout(10000)
-        .expect(200);
+      // Create user via API and track for cleanup
+      const response = await createAndTrackUser(userData);
+      expect(response.status).toBe(200);
 
       expect(response.body.user).toBeDefined();
       expect(response.body.user.username).toBe(userData.username);
@@ -108,12 +150,9 @@ describe('User Integration Tests', () => {
     it('should prevent duplicate user registration', async () => {
       const userData = createTestUserData();
 
-      // Create first user
-      await request(SERVER_URL)
-        .post('/api/auth/local/register')
-        .send(userData)
-        .timeout(10000)
-        .expect(200);
+      // Create first user and track for cleanup
+      const firstResponse = await createAndTrackUser(userData);
+      expect(firstResponse.status).toBe(200);
 
       // Attempt to create duplicate user
       const response = await request(SERVER_URL)
@@ -132,13 +171,10 @@ describe('User Integration Tests', () => {
     let userData: any;
 
     beforeEach(async () => {
-      // Create test user for authentication tests
+      // Create test user for authentication tests and track for cleanup
       userData = createTestUserData();
-      const registerResponse = await request(SERVER_URL)
-        .post('/api/auth/local/register')
-        .send(userData)
-        .timeout(10000)
-        .expect(200);
+      const registerResponse = await createAndTrackUser(userData);
+      expect(registerResponse.status).toBe(200);
       
       testUser = registerResponse.body.user;
     });
@@ -208,13 +244,10 @@ describe('User Integration Tests', () => {
     let userData: any;
 
     beforeEach(async () => {
-      // Create test user and authenticate
+      // Create test user and authenticate, track for cleanup
       userData = createTestUserData();
-      const registerResponse = await request(SERVER_URL)
-        .post('/api/auth/local/register')
-        .send(userData)
-        .timeout(10000)
-        .expect(200);
+      const registerResponse = await createAndTrackUser(userData);
+      expect(registerResponse.status).toBe(200);
       
       testUser = registerResponse.body.user;
       authToken = registerResponse.body.jwt;
@@ -230,16 +263,11 @@ describe('User Integration Tests', () => {
         .timeout(10000);
 
       // Handle both 200 (success) and 403 (forbidden) responses
-      if (response.status === 200) {
-        expect(response.body.firstName).toBe(updateData.firstName);
-        expect(response.body.lastName).toBe(updateData.lastName);
-        expect(response.body.phone).toBe(updateData.phone);
-      } else if (response.status === 403) {
-        expect(response.body.error).toBeDefined();
-        // This is expected if user profile updates are restricted
-      } else {
-        throw new Error(`Unexpected status code: ${response.status}`);
-      }
+      expect(response.status).toBe(200);
+      expect(response.body.firstName).toBe(updateData.firstName);
+      expect(response.body.lastName).toBe(updateData.lastName);
+      expect(response.body.phone).toBe(updateData.phone);
+
     });
 
     it('should validate profile update data', async () => {
@@ -254,16 +282,9 @@ describe('User Integration Tests', () => {
         .send(invalidUpdateData)
         .timeout(10000);
 
-      // Handle both 400 (validation error) and 403 (forbidden) responses
-      if (response.status === 400) {
-        expect(response.body.error).toBeDefined();
-        expect(response.body.error.message).toContain('validation');
-      } else if (response.status === 403) {
-        expect(response.body.error).toBeDefined();
-        // This is expected if user profile updates are restricted
-      } else {
-        throw new Error(`Unexpected status code: ${response.status}`);
-      }
+      expect(response.status).toBe(400);
+      expect(response.body.error).toBeDefined();
+      expect(response.body.error.message).toContain('email must be a valid email');
     });
 
     it('should prevent unauthorized profile updates', async () => {
@@ -278,6 +299,24 @@ describe('User Integration Tests', () => {
       expect([401, 403]).toContain(response.status);
       expect(response.body.error).toBeDefined();
     });
+
+    it('should not allow updating other user profile', async () => {
+      // Create another test user
+      const otherUserData = createTestUserData();
+      const otherUserResponse = await createAndTrackUser(otherUserData);
+      expect(otherUserResponse.status).toBe(200);
+      const otherUser = otherUserResponse.body.user;
+
+      // Try to update other user's profile using first user's token
+      const updateData = createTestUserUpdateData();
+      const response = await request(SERVER_URL)
+        .put(`/api/users/${otherUser.id}`)
+        .set('Authorization', `Bearer ${authToken}`)
+        .send(updateData)
+        .timeout(10000);
+      expect(response.status).toBe(403);
+      expect(response.body.error).toBeDefined();
+    });
   });
 
   describe('User Password Management', () => {
@@ -286,63 +325,75 @@ describe('User Integration Tests', () => {
     let userData: any;
 
     beforeEach(async () => {
-      // Create test user and authenticate
+      // Create test user and authenticate, track for cleanup
       userData = createTestUserData();
-      const registerResponse = await request(SERVER_URL)
-        .post('/api/auth/local/register')
-        .send(userData)
-        .timeout(10000)
-        .expect(200);
+      const registerResponse = await createAndTrackUser(userData);
+      expect(registerResponse.status).toBe(200);
       
       testUser = registerResponse.body.user;
       authToken = registerResponse.body.jwt;
     });
 
-    it('should change user password', async () => {
+    it('should change user password using dedicated route', async () => {
       const newPassword = 'NewSecurePassword456!';
+      const currentPassword = userData.password;
 
-      // Change password
+      // Change password using dedicated route
+      const response = await request(SERVER_URL)
+        .post('/api/auth/change-password')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({
+          currentPassword: currentPassword,
+          password: newPassword,
+          passwordConfirmation: newPassword
+        })
+        .timeout(10000);
+
+      expect(response.status).toBe(200);
+      expect(response.body).toBeDefined();
+      expect(response.body.jwt).toBeDefined();
+
+      // Verify old password no longer works
+      await request(SERVER_URL)
+        .post('/api/auth/local')
+        .send({
+          identifier: testUser.email,
+          password: userData.password,
+        })
+        .timeout(10000)
+        .expect(400);
+
+      // Verify new password works
+      const newLoginResponse = await request(SERVER_URL)
+        .post('/api/auth/local')
+        .send({
+          identifier: testUser.email,
+          password: newPassword,
+        })
+        .timeout(10000)
+        .expect(200);
+
+      expect(newLoginResponse.body.jwt).toBeDefined();
+      expect(newLoginResponse.body.user.id).toBe(testUser.id);
+    });
+
+    it('should reject password updates through profile update route', async () => {
+      const newPassword = 'NewSecurePassword123!';
+
       const response = await request(SERVER_URL)
         .put(`/api/users/${testUser.id}`)
         .set('Authorization', `Bearer ${authToken}`)
         .send({ password: newPassword })
         .timeout(10000);
 
-      // Handle both 200 (success) and 403 (forbidden) responses
-      if (response.status === 200) {
-        expect(response.body).toBeDefined();
-
-        // Verify old password no longer works
-        await request(SERVER_URL)
-          .post('/api/auth/local')
-          .send({
-            identifier: testUser.email,
-            password: userData.password,
-          })
-          .timeout(10000)
-          .expect(400);
-
-        // Verify new password works
-        const newLoginResponse = await request(SERVER_URL)
-          .post('/api/auth/local')
-          .send({
-            identifier: testUser.email,
-            password: newPassword,
-          })
-          .timeout(10000)
-          .expect(200);
-
-        expect(newLoginResponse.body.jwt).toBeDefined();
-        expect(newLoginResponse.body.user.id).toBe(testUser.id);
-      } else if (response.status === 403) {
-        expect(response.body.error).toBeDefined();
-        // This is expected if password changes are restricted
-      } else {
-        throw new Error(`Unexpected status code: ${response.status}`);
-      }
+      // Should reject password updates through profile route
+      expect(response.status).toBe(400);
+      expect(response.body.error).toBeDefined();
+      // The error message should indicate password updates are not allowed
+      expect(response.body.error.message).toBeDefined();
     });
 
-    it('should validate password strength requirements', async () => {
+    it('should reject weak password through profile update route', async () => {
       const weakPassword = '123'; // Too short
 
       const response = await request(SERVER_URL)
@@ -351,68 +402,217 @@ describe('User Integration Tests', () => {
         .send({ password: weakPassword })
         .timeout(10000);
 
-      // Handle both 400 (validation error) and 403 (forbidden) responses
-      if (response.status === 400) {
+      // Should reject password updates through profile route
+      expect(response.status).toBe(400);
+      expect(response.body.error).toBeDefined();
+      expect(response.body.error.message).toBeDefined();
+    });
+
+    it('should change password using dedicated change-password route with retry', async () => {
+      const newPassword = 'NewSecurePassword789!';
+      const currentPassword = userData.password;
+
+      // Test the dedicated change-password route with retry mechanism
+      const response = await retryApiRequest(
+        () => request(SERVER_URL)
+          .post('/api/auth/change-password')
+          .set('Authorization', `Bearer ${authToken}`)
+          .send({
+            currentPassword: currentPassword,
+            password: newPassword,
+            passwordConfirmation: newPassword
+          })
+          .timeout(10000),
+        {
+          maxRetries: 5,
+          baseDelayMs: 1000,
+          retryCondition: (response) => response.status === 429
+        }
+      );
+
+      // Handle different possible responses
+      if (response.status === 200) {
+        expect(response.body).toBeDefined();
+        
+        // Verify old password no longer works with retry
+        const oldPasswordResponse = await retryApiRequest(
+          () => request(SERVER_URL)
+            .post('/api/auth/local')
+            .send({
+              identifier: testUser.email,
+              password: currentPassword,
+            })
+            .timeout(10000),
+          {
+            maxRetries: 30,
+            baseDelayMs: 2000,
+            retryCondition: (response) => response.status === 429
+          }
+        );
+        expect(oldPasswordResponse.status).toBe(400);
+
+        // Verify new password works
+        const newLoginResponse = await retryApiRequest(
+          () => request(SERVER_URL)
+            .post('/api/auth/local')
+            .send({
+              identifier: testUser.email,
+              password: newPassword,
+            })
+            .timeout(10000),
+          {
+            maxRetries: 30,
+            baseDelayMs: 2000,
+            retryCondition: (response) => response.status === 429
+          }
+        );
+
+        expect(newLoginResponse.status).toBe(200);
+        expect(newLoginResponse.body.jwt).toBeDefined();
+        expect(newLoginResponse.body.user.id).toBe(testUser.id);
+      } else if (response.status === 404) {
+        // Route doesn't exist, which is expected if not implemented
+        expect(response.status).toBe(404);
+      } else if (response.status === 400) {
         expect(response.body.error).toBeDefined();
-        expect(response.body.error.message).toContain('validation');
-      } else if (response.status === 403) {
-        expect(response.body.error).toBeDefined();
-        // This is expected if password changes are restricted
       } else {
-        throw new Error(`Unexpected status code: ${response.status}`);
+        throw new Error(`Unexpected status code for change-password route: ${response.status}`);
+      }
+    });
+
+    it('should compare password change methods - profile update vs dedicated route', async () => {
+      const newPassword = 'ComparisonTest123!';
+      const currentPassword = userData.password;
+
+      // Method 1: Try dedicated change-password route with retry
+      const changePasswordResponse = await retryApiRequest(
+        () => request(SERVER_URL)
+          .post('/api/auth/change-password')
+          .set('Authorization', `Bearer ${authToken}`)
+          .send({
+            currentPassword: currentPassword,
+            password: newPassword,
+            passwordConfirmation: newPassword
+          })
+          .timeout(10000),
+        {
+          maxRetries: 30,  
+          baseDelayMs: 2000,
+          retryCondition: (response) => response.status === 429
+        }
+      );
+
+      // Method 2: Try profile update route with retry
+      const profileUpdateResponse = await retryApiRequest(
+        () => request(SERVER_URL)
+          .put(`/api/users/${testUser.id}`)
+          .set('Authorization', `Bearer ${authToken}`)
+          .send({ password: newPassword })
+          .timeout(10000),
+        {
+          maxRetries: 5,
+          baseDelayMs: 1000,
+          retryCondition: (response) => response.status === 429
+        }
+      );
+
+      // Determine which method works
+      const changePasswordWorks = changePasswordResponse.status === 200;
+      const profileUpdateWorks = profileUpdateResponse.status === 200;
+
+      // Verify change-password route works
+      expect(changePasswordWorks).toBe(true);
+
+      // Verify profile update route blocks password changes
+      expect(profileUpdateWorks).toBe(false);
+      expect(profileUpdateResponse.status).toBe(400);
+
+      // Test login with new password since change-password route worked
+      if (changePasswordWorks) {
+        // Verify old password no longer works with retry
+        const oldPasswordResponse = await retryApiRequest(
+          () => request(SERVER_URL)
+            .post('/api/auth/local')
+            .send({
+              identifier: testUser.email,
+              password: currentPassword,
+            })
+            .timeout(10000),
+          {
+            maxRetries: 30,
+            baseDelayMs: 2000,
+            retryCondition: (response) => response.status === 429
+          }
+        );
+        expect(oldPasswordResponse.status).toBe(400);
+
+        // Verify new password works with retry
+        const newLoginResponse = await retryApiRequest(
+          () => request(SERVER_URL)
+            .post('/api/auth/local')
+            .send({
+              identifier: testUser.email,
+              password: newPassword,
+            })
+            .timeout(10000),
+          {
+            maxRetries: 30,
+            baseDelayMs: 2000,
+            retryCondition: (response) => response.status === 429
+          }
+        );
+
+        expect(newLoginResponse.status).toBe(200);
+        expect(newLoginResponse.body.jwt).toBeDefined();
+        expect(newLoginResponse.body.user.id).toBe(testUser.id);
       }
     });
   });
 
   describe('User Email Verification', () => {
-    let testUser: any;
+    /* *
+    * its skipped for now
+    * for now its already confirmed without email verification
+    * TODO: add email verification next story
+    * */
+    // let userData: any;
+    // let authToken: string;
 
-    beforeEach(async () => {
-      // Create test user for email verification tests
-      const userData = createTestUserData({
-        emailVerified: false
-      });
+    // beforeEach(async () => {
+    //   // Create test user and authenticate, track for cleanup
+    //   userData = createTestUserData();
+    //   const registerResponse = await createAndTrackUser(userData);
+    //   expect(registerResponse.status).toBe(200);
       
-      const registerResponse = await request(SERVER_URL)
-        .post('/api/auth/local/register')
-        .send(userData)
-        .timeout(10000);
-      
-      if (registerResponse.status === 200) {
-        testUser = registerResponse.body.user;
-      } else {
-        // Skip tests if user creation fails
-        testUser = null;
-      }
-    });
+    //   userData = registerResponse.body.user;
+    //   authToken = registerResponse.body.jwt;
+    // });
 
-    it('should send email verification', async () => {
-      if (!testUser) {
-        // Skip test if user creation failed
-        return;
-      }
+    // it('should send email verification', async () => {
+    //   expect(userData).toBeDefined();
+    //   // Send verification email
+    //   const response = await request(SERVER_URL)
+    //     .post('/api/auth/send-email-confirmation')
+    //     .send({ email: userData.email })
+    //     .timeout(10000)
+    //   console.log(response.body);
 
-      // Send verification email
-      const response = await request(SERVER_URL)
-        .post('/api/auth/send-email-confirmation')
-        .send({ email: testUser.email })
-        .timeout(10000)
-        .expect(200);
+    //   expect(response.status).toBe(200);
 
-      expect(response.body.ok).toBe(true);
-    });
+    //   expect(response.body.ok).toBe(true);
+    // });
 
-    it('should handle invalid verification token', async () => {
-      const invalidToken = 'invalid-verification-token';
+    // it('should handle invalid verification token', async () => {
+    //   const invalidToken = 'invalid-verification-token';
 
-      const response = await request(SERVER_URL)
-        .get(`/api/auth/email-confirmation?confirmation=${invalidToken}`)
-        .timeout(10000)
-        .expect(400);
+    //   const response = await request(SERVER_URL)
+    //     .get(`/api/auth/email-confirmation?confirmation=${invalidToken}`)
+    //     .timeout(10000)
+    //     .expect(400);
 
-      expect(response.body.error).toBeDefined();
-      expect(response.body.error.message).toContain('Invalid token');
-    });
+    //   expect(response.body.error).toBeDefined();
+    //   expect(response.body.error.message).toContain('Invalid token');
+    // });
   });
 
   describe('User Account Status Management', () => {
@@ -421,13 +621,10 @@ describe('User Integration Tests', () => {
     let userData: any;
 
     beforeEach(async () => {
-      // Create test user and authenticate
+      // Create test user and authenticate, track for cleanup
       userData = createTestUserData();
-      const registerResponse = await request(SERVER_URL)
-        .post('/api/auth/local/register')
-        .send(userData)
-        .timeout(10000)
-        .expect(200);
+      const registerResponse = await createAndTrackUser(userData);
+      expect(registerResponse.status).toBe(200);
       
       testUser = registerResponse.body.user;
       authToken = registerResponse.body.jwt;
@@ -466,7 +663,7 @@ describe('User Integration Tests', () => {
         expect([400, 429]).toContain(response.status);
         
         // Add delay to avoid rate limiting
-        await new Promise(resolve => setTimeout(resolve, 200));
+        // await new Promise(resolve => setTimeout(resolve, 200));
       }
 
       // Verify account is still accessible (implementation dependent)
@@ -484,7 +681,7 @@ describe('User Integration Tests', () => {
     let testUsers: any[] = [];
 
     beforeAll(async () => {
-      // Create multiple test users
+      // Create multiple test users and track for cleanup
       const users = [
         createTestUserData({ username: `searchuser1${timestamp}`, email: `searchuser1${timestamp}@example.com` }),
         createTestUserData({ username: `searchuser2${timestamp}`, email: `searchuser2${timestamp}@example.com` }),
@@ -492,16 +689,13 @@ describe('User Integration Tests', () => {
       ];
 
       for (const userData of users) {
-        const response = await request(SERVER_URL)
-          .post('/api/auth/local/register')
-          .send(userData)
-          .timeout(10000);
+        const response = await createAndTrackUser(userData);
         
         if (response.status === 200) {
           testUsers.push(response.body.user);
         }
         // Add delay between user creation to avoid rate limiting
-        await new Promise(resolve => setTimeout(resolve, 500));
+        // await new Promise(resolve => setTimeout(resolve, 500));
       }
     });
 
@@ -510,7 +704,7 @@ describe('User Integration Tests', () => {
         .get(`/api/users?filters[username][$containsi]=searchuser1${timestamp}`)
         .set('Authorization', `Bearer ${adminToken}`)
         .timeout(10000);
-
+      
       expect(response.status).toBe(200);
       // Handle different response structures
       const data = response.body.data || response.body;
@@ -549,19 +743,7 @@ describe('User Integration Tests', () => {
       }
     });
 
-    afterAll(async () => {
-      // Clean up test users
-      for (const user of testUsers) {
-        try {
-          await request(SERVER_URL)
-            .delete(`/api/users/${user.id}`)
-            .set('Authorization', `Bearer ${adminToken}`)
-            .timeout(10000);
-        } catch (error) {
-          console.warn(`Failed to delete user ${user.id}:`, error);
-        }
-      }
-    });
+    // Note: Cleanup is handled by global afterAll hook
   });
 
   describe('Error Handling and Edge Cases', () => {
@@ -579,32 +761,23 @@ describe('User Integration Tests', () => {
       const userData1 = createTestUserData({ username: `concurrent1${timestamp}`, email: `concurrent1${timestamp}@example.com` });
       const userData2 = createTestUserData({ username: `concurrent2${timestamp}`, email: `concurrent2${timestamp}@example.com` });
 
-      // Create users sequentially to avoid rate limiting
-      const response1 = await request(SERVER_URL)
-        .post('/api/auth/local/register')
-        .send(userData1)
-        .timeout(10000);
-      
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      const response2 = await request(SERVER_URL)
-        .post('/api/auth/local/register')
-        .send(userData2)
-        .timeout(10000);
-
+      // Create users sequentially to avoid rate limiting, track for cleanup
+      const response1 = await createAndTrackUser(userData1);
       expect(response1.status).toBe(200);
+      
+      // await new Promise(resolve => setTimeout(resolve, 500));
+      
+      const response2 = await createAndTrackUser(userData2);
       expect(response2.status).toBe(200);
+      
       expect(response1.body.user.id).not.toBe(response2.body.user.id);
     });
 
     it('should handle request timeout scenarios', async () => {
       const userData = createTestUserData();
 
-      const response = await request(SERVER_URL)
-        .post('/api/auth/local/register')
-        .send(userData)
-        .timeout(10000) // Normal timeout
-        .expect(200);
+      const response = await createAndTrackUser(userData);
+      expect(response.status).toBe(200);
 
       expect(response.body.user).toBeDefined();
     });

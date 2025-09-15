@@ -30,66 +30,13 @@ const testCustomerUsers = [
     email: 'customer@test.com',
     password: 'Customer123',
     username: 'Customer',
-    roleName: 'customer',
+    roleType: 'authenticated', // Use default authenticated role
     confirmed: true,
     isActive: true
   },
 ];
-async function createDefaultRolesIfNotExist(strapi: Core.Strapi) {
-    try {
-        const defaultRoles = [
-            {
-                name: 'customer',
-                description: 'Default role for customers',
-                type: 'authenticated'
-            },
-            {
-                name: 'admin',
-                description: 'Administrator role',
-                type: 'authenticated'
-            },
-            {
-                name: 'manager',
-                description: 'Manager role',
-                type: 'authenticated'
-            },
-            {
-                name: 'support',
-                description: 'Support role',
-                type: 'authenticated'
-            },
-            {
-                name: 'moderator',
-                description: 'Moderator role',
-                type: 'authenticated'
-            }
-        ];
 
-        for (const roleData of defaultRoles) {
-            // Check if role already exists
-            const existingRole = await strapi.query('plugin::users-permissions.role').findOne({
-                where: { name: roleData.name }
-            });
-
-            if (!existingRole) {
-                // Create the role
-                await strapi.query('plugin::users-permissions.role').create({
-                    data: {
-                        name: roleData.name,
-                        description: roleData.description,
-                        type: roleData.type
-                    }
-                });
-
-                console.info(`✅ Created role: ${roleData.name}`);
-            } else {
-                console.info(`ℹ️ Role already exists: ${roleData.name}`);
-            }
-        }
-    } catch (error) {
-        console.error('Failed to create default roles:', error);
-    }
-}
+// Removed custom role creation - using default Strapi roles
 
 async function setupPublicPermissions(strapi: Core.Strapi) {
     try {
@@ -103,10 +50,6 @@ async function setupPublicPermissions(strapi: Core.Strapi) {
         });
 
 
-        const customerRole = await strapi.query('plugin::users-permissions.role').findOne({
-            where: { name: 'customer' }
-        });
-
         if (!publicRole) {
             console.warn('Public role not found, skipping permission setup');
             return;
@@ -116,15 +59,12 @@ async function setupPublicPermissions(strapi: Core.Strapi) {
             console.warn('Authenticated role not found, skipping permission setup');
             return;
         }
-        if (!customerRole) {
-            console.warn('Customer role not found, skipping permission setup');
-            return;
-        }
 
 
         // Get the default permissions configuration from plugins config
         const pluginsConfig: any = strapi.config.get('plugin.users-permissions');
         const defaultPermissions = pluginsConfig?.defaultPermissions?.public;
+        const defaultPermissionsAuthenticated = pluginsConfig?.defaultPermissions?.authenticated;
 
         if (!defaultPermissions) {
             console.warn('No default permissions configuration found');
@@ -132,38 +72,49 @@ async function setupPublicPermissions(strapi: Core.Strapi) {
         }
 
         const { publicContentTypes, publicActions } = defaultPermissions;
+        const { authenticatedContentTypes, authenticatedActions } = defaultPermissionsAuthenticated;
 
         // Set up permissions for both public and authenticated roles
         const permissions = [];
         
-        for (const contentType of publicContentTypes) {
-            for (const action of publicActions) {
-                // Add permission for public role
-                permissions.push({
-                    action: `${contentType}.${action}`,
-                    subject: null,
-                    properties: {},
-                    conditions: [],
-                    role: publicRole.id
-                });
+        // Set up public permissions
+        if (publicContentTypes && publicActions) {
+            for (const contentType of publicContentTypes) {
+                for (const action of publicActions) {
+                    // Add permission for public role
+                    permissions.push({
+                        action: `${contentType}.${action}`,
+                        subject: null,
+                        properties: {},
+                        conditions: [],
+                        role: publicRole.id
+                    });
 
-                // Add permission for authenticated role
-                permissions.push({
-                    action: `${contentType}.${action}`,
-                    subject: null,
-                    properties: {},
-                    conditions: [],
-                    role: authenticatedRole.id
-                });
+                    // Add permission for authenticated role
+                    permissions.push({
+                        action: `${contentType}.${action}`,
+                        subject: null,
+                        properties: {},
+                        conditions: [],
+                        role: authenticatedRole.id
+                    });
+                }
+            }
+        }
 
-                // Add permission for customer role
-                permissions.push({
-                    action: `${contentType}.${action}`,
-                    subject: null,
-                    properties: {},
-                    conditions: [],
-                    role: customerRole.id
-                });
+        // Set up authenticated-only permissions
+        if (authenticatedContentTypes && authenticatedActions) {
+            for (const contentType of authenticatedContentTypes) {
+                for (const action of authenticatedActions) {
+                    // Add permission for authenticated role only
+                    permissions.push({
+                        action: `${contentType}.${action}`,
+                        subject: null,
+                        properties: {},
+                        conditions: [],
+                        role: authenticatedRole.id
+                    });
+                }
             }
         }
 
@@ -191,6 +142,48 @@ async function setupPublicPermissions(strapi: Core.Strapi) {
         console.error('Failed to setup public permissions:', error);
     }
 }
+
+async function setupUserSelfUpdatePermissions(strapi: Core.Strapi) {
+    try {
+        const authenticatedRole = await strapi.query('plugin::users-permissions.role').findOne({
+            where: { type: 'authenticated' }
+        });
+
+        if (!authenticatedRole) {
+            console.warn('Authenticated role not found, skipping user self-update permission setup');
+            return;
+        }
+
+        // Add permission for users to update user profiles (policy will restrict to own profile)
+        const selfUpdatePermission = {
+            action: 'plugin::users-permissions.user.update',
+            subject: null,
+            properties: {},
+            conditions: [],
+            role: authenticatedRole.id
+        };
+
+        // Check if permission already exists
+        const existingPermission = await strapi.query('plugin::users-permissions.permission').findOne({
+            where: {
+                action: selfUpdatePermission.action,
+                role: selfUpdatePermission.role
+            }
+        });
+
+        if (!existingPermission) {
+            await strapi.query('plugin::users-permissions.permission').create({
+                data: selfUpdatePermission
+            });
+            console.info(`✅ Created authenticated user update permission: ${selfUpdatePermission.action} (restricted by policy)`);
+        } else {
+            console.info(`ℹ️ Authenticated user update permission already exists: ${selfUpdatePermission.action}`);
+        }
+    } catch (error) {
+        console.error('Failed to setup user self-update permissions:', error);
+    }
+}
+
 
 async function createE2EBearerTokenIfNotExist(strapi: Core.Strapi) {
     const tokenService = strapi.service('admin::api-token');
@@ -286,13 +279,13 @@ async function createTestFrontendUsersIfNotExist(strapi: Core.Strapi) {
                 // Hash the password
                 const hashedPassword = await bcrypt.hash(userData.password, 10);
                 
-                // Get the role by name
+                // Get the authenticated role by type
                 const role = await strapi.query('plugin::users-permissions.role').findOne({
-                    where: { name: userData.roleName }
+                    where: { type: userData.roleType }
                 });
 
                 if (!role) {
-                    console.warn(`⚠️ Role '${userData.roleName}' not found, skipping user creation for ${userData.email}`);
+                    console.warn(`⚠️ Role with type '${userData.roleType}' not found, skipping user creation for ${userData.email}`);
                     continue;
                 }
 
@@ -310,7 +303,7 @@ async function createTestFrontendUsersIfNotExist(strapi: Core.Strapi) {
                     }
                 });
 
-                console.info(`✅ Created test frontend user: ${userData.email} with role: ${role.name}`);
+                console.info(`✅ Created test frontend user: ${userData.email} with role: ${role.name} (${role.type})`);
             } else {
                 console.info(`ℹ️ Test frontend user already exists: ${userData.email}`);
             }
@@ -386,11 +379,13 @@ export default {
         await writeTokenToEnvFile(apiToken);
       }
 
-      // Create default roles first
-      await createDefaultRolesIfNotExist(strapi);
+        // Using default Strapi roles - no custom role creation needed
 
       // Set up public permissions for categories
       await setupPublicPermissions(strapi);
+
+      // Set up user self-update permissions (using policy-based restriction)
+      await setupUserSelfUpdatePermissions(strapi);
 
       // Create test admin users (roles already exist in admin panel)
       await createTestUsersIfNotExist(strapi);

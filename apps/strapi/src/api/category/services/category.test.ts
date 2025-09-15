@@ -497,9 +497,9 @@ describe('Category Service', () => {
         documentId: 'cat1',
         name: 'Electronics',
         products: [
-          { status: 'published', isActive: true, inventory: 10, price: 29.99 },
-          { status: 'draft', isActive: true, inventory: 5, price: 39.99 },
-          { status: 'published', isActive: false, inventory: 0, price: 19.99 },
+          { status: 'active', inventory: 10 },
+          { status: 'draft', inventory: 5 },
+          { status: 'inactive', inventory: 0 },
         ],
         children: [{ name: 'Laptops' }, { name: 'Phones' }],
       };

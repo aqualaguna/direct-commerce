@@ -1,4 +1,61 @@
+import { trackLoginAttempt, trackGeneralActivity } from '../../utils/activity-tracking';
+
 export default (plugin) => {
+  // Add custom rate limit middleware for testing environment
+  if (process.env.NODE_ENV === 'test') {
+    plugin.middlewares['testRateLimit'] = require('../../middlewares/test-rate-limit').default;
+  }
+
+  // Store the original update method
+  const originalUpdate = plugin.controllers.user.update;
+
+  // Override the user update controller to enforce ownership and password security
+  plugin.controllers.user.update = async (ctx) => {
+    const { id } = ctx.params;
+    const { user } = ctx.state;
+    const { password } = ctx.request.body;
+
+    // If no user is authenticated, deny the update
+    if (!user) {
+      return ctx.unauthorized('You must be logged in to perform this action.');
+    }
+
+    // SECURITY: Reject password updates through profile update route
+    if (password !== undefined) {
+      return ctx.badRequest({
+        error: {
+          message: 'Password updates are not allowed through profile update. Please use the dedicated change-password endpoint: POST /api/auth/change-password',
+          details: {
+            allowedEndpoint: '/api/auth/change-password',
+            method: 'POST',
+            requiredFields: ['currentPassword', 'password', 'passwordConfirmation']
+          }
+        }
+      });
+    }
+
+    // Admin users can update any user (except passwords)
+    const isAdmin = user.role?.type === 'admin' || 
+                    user.role?.name === 'admin' || 
+                    user.role?.code === 'strapi-super-admin';
+    
+    if (isAdmin) {
+      // Call the original update method
+      return await originalUpdate(ctx);
+    }
+
+    // Check if user is trying to update their own profile
+    const userId = user.id?.toString();
+    const resourceId = id?.toString();
+
+    if (userId !== resourceId) {
+      return ctx.forbidden('You can only update your own profile.');
+    }
+
+    // Call the original update method
+    return await originalUpdate(ctx);
+  };
+
   // Configure built-in RBAC system
   plugin.controllers.auth.callback = async (ctx) => {
     const { identifier } = ctx.request.body;
@@ -19,7 +76,7 @@ export default (plugin) => {
 
       if (!user) {
         // Track failed login attempt
-        await trackLoginAttempt(ctx, null, false, 'Invalid identifier or password', 0);
+        await trackLoginAttempt(strapi, ctx, null, false, 'Invalid identifier or password', 0);
         throw new Error('Invalid identifier or password');
       }
 
@@ -30,7 +87,7 @@ export default (plugin) => {
 
       if (!validPassword) {
         // Track failed login attempt
-        await trackLoginAttempt(ctx, user, false, 'Invalid password', 0);
+        await trackLoginAttempt(strapi, ctx, user, false, 'Invalid password', 0);
         throw new Error('Invalid identifier or password');
       }
 
@@ -51,9 +108,9 @@ export default (plugin) => {
 
       // Track successful login
       const sessionDuration = Date.now() - startTime;
-      await trackLoginAttempt(ctx, user, true, null, sessionDuration);
+      await trackLoginAttempt(strapi, ctx, user, true, null, sessionDuration);
 
-      return {
+      ctx.send({
         jwt,
         user: {
           id: user.id,
@@ -62,32 +119,17 @@ export default (plugin) => {
           role: userRole,
           permissions: permissions,
         },
-      };
+      });
     } catch (error) {
       // Ensure failed attempts are tracked even if not handled above
       if (!error.message.includes('Invalid identifier')) {
-        await trackLoginAttempt(ctx, null, false, error.message, 0);
+        await trackLoginAttempt(strapi, ctx, null, false, error.message, 0);
       }
       throw error;
     }
   };
 
-  // Add logout tracking
-  plugin.controllers.auth.logout = async (ctx) => {
-    const user = ctx.state.user;
-    
-    if (user) {
-      await trackActivity({
-        user,
-        activityType: 'logout',
-        ctx,
-        success: true,
-        errorMessage: null
-      });
-    }
 
-    ctx.send({ message: 'Logged out successfully' });
-  };
 
   // Add custom role assignment service
   plugin.services.roleAssignment = {
@@ -213,100 +255,4 @@ export default (plugin) => {
   return plugin;
 };
 
-// Helper functions for activity tracking
-async function trackLoginAttempt(ctx, user, success, errorMessage, sessionDuration) {
-  try {
-    const ipAddress = ctx.request.ip || 
-                     ctx.request.headers['x-forwarded-for'] || 
-                     ctx.request.headers['x-real-ip'] || 
-                     ctx.request.connection.remoteAddress;
-    
-    const userAgent = ctx.request.headers['user-agent'];
-    const sessionId = ctx.request.headers['x-session-id'] || generateSessionId();
-    
-    await strapi.documents('api::user-activity.user-activity').create({
-      data: {
-        user: user ? user.documentId : null,
-        activityType: 'login',
-        activityData: {
-          endpoint: '/api/auth/local',
-          method: 'POST',
-          identifier: ctx.request.body.identifier,
-          timestamp: new Date().toISOString()
-        },
-        ipAddress: anonymizeIP(ipAddress),
-        userAgent,
-        sessionId,
-        sessionDuration,
-        success,
-        errorMessage,
-        metadata: {
-          loginAttempt: true,
-          timestamp: new Date().toISOString()
-        }
-      }
-    });
-  } catch (error) {
-    strapi.log.error('Failed to track login attempt:', error);
-  }
-}
-
-async function trackActivity({ user, activityType, ctx, success, errorMessage }) {
-  try {
-    const ipAddress = ctx.request.ip || 
-                     ctx.request.headers['x-forwarded-for'] || 
-                     ctx.request.headers['x-real-ip'] || 
-                     ctx.request.connection.remoteAddress;
-    
-    const userAgent = ctx.request.headers['user-agent'];
-    const sessionId = ctx.request.headers['x-session-id'] || generateSessionId();
-    
-    await strapi.documents('api::user-activity.user-activity').create({
-      data: {
-        user: user.documentId,
-        activityType,
-        activityData: {
-          endpoint: ctx.request.url,
-          method: ctx.request.method,
-          timestamp: new Date().toISOString()
-        },
-        ipAddress: anonymizeIP(ipAddress),
-        userAgent,
-        sessionId,
-        success,
-        errorMessage,
-        metadata: {
-          timestamp: new Date().toISOString()
-        }
-      }
-    });
-  } catch (error) {
-    strapi.log.error('Failed to track activity:', error);
-  }
-}
-
-function generateSessionId() {
-  return require('crypto').randomUUID();
-}
-
-function anonymizeIP(ipAddress) {
-  if (!ipAddress) return null;
-  
-  // IPv4 - remove last octet
-  if (ipAddress.includes('.')) {
-    const parts = ipAddress.split('.');
-    if (parts.length === 4) {
-      return `${parts[0]}.${parts[1]}.${parts[2]}.0`;
-    }
-  }
-  
-  // IPv6 - remove last 64 bits
-  if (ipAddress.includes(':')) {
-    const parts = ipAddress.split(':');
-    if (parts.length >= 4) {
-      return `${parts.slice(0, 4).join(':')}::`;
-    }
-  }
-  
-  return ipAddress;
-}
+// Helper functions are now imported from utils/activity-tracking

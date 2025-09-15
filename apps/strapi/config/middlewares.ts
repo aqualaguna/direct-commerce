@@ -10,4 +10,5 @@ export default [
   'strapi::favicon',
   'strapi::public',
   'global::security', // Custom security middleware
+  'global::activity-tracking', // Activity tracking middleware
 ];

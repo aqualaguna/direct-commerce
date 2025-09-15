@@ -15,5 +15,5 @@ export default async (
   }
 
   // Allow admin users
-  return user?.role?.type === 'admin';
+  return user?.role === 'admin' || user?.role?.type === 'admin';
 };

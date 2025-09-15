@@ -12,7 +12,7 @@
 
 const { spawn } = require('child_process');
 const path = require('path');
-const { ensureServerRunning, stopServer } = require('./test-server');
+const { ensureServerRunning, stopServer, cleanTestDatabase } = require('./test-server');
 
 /**
  * Run integration tests
@@ -28,6 +28,14 @@ async function runIntegrationTests(testPattern = null) {
     
     if (!serverStatus.running) {
       throw new Error('Failed to start test server');
+    }
+    
+    // Step 2.5: Clean test database before running tests
+    console.log('📋 Step 2.5: Cleaning test database...');
+    try {
+      await cleanTestDatabase();
+    } catch (error) {
+      console.warn('⚠️  Failed to clean test database, continuing with tests:', error.message);
     }
     
     // Step 3: Run integration tests

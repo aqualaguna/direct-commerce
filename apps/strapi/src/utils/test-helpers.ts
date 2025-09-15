@@ -230,6 +230,95 @@ export const createTestProductData = (overrides: any = {}) => ({
 });
 
 /**
+ * Retry mechanism for API calls with exponential backoff
+ */
+export const retryApiCall = async <T>(
+  apiCall: () => Promise<T>,
+  options: {
+    maxRetries?: number;
+    baseDelayMs?: number;
+    maxDelayMs?: number;
+    retryCondition?: (error: any) => boolean;
+  } = {}
+): Promise<T> => {
+  const {
+    maxRetries = 3,
+    baseDelayMs = 1000,
+    maxDelayMs = 5000,
+    retryCondition = (error: any) => error?.status === 429 || error?.response?.status === 429
+  } = options;
+
+  let lastError: any;
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await apiCall();
+    } catch (error) {
+      lastError = error;
+      
+      // Check if we should retry
+      if (attempt === maxRetries || !retryCondition(error)) {
+        throw error;
+      }
+      
+      // Calculate delay with exponential backoff
+      const delay = Math.min(baseDelayMs * Math.pow(2, attempt - 1), maxDelayMs);
+      await waitFor(delay);
+    }
+  }
+  
+  throw lastError;
+};
+
+/**
+ * Retry mechanism for API calls that return response objects
+ */
+export const retryApiRequest = async <T>(
+  apiCall: () => Promise<{ status: number; body: any }>,
+  options: {
+    maxRetries?: number;
+    baseDelayMs?: number;
+    maxDelayMs?: number;
+    retryCondition?: (response: { status: number; body: any }) => boolean;
+  } = {}
+): Promise<{ status: number; body: any }> => {
+  const {
+    maxRetries = 3,
+    baseDelayMs = 1000,
+    maxDelayMs = 5000,
+    retryCondition = (response) => response.status === 429
+  } = options;
+
+  let lastResponse: { status: number; body: any };
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const response = await apiCall();
+      lastResponse = response;
+      
+      // Check if we should retry
+      if (attempt === maxRetries || !retryCondition(response)) {
+        return response;
+      }
+      
+      // Calculate delay with exponential backoff
+      const delay = Math.min(baseDelayMs * Math.pow(2, attempt - 1), maxDelayMs);
+      await waitFor(delay);
+    } catch (error) {
+      if (attempt === maxRetries) {
+        throw error;
+      }
+      
+      // Calculate delay with exponential backoff
+      const delay = Math.min(baseDelayMs * Math.pow(2, attempt - 1), maxDelayMs);
+      await waitFor(delay);
+    }
+  }
+  
+  return lastResponse!;
+};
+
+/**
  * Reset all mocks
  */
 export const resetMocks = () => {

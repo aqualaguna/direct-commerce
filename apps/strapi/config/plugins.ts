@@ -41,8 +41,8 @@ export default ({ env }) => ({
         expiresIn: '7d', // Token expires in 7 days as specified in story
       },
       ratelimit: {
-        max: 5, // Maximum 5 requests per window
-        windowMs: 15 * 60 * 1000, // 15 minutes window
+        max: env('NODE_ENV') === 'test' ? 1000 : 5, // Higher limit for testing, normal limit for production
+        windowMs: env('NODE_ENV') === 'test' ? 60 * 1000 : 15 * 60 * 1000, // 1 minute for testing, 15 minutes for production
       },
       // Email configuration for verification and password reset
       email: {
@@ -72,6 +72,17 @@ export default ({ env }) => ({
           ],
           // Actions that should be public for these content types
           publicActions: ['find', 'findOne']
+        },
+        authenticated: {
+          // List of content types that should be accessible by authenticated users
+          authenticatedContentTypes: [
+            'api::user-activity.user-activity',
+            'api::user-preference.user-preference',
+            'api::privacy-setting.privacy-setting',
+            // Add more content types as needed
+          ],
+          // Actions that should be available for authenticated users
+          authenticatedActions: ['find', 'findOne', 'create', 'update', 'delete']
         }
       },
     },

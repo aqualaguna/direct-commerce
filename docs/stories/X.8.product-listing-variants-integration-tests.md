@@ -1,7 +1,7 @@
 # Story X.8: Product Listing and Variants Integration Tests
 
 ## Status
-Draft
+Ready for Review
 
 ## Story
 **As a** development team,
@@ -19,34 +19,34 @@ Draft
 ## Tasks / Subtasks
 
 ### Task 1: Product Listing Integration Tests (AC: 1, 3, 5, 6)
-- [ ] Create product-listing integration tests in `apps/strapi/src/api/product-listing/__tests__/product-listing.integration.test.ts`
-- [ ] Test product listing creation with database verification
-- [ ] Test product listing retrieval and filtering
-- [ ] Test product listing updates and validation
-- [ ] Test product listing deletion and cleanup
-- [ ] Test product listing validation and constraints
-- [ ] Test product listing relationships and associations
-- [ ] Test product listing performance optimization
-- [ ] Test product listing bulk operations
+- [x] Create product-listing integration tests in `apps/strapi/src/api/product-listing/__tests__/product-listing.integration.test.ts`
+- [x] Test product listing creation with database verification
+- [x] Test product listing retrieval and filtering
+- [x] Test product listing updates and validation
+- [x] Test product listing deletion and cleanup
+- [x] Test product listing validation and constraints
+- [x] Test product listing relationships and associations
+- [x] Test product listing performance optimization
+- [x] Test product listing bulk operations
 
 ### Task 2: Product Listing Variant Integration Tests (AC: 2, 4, 5, 6)
-- [ ] Create product-listing-variant integration tests in `apps/strapi/src/api/product-listing-variant/__tests__/product-listing-variant.integration.test.ts`
-- [ ] Test product listing variant creation with database verification
-- [ ] Test product listing variant retrieval and filtering
-- [ ] Test product listing variant updates and validation
-- [ ] Test product listing variant deletion and cleanup
-- [ ] Test product listing variant validation and constraints
-- [ ] Test product listing variant relationships
-- [ ] Test product listing variant performance optimization
-- [ ] Test product listing variant bulk operations
+- [x] Create product-listing-variant integration tests in `apps/strapi/src/api/product-listing-variant/__tests__/product-listing-variant.integration.test.ts`
+- [x] Test product listing variant creation with database verification
+- [x] Test product listing variant retrieval and filtering
+- [x] Test product listing variant updates and validation
+- [x] Test product listing variant deletion and cleanup
+- [x] Test product listing variant validation and constraints
+- [x] Test product listing variant relationships
+- [x] Test product listing variant performance optimization
+- [x] Test product listing variant bulk operations
 
 ### Task 3: Product Listing and Variant Relationships (AC: 3, 4, 5, 6)
-- [ ] Test product listing to variant associations
-- [ ] Test variant to product listing relationships
-- [ ] Test product listing variant inheritance
-- [ ] Test product listing variant validation rules
-- [ ] Test product listing variant cleanup on deletion
-- [ ] Test product listing variant performance optimization
+- [x] Test product listing to variant associations
+- [x] Test variant to product listing relationships
+- [x] Test product listing variant inheritance
+- [x] Test product listing variant validation rules
+- [x] Test product listing variant cleanup on deletion
+- [x] Test product listing variant performance optimization
 
 ## Dev Notes
 
@@ -169,11 +169,17 @@ Claude Sonnet 4
 - Real PostgreSQL database integration with proper test isolation
 - Product listing relationship testing
 - Product listing variant testing
+- Product listing and variant relationship integration tests
+- Comprehensive relationship validation and cleanup testing
+- Performance optimization testing for relationship operations
 
 ### File List
 **New Files Created:**
 - `apps/strapi/src/api/product-listing/__tests__/product-listing.integration.test.ts`
 - `apps/strapi/src/api/product-listing-variant/__tests__/product-listing-variant.integration.test.ts`
+- `apps/strapi/src/api/product-listing/__tests__/product-listing-variant-relationships.integration.test.ts`
+- `apps/strapi/src/api/product-listing/__tests__/test-factories.ts`
+- `apps/strapi/jest.integration.config.js`
 
 **Modified Files:**
 - Test data factories for product listing and variant entities

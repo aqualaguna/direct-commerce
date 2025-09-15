@@ -60,6 +60,57 @@ async function ensureTestDatabase() {
 }
 
 /**
+ * Clean test database by truncating all tables
+ */
+async function cleanTestDatabase() {
+  const testDbConfig = {
+    host: 'localhost',
+    port: 5432,
+    user: 'strapi',
+    password: 'strapi_password',
+    database: 'strapi_ecommerce_test'
+  };
+
+  const client = new Client(testDbConfig);
+  
+  try {
+    await client.connect();
+    console.log('🧹 Cleaning test database...');
+    
+    // Only clean activity-related tables to preserve test users and system data
+    const tablesResult = await client.query(`
+      SELECT tablename 
+      FROM pg_tables 
+      WHERE schemaname = 'public' 
+      AND tablename IN (
+        'user_activities',
+        'user_behaviors',
+        'user_preferences',
+        'security_events',
+        'engagement_metrics',
+        'checkout_activities'
+      )
+    `);
+    
+    if (tablesResult.rows.length > 0) {
+      const tableNames = tablesResult.rows.map(row => row.tablename);
+      console.log(`🗑️  Truncating ${tableNames.length} tables: ${tableNames.join(', ')}`);
+      
+      // Truncate all tables except system tables
+      await client.query(`TRUNCATE TABLE ${tableNames.join(', ')} RESTART IDENTITY CASCADE`);
+      console.log('✅ Test database cleaned successfully (preserving system tables)');
+    } else {
+      console.log('✅ No tables to clean');
+    }
+  } catch (error) {
+    console.error('❌ Failed to clean test database:', error.message);
+    throw error;
+  } finally {
+    await client.end();
+  }
+}
+
+/**
  * Check if server is running and responding
  */
 function checkServerHealth() {
@@ -321,8 +372,11 @@ async function main() {
         console.log(`Server health: ${isHealthy ? 'Healthy' : 'Unhealthy'}`);
         process.exit(isHealthy ? 0 : 1);
         break;
+      case 'clean':
+        await cleanTestDatabase();
+        break;
       default:
-        console.log('Usage: node test-server.js [start|stop|restart|status|ensure|health]');
+        console.log('Usage: node test-server.js [start|stop|restart|status|ensure|health|clean]');
         console.log('');
         console.log('Commands:');
         console.log('  start   - Start the test server');
@@ -331,6 +385,7 @@ async function main() {
         console.log('  status  - Check server status');
         console.log('  ensure  - Ensure server is running (start if not)');
         console.log('  health  - Check server health (exit code 0 if healthy)');
+        console.log('  clean   - Clean test database (truncate all tables)');
         process.exit(1);
     }
   } catch (error) {
@@ -363,5 +418,6 @@ module.exports = {
   ensureServerRunning,
   checkServerHealth,
   killExistingServer,
-  ensureTestDatabase
+  ensureTestDatabase,
+  cleanTestDatabase
 };

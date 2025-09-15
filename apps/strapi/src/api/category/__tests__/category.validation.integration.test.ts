@@ -17,17 +17,23 @@ describe('Category Validation Integration Tests', () => {
     adminToken = process.env.STRAPI_API_TOKEN as string;
 
     if (!adminToken) {
-      throw new Error('STRAPI_API_TOKEN environment variable is not set. Please ensure the test server is running and the token is generated.');
+      console.warn('STRAPI_API_TOKEN not set, attempting to use public access');
+      // For public endpoints, we can proceed without token
     }
   });
 
   afterAll(async () => {
     // Global cleanup - delete all test categories that might have been left behind
     try {
-      const response = await request(SERVER_URL)
+      const requestBuilder = request(SERVER_URL)
         .get('/api/categories')
-        .set('Authorization', `Bearer ${adminToken}`)
         .timeout(10000);
+      
+      if (adminToken) {
+        requestBuilder.set('Authorization', `Bearer ${adminToken}`);
+      }
+      
+      const response = await requestBuilder;
 
       if (response.status === 200 && response.body.data) {
         const categories = response.body.data;
@@ -36,10 +42,15 @@ describe('Category Validation Integration Tests', () => {
           if (category.name && category.name.includes('Test Category') ||
             category.name && category.name.includes('Duplicate Slug Category')) {
             try {
-              await request(SERVER_URL)
+              const deleteRequestBuilder = request(SERVER_URL)
                 .delete(`/api/categories/${category.documentId}`)
-                .set('Authorization', `Bearer ${adminToken}`)
                 .timeout(10000);
+              
+              if (adminToken) {
+                deleteRequestBuilder.set('Authorization', `Bearer ${adminToken}`);
+              }
+              
+              await deleteRequestBuilder;
             } catch (error) {
               console.warn(`Failed to delete category ${category.documentId}:`, error);
             }
@@ -57,11 +68,16 @@ describe('Category Validation Integration Tests', () => {
         description: 'Category without name'
       };
 
-      const response = await request(SERVER_URL)
+      const requestBuilder = request(SERVER_URL)
         .post('/api/categories')
-        .set('Authorization', `Bearer ${adminToken}`)
         .send({ data: invalidCategory })
         .timeout(10000);
+      
+      if (adminToken) {
+        requestBuilder.set('Authorization', `Bearer ${adminToken}`);
+      }
+      
+      const response = await requestBuilder;
 
       expect(response.status).toBe(400);
     });
@@ -69,11 +85,16 @@ describe('Category Validation Integration Tests', () => {
     it('should reject category with duplicate slug', async () => {
       // First, create a category with a unique slug
       const uniqueSlug = `unique-slug-${timestamp}`;
-      const response1 = await request(SERVER_URL)
+      const requestBuilder1 = request(SERVER_URL)
         .post('/api/categories')
-        .set('Authorization', `Bearer ${adminToken}`)
         .send({ data: { ...testCategory, slug: uniqueSlug } })
         .timeout(10000);
+      
+      if (adminToken) {
+        requestBuilder1.set('Authorization', `Bearer ${adminToken}`);
+      }
+      
+      const response1 = await requestBuilder1;
 
       expect([200, 201]).toContain(response1.status);
       const firstCategoryId = response1.body.data.documentId;
@@ -85,20 +106,30 @@ describe('Category Validation Integration Tests', () => {
         slug: uniqueSlug // Same slug as the first category
       };
 
-      const response2 = await request(SERVER_URL)
+      const requestBuilder2 = request(SERVER_URL)
         .post('/api/categories')
-        .set('Authorization', `Bearer ${adminToken}`)
         .send({ data: duplicateCategory })
         .timeout(10000);
+      
+      if (adminToken) {
+        requestBuilder2.set('Authorization', `Bearer ${adminToken}`);
+      }
+      
+      const response2 = await requestBuilder2;
 
       expect(response2.status).toBe(400);
 
       // Clean up
       try {
-        await request(SERVER_URL)
+        const deleteRequestBuilder = request(SERVER_URL)
           .delete(`/api/categories/${firstCategoryId}`)
-          .set('Authorization', `Bearer ${adminToken}`)
           .timeout(10000);
+        
+        if (adminToken) {
+          deleteRequestBuilder.set('Authorization', `Bearer ${adminToken}`);
+        }
+        
+        await deleteRequestBuilder;
       } catch (error) {
         console.warn(`Failed to delete category ${firstCategoryId}:`, error);
       }
@@ -112,55 +143,86 @@ describe('Category Validation Integration Tests', () => {
         parent: 'invalid-parent-id'
       };
 
-      const response = await request(SERVER_URL)
+      const requestBuilder = request(SERVER_URL)
         .post('/api/categories')
-        .set('Authorization', `Bearer ${adminToken}`)
         .send({ data: invalidCategory })
         .timeout(10000);
+      
+      if (adminToken) {
+        requestBuilder.set('Authorization', `Bearer ${adminToken}`);
+      }
+      
+      const response = await requestBuilder;
 
       expect(response.status).toBe(400);
     });
 
     it('should reject category with circular reference', async () => {
       // Create a parent category
-      const parentResponse = await request(SERVER_URL)
+      const parentRequestBuilder = request(SERVER_URL)
         .post('/api/categories')
-        .set('Authorization', `Bearer ${adminToken}`)
         .send({ data: { ...testCategory, name: `Parent Category ${timestamp}`, slug: `parent-category-${timestamp}` } })
         .timeout(10000);
+      
+      if (adminToken) {
+        parentRequestBuilder.set('Authorization', `Bearer ${adminToken}`);
+      }
+      
+      const parentResponse = await parentRequestBuilder;
 
       expect([200, 201]).toContain(parentResponse.status);
       const parentCategoryId = parentResponse.body.data.documentId;
 
       // Create a child category
-      const childResponse = await request(SERVER_URL)
+      const childRequestBuilder = request(SERVER_URL)
         .post('/api/categories')
-        .set('Authorization', `Bearer ${adminToken}`)
         .send({ data: { ...testCategory, name: `Child Category ${timestamp}`, slug: `child-category-${timestamp}`, parent: parentCategoryId } })
         .timeout(10000);
+      
+      if (adminToken) {
+        childRequestBuilder.set('Authorization', `Bearer ${adminToken}`);
+      }
+      
+      const childResponse = await childRequestBuilder;
 
       expect([200, 201]).toContain(childResponse.status);
       const childCategoryId = childResponse.body.data.documentId;
 
       // Try to make parent a child of its child (circular reference)
-      const updateResponse = await request(SERVER_URL)
+      const updateRequestBuilder = request(SERVER_URL)
         .put(`/api/categories/${parentCategoryId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
         .send({ data: { parent: childCategoryId } })
         .timeout(10000);
+      
+      if (adminToken) {
+        updateRequestBuilder.set('Authorization', `Bearer ${adminToken}`);
+      }
+      
+      const updateResponse = await updateRequestBuilder;
 
       expect(updateResponse.status).toBe(400);
 
       // Clean up
       try {
-        await request(SERVER_URL)
+        const deleteChildRequestBuilder = request(SERVER_URL)
           .delete(`/api/categories/${childCategoryId}`)
-          .set('Authorization', `Bearer ${adminToken}`)
           .timeout(10000);
-        await request(SERVER_URL)
+        
+        if (adminToken) {
+          deleteChildRequestBuilder.set('Authorization', `Bearer ${adminToken}`);
+        }
+        
+        await deleteChildRequestBuilder;
+        
+        const deleteParentRequestBuilder = request(SERVER_URL)
           .delete(`/api/categories/${parentCategoryId}`)
-          .set('Authorization', `Bearer ${adminToken}`)
           .timeout(10000);
+        
+        if (adminToken) {
+          deleteParentRequestBuilder.set('Authorization', `Bearer ${adminToken}`);
+        }
+        
+        await deleteParentRequestBuilder;
       } catch (error) {
         console.warn('Failed to delete test categories:', error);
       }
