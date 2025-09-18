@@ -88,8 +88,9 @@ export default factories.createCoreController(
         // Use Document Service API
         const metrics = await strapi.documents('api::engagement-metrics.engagement-metric').findMany({
           filters,
-          sort: { calculationDate: 'desc' },
-          pagination,
+          sort: 'calculationDate:desc',
+          limit: pagination.pageSize,
+          start: (pagination.page - 1) * pagination.pageSize,
           populate: ['user']
         })
 

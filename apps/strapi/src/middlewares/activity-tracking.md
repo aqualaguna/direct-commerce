@@ -191,8 +191,9 @@ const activities = await strapi.documents('api::user-activity.user-activity').fi
     user: 'user-document-id',
     activityType: 'login'
   },
-  sort: { createdAt: 'desc' },
-  pagination: { page: 1, pageSize: 10 }
+  sort: 'createdAt:desc',
+  limit: 10,
+  start: 0,
 });
 ```
 

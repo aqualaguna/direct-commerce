@@ -298,8 +298,9 @@ export default factories.createCoreService(
                 fields: ['documentId', 'name', 'slug'],
               },
             },
-            sort: { name: 'asc' },
-            pagination: { page: 1, pageSize: 100 },
+            sort: 'name:asc',
+            limit: 100,
+            start: 0,
           } as any);
 
 

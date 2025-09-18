@@ -1,10 +1,10 @@
 'use strict'
 
-import { factories } from '@strapi/strapi'
+import { Core, factories } from '@strapi/strapi'
 
 export default factories.createCoreService(
-  'api::engagement-metrics.engagement-calculator',
-  ({ strapi }) => ({
+  'api::engagement-metrics.engagement-calculator' as any,
+  ({ strapi }: { strapi: Core.Strapi }) => ({
   async calculateMetric(params: any) {
     try {
       const { userId, metricType, periodStart, periodEnd } = params
@@ -46,7 +46,7 @@ export default factories.createCoreService(
     // Get user activities for the period
     const activities = await strapi.documents('api::user-activity.user-activity').findMany({
       filters: {
-        user: userId,
+        user: {documentId: userId},
         timestamp: {
           $gte: startDate,
           $lte: endDate
@@ -56,7 +56,7 @@ export default factories.createCoreService(
 
     // Count unique days with activity
     const uniqueDays = new Set(
-      activities.map(activity => 
+      activities.map((activity: any) => 
         new Date(activity.timestamp).toISOString().split('T')[0]
       )
     ).size
@@ -79,7 +79,7 @@ export default factories.createCoreService(
 
     const activities = await strapi.documents('api::user-activity.user-activity').findMany({
       filters: {
-        user: userId,
+        user: {documentId: userId},
         timestamp: {
           $gte: startDate,
           $lte: endDate
@@ -89,7 +89,7 @@ export default factories.createCoreService(
 
     // Count unique weeks with activity
     const uniqueWeeks = new Set(
-      activities.map(activity => {
+      activities.map((activity: any) => {
         const date = new Date(activity.timestamp)
         const weekStart = new Date(date.setDate(date.getDate() - date.getDay()))
         return weekStart.toISOString().split('T')[0]
@@ -114,7 +114,7 @@ export default factories.createCoreService(
 
     const activities = await strapi.documents('api::user-activity.user-activity').findMany({
       filters: {
-        user: userId,
+        user: {documentId: userId},
         timestamp: {
           $gte: startDate,
           $lte: endDate
@@ -124,7 +124,7 @@ export default factories.createCoreService(
 
     // Count unique months with activity
     const uniqueMonths = new Set(
-      activities.map(activity => 
+      activities.map((activity: any) => 
         new Date(activity.timestamp).toISOString().slice(0, 7) // YYYY-MM format
       )
     ).size
@@ -148,9 +148,9 @@ export default factories.createCoreService(
     // Get user's first activity
     const firstActivity = await strapi.documents('api::user-activity.user-activity').findFirst({
       filters: {
-        user: userId
+        user: {documentId: userId}
       },
-      sort: { timestamp: 'asc' }
+      sort: { createdAt: 'asc' }
     })
 
     if (!firstActivity) {
@@ -165,7 +165,7 @@ export default factories.createCoreService(
     // Get recent activities
     const recentActivities = await strapi.documents('api::user-activity.user-activity').findMany({
       filters: {
-        user: userId,
+        user: {documentId: userId},
         timestamp: {
           $gte: startDate,
           $lte: endDate
@@ -176,7 +176,7 @@ export default factories.createCoreService(
     // Calculate retention rate (recent activity / total possible days)
     const totalDays = (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
     const activeDays = new Set(
-      recentActivities.map(activity => 
+      recentActivities.map((activity: any) => 
         new Date(activity.timestamp).toISOString().split('T')[0]
       )
     ).size
@@ -191,7 +191,7 @@ export default factories.createCoreService(
         totalDays: Math.round(totalDays),
         activeDays: activeDays,
         retentionRate: retentionRate,
-        firstActivity: firstActivity.timestamp
+        firstActivity: firstActivity.createdAt
       }
     }
   },
@@ -203,7 +203,7 @@ export default factories.createCoreService(
     // Get user behaviors for the period
     const behaviors = await strapi.documents('api::user-behavior.user-behavior').findMany({
       filters: {
-        user: userId,
+        user: {documentId: userId},
         timestamp: {
           $gte: startDate,
           $lte: endDate
@@ -272,13 +272,13 @@ export default factories.createCoreService(
 
     const behaviors = await strapi.documents('api::user-behavior.user-behavior').findMany({
       filters: {
-        user: userId,
+        user: {documentId: userId},
         timestamp: {
           $gte: startDate,
           $lte: endDate
         }
       },
-      sort: { timestamp: 'asc' }
+      sort: 'timestamp:asc'
     })
 
     // Group behaviors by session
@@ -325,7 +325,7 @@ export default factories.createCoreService(
 
     const pageViews = await strapi.documents('api::user-behavior.user-behavior').count({
       filters: {
-        user: userId,
+        user: {documentId: userId},
         behaviorType: 'page_view',
         timestamp: {
           $gte: startDate,
@@ -351,7 +351,7 @@ export default factories.createCoreService(
 
     const behaviors = await strapi.documents('api::user-behavior.user-behavior').findMany({
       filters: {
-        user: userId,
+        user: {documentId: userId},
         timestamp: {
           $gte: startDate,
           $lte: endDate
@@ -394,7 +394,7 @@ export default factories.createCoreService(
 
     const behaviors = await strapi.documents('api::user-behavior.user-behavior').findMany({
       filters: {
-        user: userId,
+        user: {documentId: userId},
         timestamp: {
           $gte: startDate,
           $lte: endDate
@@ -425,7 +425,7 @@ export default factories.createCoreService(
 
     const behaviors = await strapi.documents('api::user-behavior.user-behavior').findMany({
       filters: {
-        user: userId,
+        user: {documentId: userId},
         timestamp: {
           $gte: startDate,
           $lte: endDate

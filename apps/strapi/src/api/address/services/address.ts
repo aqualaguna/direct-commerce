@@ -10,7 +10,7 @@ export default factories.createCoreService('api::address.address', ({ strapi }) 
    */
   async findByUserAndType(userId: string, type: 'shipping' | 'billing' | 'both') {
     try {
-      const addresses = await strapi.entityService.findMany('api::address.address', {
+      const addresses = await strapi.documents('api::address.address').findMany({
         filters: {
           user: { id: userId },
           type: type === 'both' ? { $in: ['shipping', 'billing', 'both'] } : type
@@ -31,7 +31,7 @@ export default factories.createCoreService('api::address.address', ({ strapi }) 
    */
   async getDefaultAddress(userId: string, type: 'shipping' | 'billing' | 'both') {
     try {
-      const addresses = await strapi.entityService.findMany('api::address.address', {
+      const addresses = await strapi.documents('api::address.address').findMany({
         filters: {
           user: { id: userId },
           isDefault: true,
@@ -109,7 +109,7 @@ export default factories.createCoreService('api::address.address', ({ strapi }) 
       } else if (data.isDefault) {
         // Remove default flag from other addresses of the same type
         await strapi.db.query('api::address.address').updateMany({
-          filters: {
+          where: {
             user: userId,
             isDefault: true,
             type: data.type
@@ -162,7 +162,7 @@ export default factories.createCoreService('api::address.address', ({ strapi }) 
             user: userId,
             isDefault: true,
             type: currentAddress.type,
-            id: { $ne: documentId }
+            documentId: { $ne: documentId }
           },
           data: {
             isDefault: false

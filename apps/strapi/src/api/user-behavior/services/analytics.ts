@@ -30,7 +30,7 @@ export default ({ strapi }: { strapi: any }) => ({
       // Get raw behavior data
       const behaviors = await strapi.documents('api::user-behavior.user-behavior').findMany({
         filters,
-        sort: { timestamp: 'asc' },
+        sort: 'timestamp:asc',
         populate: ['user']
       })
 
@@ -231,8 +231,9 @@ export default ({ strapi }: { strapi: any }) => ({
     try {
       const behaviors = await strapi.documents('api::user-behavior.user-behavior').findMany({
         filters: { user: userId },
-        sort: { timestamp: 'desc' },
-        pagination: { page: 1, pageSize: 100 }
+        sort: 'timestamp:desc',
+        limit: 100,
+        start: 0
       })
 
       const patterns = {

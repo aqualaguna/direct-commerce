@@ -20,13 +20,13 @@ interface SEOData {
   twitterDescription?: string;
 }
 
-interface ProductData {
+interface ProductListingData {
   id: number;
   title: string;
   description: string;
   shortDescription?: string;
-  price: number;
-  comparePrice?: number;
+  basePrice: number;
+  discountPrice?: number;
   sku: string;
   inventory: number;
   images?: any[];
@@ -52,7 +52,7 @@ export default {
    * Generate SEO metadata for a product
    */
   async generateSEOData(
-    product: ProductData,
+    product: ProductListingData,
     customSEO?: SEOData
   ): Promise<SEOData> {
     const seoData: SEOData = {
@@ -90,7 +90,7 @@ export default {
   /**
    * Generate meta title from product data
    */
-  generateMetaTitle(product: ProductData): string {
+  generateMetaTitle(product: ProductListingData): string {
     const baseTitle = product.title;
     const categoryName = product.category?.name || '';
 
@@ -111,7 +111,7 @@ export default {
   /**
    * Generate meta description from product data
    */
-  generateMetaDescription(product: ProductData): string {
+  generateMetaDescription(product: ProductListingData): string {
     let description = product.shortDescription || product.description;
 
     // Strip HTML tags if present
@@ -128,7 +128,7 @@ export default {
   /**
    * Generate keywords from product data
    */
-  generateKeywords(product: ProductData): string {
+  generateKeywords(product: ProductListingData): string {
     const keywords = [];
 
     // Add product title words
@@ -153,42 +153,42 @@ export default {
   /**
    * Generate canonical URL
    */
-  generateCanonicalURL(product: ProductData): string {
+  generateCanonicalURL(product: ProductListingData): string {
     return `/products/${product.slug}`;
   },
 
   /**
    * Generate Open Graph title
    */
-  generateOGTitle(product: ProductData): string {
+  generateOGTitle(product: ProductListingData): string {
     return this.generateMetaTitle(product);
   },
 
   /**
    * Generate Open Graph description
    */
-  generateOGDescription(product: ProductData): string {
+  generateOGDescription(product: ProductListingData): string {
     return this.generateMetaDescription(product);
   },
 
   /**
    * Generate Twitter title
    */
-  generateTwitterTitle(product: ProductData): string {
+  generateTwitterTitle(product: ProductListingData): string {
     return this.generateMetaTitle(product);
   },
 
   /**
    * Generate Twitter description
    */
-  generateTwitterDescription(product: ProductData): string {
+  generateTwitterDescription(product: ProductListingData): string {
     return this.generateMetaDescription(product);
   },
 
   /**
    * Generate structured data (JSON-LD) for product
    */
-  generateStructuredData(product: ProductData): any {
+  generateStructuredData(product: ProductListingData): any {
     const structuredData: any = {
       '@context': 'https://schema.org',
       '@type': 'Product',
@@ -201,7 +201,7 @@ export default {
       },
       offers: {
         '@type': 'Offer',
-        price: product.price,
+        price: product.basePrice,
         priceCurrency: 'USD', // This could be configurable
         availability:
           product.inventory > 0
@@ -212,9 +212,9 @@ export default {
     };
 
     // Add compare price if available
-    if (product.comparePrice) {
-      structuredData.offers.highPrice = product.comparePrice;
-      structuredData.offers.lowPrice = product.price;
+    if (product.discountPrice) {
+      structuredData.offers.highPrice = product.discountPrice;
+      structuredData.offers.lowPrice = product.discountPrice;
     }
 
     // Add category if available
@@ -332,7 +332,7 @@ export default {
    */
   async optimizeSEOData(
     seoData: SEOData,
-    product: ProductData
+    product: ProductListingData
   ): Promise<SEOData> {
     const optimized = { ...seoData };
 
@@ -357,8 +357,8 @@ export default {
     }
 
     // Add price to meta description if space allows
-    if (optimized.metaDescription && product.price) {
-      const priceSuffix = ` - $${product.price}`;
+    if (optimized.metaDescription && product.basePrice) {
+      const priceSuffix = ` - $${product.basePrice}`;
       if (optimized.metaDescription.length + priceSuffix.length <= 160) {
         optimized.metaDescription += priceSuffix;
       }
@@ -370,7 +370,7 @@ export default {
   /**
    * Generate sitemap data for products
    */
-  async generateSitemapData(products: ProductData[]): Promise<any[]> {
+  async generateSitemapData(products: ProductListingData[]): Promise<any[]> {
     return products.map(product => ({
       url: this.generateCanonicalURL(product),
       lastmod: product.updatedAt || new Date().toISOString(),

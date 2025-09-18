@@ -53,9 +53,7 @@ export default ({ strapi }) => ({
       });
 
     // Check if all required option groups are selected
-    const requiredOptionGroups = productListing.optionGroups.filter(
-      og => og.isRequired
-    );
+    const requiredOptionGroups = productListing.optionGroups;
     const selectedOptionGroupIds = selectedOptions.map(
       option => option.optionGroupId
     );
@@ -164,7 +162,7 @@ export default ({ strapi }) => ({
             optionGroup: optionGroup.documentId,
             isActive: true,
           },
-          sort: { sortOrder: 'asc' },
+          sort: 'sortOrder:asc',
         });
 
       options.push({
@@ -173,7 +171,6 @@ export default ({ strapi }) => ({
           name: optionGroup.name,
           displayName: optionGroup.displayName,
           type: optionGroup.type,
-          isRequired: optionGroup.isRequired,
         },
         optionValues: optionValues.map(ov => ({
           id: ov.documentId,
@@ -234,8 +231,9 @@ export default ({ strapi }) => ({
           status: 'published',
           inventory: { $gt: 0 },
         },
-        sort: { inventory: 'desc' },
-        pagination: { page: 1, pageSize: limit },
+        sort: 'inventory:desc',
+        limit: limit,
+        start: 0,
         populate: ['optionValues', 'images'],
       });
 

@@ -521,6 +521,10 @@ describe('Category Controller', () => {
     });
 
     it('should handle errors in tree generation', async () => {
+      // Mock console.error to prevent error output in test
+      const originalConsoleError = console.error;
+      console.error = jest.fn();
+
       mockStrapi
         .service()
         .getCategoryTree.mockRejectedValue(new Error('Tree error'));
@@ -532,6 +536,9 @@ describe('Category Controller', () => {
         expect.any(Error)
       );
       expect(mockCtx.throw).toHaveBeenCalledWith(500, 'Internal server error');
+
+      // Restore console.error
+      console.error = originalConsoleError;
     });
   });
 

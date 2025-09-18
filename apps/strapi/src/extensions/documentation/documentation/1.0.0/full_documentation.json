@@ -14,7 +14,7 @@
       "name": "Apache 2.0",
       "url": "https://www.apache.org/licenses/LICENSE-2.0.html"
     },
-    "x-generation-date": "2025-09-15T05:04:06.155Z"
+    "x-generation-date": "2025-09-18T04:56:12.723Z"
   },
   "x-strapi-config": {
     "plugins": [
@@ -6911,6 +6911,88 @@
         "operationId": "delete/manual-payments/{documentId}"
       }
     },
+    "/option-groups/product-listing/{productListingId}": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OptionGroupResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Option-group"
+        ],
+        "parameters": [
+          {
+            "name": "productListingId",
+            "in": "path",
+            "description": "",
+            "deprecated": false,
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "operationId": "get/option-groups/product-listing/{productListingId}"
+      }
+    },
     "/option-groups": {
       "get": {
         "responses": {
@@ -7921,6 +8003,251 @@
           }
         ],
         "operationId": "delete/option-values/{id}"
+      }
+    },
+    "/option-values/bulk-create": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OptionValueResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Option-value"
+        ],
+        "parameters": [],
+        "operationId": "post/option-values/bulk-create",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OptionValueRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/option-values/option-group/{optionGroupId}": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OptionValueResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Option-value"
+        ],
+        "parameters": [
+          {
+            "name": "optionGroupId",
+            "in": "path",
+            "description": "",
+            "deprecated": false,
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "operationId": "get/option-values/option-group/{optionGroupId}"
+      }
+    },
+    "/option-values/product-listing/{productListingId}": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OptionValueResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Option-value"
+        ],
+        "parameters": [
+          {
+            "name": "productListingId",
+            "in": "path",
+            "description": "",
+            "deprecated": false,
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "operationId": "get/option-values/product-listing/{productListingId}"
       }
     },
     "/orders": {
@@ -11257,6 +11584,354 @@
         "operationId": "delete/product-listings/{id}"
       }
     },
+    "/product-listings/type/{type}": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductListingResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Product-listing"
+        ],
+        "parameters": [
+          {
+            "name": "type",
+            "in": "path",
+            "description": "",
+            "deprecated": false,
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "operationId": "get/product-listings/type/{type}"
+      }
+    },
+    "/product-listings/{documentId}/with-variants": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductListingResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Product-listing"
+        ],
+        "parameters": [
+          {
+            "name": "documentId",
+            "in": "path",
+            "description": "",
+            "deprecated": false,
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "operationId": "get/product-listings/{documentId}/with-variants"
+      }
+    },
+    "/product-listings/{documentId}/publish": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductListingResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Product-listing"
+        ],
+        "parameters": [
+          {
+            "name": "documentId",
+            "in": "path",
+            "description": "",
+            "deprecated": false,
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "operationId": "post/product-listings/{documentId}/publish",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProductListingRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/product-listings/{documentId}/unpublish": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductListingResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "Product-listing"
+        ],
+        "parameters": [
+          {
+            "name": "documentId",
+            "in": "path",
+            "description": "",
+            "deprecated": false,
+            "required": true,
+            "schema": {
+              "type": "number"
+            }
+          }
+        ],
+        "operationId": "post/product-listings/{documentId}/unpublish",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProductListingRequest"
+              }
+            }
+          }
+        }
+      }
+    },
     "/product-listing-variants": {
       "get": {
         "responses": {
@@ -14154,6 +14829,158 @@
         }
       }
     },
+    "/user-preferences/me/reset": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserPreferenceResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "User-preference"
+        ],
+        "parameters": [],
+        "operationId": "post/user-preferences/me/reset",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserPreferenceRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/user-preferences/me/export": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserPreferenceResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        },
+        "tags": [
+          "User-preference"
+        ],
+        "parameters": [],
+        "operationId": "get/user-preferences/me/export"
+      }
+    },
     "/user-preferences/me/{category}": {
       "get": {
         "responses": {
@@ -14314,158 +15141,6 @@
           }
         ],
         "operationId": "patch/user-preferences/me/{category}"
-      }
-    },
-    "/user-preferences/me/reset": {
-      "post": {
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/UserPreferenceResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal Server Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "User-preference"
-        ],
-        "parameters": [],
-        "operationId": "post/user-preferences/me/reset",
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UserPreferenceRequest"
-              }
-            }
-          }
-        }
-      }
-    },
-    "/user-preferences/me/export": {
-      "get": {
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/UserPreferenceResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not Found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal Server Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/Error"
-                }
-              }
-            }
-          }
-        },
-        "tags": [
-          "User-preference"
-        ],
-        "parameters": [],
-        "operationId": "get/user-preferences/me/export"
       }
     },
     "/upload": {
@@ -17449,7 +18124,7 @@
                             "type": "number",
                             "format": "float"
                           },
-                          "comparePrice": {
+                          "discountPrice": {
                             "type": "number",
                             "format": "float"
                           },
@@ -17627,11 +18302,11 @@
                                 "sku": {
                                   "type": "string"
                                 },
-                                "price": {
+                                "basePrice": {
                                   "type": "number",
                                   "format": "float"
                                 },
-                                "comparePrice": {
+                                "discountPrice": {
                                   "type": "number",
                                   "format": "float"
                                 },
@@ -17688,9 +18363,6 @@
                                       "sortOrder": {
                                         "type": "integer"
                                       },
-                                      "isActive": {
-                                        "type": "boolean"
-                                      },
                                       "optionGroup": {
                                         "type": "object",
                                         "properties": {
@@ -17710,18 +18382,11 @@
                                             "type": "string",
                                             "enum": [
                                               "select",
-                                              "radio",
-                                              "checkbox"
+                                              "radio"
                                             ]
-                                          },
-                                          "isRequired": {
-                                            "type": "boolean"
                                           },
                                           "sortOrder": {
                                             "type": "integer"
-                                          },
-                                          "isActive": {
-                                            "type": "boolean"
                                           },
                                           "productListings": {
                                             "type": "array",
@@ -21205,7 +21870,7 @@
                                   "type": "number",
                                   "format": "float"
                                 },
-                                "comparePrice": {
+                                "discountPrice": {
                                   "type": "number",
                                   "format": "float"
                                 },
@@ -21383,11 +22048,11 @@
                                       "sku": {
                                         "type": "string"
                                       },
-                                      "price": {
+                                      "basePrice": {
                                         "type": "number",
                                         "format": "float"
                                       },
-                                      "comparePrice": {
+                                      "discountPrice": {
                                         "type": "number",
                                         "format": "float"
                                       },
@@ -21444,9 +22109,6 @@
                                             "sortOrder": {
                                               "type": "integer"
                                             },
-                                            "isActive": {
-                                              "type": "boolean"
-                                            },
                                             "optionGroup": {
                                               "type": "object",
                                               "properties": {
@@ -21466,18 +22128,11 @@
                                                   "type": "string",
                                                   "enum": [
                                                     "select",
-                                                    "radio",
-                                                    "checkbox"
+                                                    "radio"
                                                   ]
-                                                },
-                                                "isRequired": {
-                                                  "type": "boolean"
                                                 },
                                                 "sortOrder": {
                                                   "type": "integer"
-                                                },
-                                                "isActive": {
-                                                  "type": "boolean"
                                                 },
                                                 "productListings": {
                                                   "type": "array",
@@ -25352,7 +26007,7 @@
                             "type": "number",
                             "format": "float"
                           },
-                          "comparePrice": {
+                          "discountPrice": {
                             "type": "number",
                             "format": "float"
                           },
@@ -25530,11 +26185,11 @@
                                 "sku": {
                                   "type": "string"
                                 },
-                                "price": {
+                                "basePrice": {
                                   "type": "number",
                                   "format": "float"
                                 },
-                                "comparePrice": {
+                                "discountPrice": {
                                   "type": "number",
                                   "format": "float"
                                 },
@@ -25591,9 +26246,6 @@
                                       "sortOrder": {
                                         "type": "integer"
                                       },
-                                      "isActive": {
-                                        "type": "boolean"
-                                      },
                                       "optionGroup": {
                                         "type": "object",
                                         "properties": {
@@ -25613,18 +26265,11 @@
                                             "type": "string",
                                             "enum": [
                                               "select",
-                                              "radio",
-                                              "checkbox"
+                                              "radio"
                                             ]
-                                          },
-                                          "isRequired": {
-                                            "type": "boolean"
                                           },
                                           "sortOrder": {
                                             "type": "integer"
-                                          },
-                                          "isActive": {
-                                            "type": "boolean"
                                           },
                                           "productListings": {
                                             "type": "array",
@@ -28884,7 +29529,7 @@
                                 "type": "number",
                                 "format": "float"
                               },
-                              "comparePrice": {
+                              "discountPrice": {
                                 "type": "number",
                                 "format": "float"
                               },
@@ -29062,11 +29707,11 @@
                                     "sku": {
                                       "type": "string"
                                     },
-                                    "price": {
+                                    "basePrice": {
                                       "type": "number",
                                       "format": "float"
                                     },
-                                    "comparePrice": {
+                                    "discountPrice": {
                                       "type": "number",
                                       "format": "float"
                                     },
@@ -29123,9 +29768,6 @@
                                           "sortOrder": {
                                             "type": "integer"
                                           },
-                                          "isActive": {
-                                            "type": "boolean"
-                                          },
                                           "optionGroup": {
                                             "type": "object",
                                             "properties": {
@@ -29145,18 +29787,11 @@
                                                 "type": "string",
                                                 "enum": [
                                                   "select",
-                                                  "radio",
-                                                  "checkbox"
+                                                  "radio"
                                                 ]
-                                              },
-                                              "isRequired": {
-                                                "type": "boolean"
                                               },
                                               "sortOrder": {
                                                 "type": "integer"
-                                              },
-                                              "isActive": {
-                                                "type": "boolean"
                                               },
                                               "productListings": {
                                                 "type": "array",
@@ -32732,7 +33367,7 @@
                                             "type": "number",
                                             "format": "float"
                                           },
-                                          "comparePrice": {
+                                          "discountPrice": {
                                             "type": "number",
                                             "format": "float"
                                           },
@@ -32910,11 +33545,11 @@
                                                 "sku": {
                                                   "type": "string"
                                                 },
-                                                "price": {
+                                                "basePrice": {
                                                   "type": "number",
                                                   "format": "float"
                                                 },
-                                                "comparePrice": {
+                                                "discountPrice": {
                                                   "type": "number",
                                                   "format": "float"
                                                 },
@@ -32971,9 +33606,6 @@
                                                       "sortOrder": {
                                                         "type": "integer"
                                                       },
-                                                      "isActive": {
-                                                        "type": "boolean"
-                                                      },
                                                       "optionGroup": {
                                                         "type": "object",
                                                         "properties": {
@@ -32993,18 +33625,11 @@
                                                             "type": "string",
                                                             "enum": [
                                                               "select",
-                                                              "radio",
-                                                              "checkbox"
+                                                              "radio"
                                                             ]
-                                                          },
-                                                          "isRequired": {
-                                                            "type": "boolean"
                                                           },
                                                           "sortOrder": {
                                                             "type": "integer"
-                                                          },
-                                                          "isActive": {
-                                                            "type": "boolean"
                                                           },
                                                           "productListings": {
                                                             "type": "array",
@@ -36074,7 +36699,7 @@
                             "type": "number",
                             "format": "float"
                           },
-                          "comparePrice": {
+                          "discountPrice": {
                             "type": "number",
                             "format": "float"
                           },
@@ -36252,11 +36877,11 @@
                                 "sku": {
                                   "type": "string"
                                 },
-                                "price": {
+                                "basePrice": {
                                   "type": "number",
                                   "format": "float"
                                 },
-                                "comparePrice": {
+                                "discountPrice": {
                                   "type": "number",
                                   "format": "float"
                                 },
@@ -36313,9 +36938,6 @@
                                       "sortOrder": {
                                         "type": "integer"
                                       },
-                                      "isActive": {
-                                        "type": "boolean"
-                                      },
                                       "optionGroup": {
                                         "type": "object",
                                         "properties": {
@@ -36335,18 +36957,11 @@
                                             "type": "string",
                                             "enum": [
                                               "select",
-                                              "radio",
-                                              "checkbox"
+                                              "radio"
                                             ]
-                                          },
-                                          "isRequired": {
-                                            "type": "boolean"
                                           },
                                           "sortOrder": {
                                             "type": "integer"
-                                          },
-                                          "isActive": {
-                                            "type": "boolean"
                                           },
                                           "productListings": {
                                             "type": "array",
@@ -40057,7 +40672,7 @@
                                       "type": "number",
                                       "format": "float"
                                     },
-                                    "comparePrice": {
+                                    "discountPrice": {
                                       "type": "number",
                                       "format": "float"
                                     },
@@ -40235,11 +40850,11 @@
                                           "sku": {
                                             "type": "string"
                                           },
-                                          "price": {
+                                          "basePrice": {
                                             "type": "number",
                                             "format": "float"
                                           },
-                                          "comparePrice": {
+                                          "discountPrice": {
                                             "type": "number",
                                             "format": "float"
                                           },
@@ -40296,9 +40911,6 @@
                                                 "sortOrder": {
                                                   "type": "integer"
                                                 },
-                                                "isActive": {
-                                                  "type": "boolean"
-                                                },
                                                 "optionGroup": {
                                                   "type": "object",
                                                   "properties": {
@@ -40318,18 +40930,11 @@
                                                       "type": "string",
                                                       "enum": [
                                                         "select",
-                                                        "radio",
-                                                        "checkbox"
+                                                        "radio"
                                                       ]
-                                                    },
-                                                    "isRequired": {
-                                                      "type": "boolean"
                                                     },
                                                     "sortOrder": {
                                                       "type": "integer"
-                                                    },
-                                                    "isActive": {
-                                                      "type": "boolean"
                                                     },
                                                     "productListings": {
                                                       "type": "array",
@@ -43557,7 +44162,7 @@
                                       "type": "number",
                                       "format": "float"
                                     },
-                                    "comparePrice": {
+                                    "discountPrice": {
                                       "type": "number",
                                       "format": "float"
                                     },
@@ -43735,11 +44340,11 @@
                                           "sku": {
                                             "type": "string"
                                           },
-                                          "price": {
+                                          "basePrice": {
                                             "type": "number",
                                             "format": "float"
                                           },
-                                          "comparePrice": {
+                                          "discountPrice": {
                                             "type": "number",
                                             "format": "float"
                                           },
@@ -43796,9 +44401,6 @@
                                                 "sortOrder": {
                                                   "type": "integer"
                                                 },
-                                                "isActive": {
-                                                  "type": "boolean"
-                                                },
                                                 "optionGroup": {
                                                   "type": "object",
                                                   "properties": {
@@ -43818,18 +44420,11 @@
                                                       "type": "string",
                                                       "enum": [
                                                         "select",
-                                                        "radio",
-                                                        "checkbox"
+                                                        "radio"
                                                       ]
-                                                    },
-                                                    "isRequired": {
-                                                      "type": "boolean"
                                                     },
                                                     "sortOrder": {
                                                       "type": "integer"
-                                                    },
-                                                    "isActive": {
-                                                      "type": "boolean"
                                                     },
                                                     "productListings": {
                                                       "type": "array",
@@ -46978,7 +47573,7 @@
                             "type": "number",
                             "format": "float"
                           },
-                          "comparePrice": {
+                          "discountPrice": {
                             "type": "number",
                             "format": "float"
                           },
@@ -47156,11 +47751,11 @@
                                 "sku": {
                                   "type": "string"
                                 },
-                                "price": {
+                                "basePrice": {
                                   "type": "number",
                                   "format": "float"
                                 },
-                                "comparePrice": {
+                                "discountPrice": {
                                   "type": "number",
                                   "format": "float"
                                 },
@@ -47217,9 +47812,6 @@
                                       "sortOrder": {
                                         "type": "integer"
                                       },
-                                      "isActive": {
-                                        "type": "boolean"
-                                      },
                                       "optionGroup": {
                                         "type": "object",
                                         "properties": {
@@ -47239,18 +47831,11 @@
                                             "type": "string",
                                             "enum": [
                                               "select",
-                                              "radio",
-                                              "checkbox"
+                                              "radio"
                                             ]
-                                          },
-                                          "isRequired": {
-                                            "type": "boolean"
                                           },
                                           "sortOrder": {
                                             "type": "integer"
-                                          },
-                                          "isActive": {
-                                            "type": "boolean"
                                           },
                                           "productListings": {
                                             "type": "array",
@@ -49746,18 +50331,11 @@
                 "type": "string",
                 "enum": [
                   "select",
-                  "radio",
-                  "checkbox"
+                  "radio"
                 ]
-              },
-              "isRequired": {
-                "type": "boolean"
               },
               "sortOrder": {
                 "type": "integer"
-              },
-              "isActive": {
-                "type": "boolean"
               },
               "productListings": {
                 "type": "array",
@@ -49867,18 +50445,11 @@
             "type": "string",
             "enum": [
               "select",
-              "radio",
-              "checkbox"
+              "radio"
             ]
-          },
-          "isRequired": {
-            "type": "boolean"
           },
           "sortOrder": {
             "type": "integer"
-          },
-          "isActive": {
-            "type": "boolean"
           },
           "productListings": {
             "type": "array",
@@ -49914,7 +50485,7 @@
                   "type": "number",
                   "format": "float"
                 },
-                "comparePrice": {
+                "discountPrice": {
                   "type": "number",
                   "format": "float"
                 },
@@ -51702,11 +52273,11 @@
                                           "sku": {
                                             "type": "string"
                                           },
-                                          "price": {
+                                          "basePrice": {
                                             "type": "number",
                                             "format": "float"
                                           },
-                                          "comparePrice": {
+                                          "discountPrice": {
                                             "type": "number",
                                             "format": "float"
                                           },
@@ -51763,9 +52334,6 @@
                                                 "sortOrder": {
                                                   "type": "integer"
                                                 },
-                                                "isActive": {
-                                                  "type": "boolean"
-                                                },
                                                 "optionGroup": {
                                                   "type": "object",
                                                   "properties": {
@@ -51785,18 +52353,11 @@
                                                       "type": "string",
                                                       "enum": [
                                                         "select",
-                                                        "radio",
-                                                        "checkbox"
+                                                        "radio"
                                                       ]
-                                                    },
-                                                    "isRequired": {
-                                                      "type": "boolean"
                                                     },
                                                     "sortOrder": {
                                                       "type": "integer"
-                                                    },
-                                                    "isActive": {
-                                                      "type": "boolean"
                                                     },
                                                     "productListings": {
                                                       "type": "array",
@@ -53229,9 +53790,6 @@
               "sortOrder": {
                 "type": "integer"
               },
-              "isActive": {
-                "type": "boolean"
-              },
               "optionGroup": {
                 "oneOf": [
                   {
@@ -53336,9 +53894,6 @@
           "sortOrder": {
             "type": "integer"
           },
-          "isActive": {
-            "type": "boolean"
-          },
           "optionGroup": {
             "type": "object",
             "properties": {
@@ -53358,18 +53913,11 @@
                 "type": "string",
                 "enum": [
                   "select",
-                  "radio",
-                  "checkbox"
+                  "radio"
                 ]
-              },
-              "isRequired": {
-                "type": "boolean"
               },
               "sortOrder": {
                 "type": "integer"
-              },
-              "isActive": {
-                "type": "boolean"
               },
               "productListings": {
                 "type": "array",
@@ -53405,7 +53953,7 @@
                       "type": "number",
                       "format": "float"
                     },
-                    "comparePrice": {
+                    "discountPrice": {
                       "type": "number",
                       "format": "float"
                     },
@@ -55193,11 +55741,11 @@
                                               "sku": {
                                                 "type": "string"
                                               },
-                                              "price": {
+                                              "basePrice": {
                                                 "type": "number",
                                                 "format": "float"
                                               },
-                                              "comparePrice": {
+                                              "discountPrice": {
                                                 "type": "number",
                                                 "format": "float"
                                               },
@@ -55253,9 +55801,6 @@
                                                     },
                                                     "sortOrder": {
                                                       "type": "integer"
-                                                    },
-                                                    "isActive": {
-                                                      "type": "boolean"
                                                     },
                                                     "optionGroup": {
                                                       "type": "object",
@@ -58311,7 +58856,7 @@
                             "type": "number",
                             "format": "float"
                           },
-                          "comparePrice": {
+                          "discountPrice": {
                             "type": "number",
                             "format": "float"
                           },
@@ -58489,11 +59034,11 @@
                                 "sku": {
                                   "type": "string"
                                 },
-                                "price": {
+                                "basePrice": {
                                   "type": "number",
                                   "format": "float"
                                 },
-                                "comparePrice": {
+                                "discountPrice": {
                                   "type": "number",
                                   "format": "float"
                                 },
@@ -58550,9 +59095,6 @@
                                       "sortOrder": {
                                         "type": "integer"
                                       },
-                                      "isActive": {
-                                        "type": "boolean"
-                                      },
                                       "optionGroup": {
                                         "type": "object",
                                         "properties": {
@@ -58572,18 +59114,11 @@
                                             "type": "string",
                                             "enum": [
                                               "select",
-                                              "radio",
-                                              "checkbox"
+                                              "radio"
                                             ]
-                                          },
-                                          "isRequired": {
-                                            "type": "boolean"
                                           },
                                           "sortOrder": {
                                             "type": "integer"
-                                          },
-                                          "isActive": {
-                                            "type": "boolean"
                                           },
                                           "productListings": {
                                             "type": "array",
@@ -63231,7 +63766,7 @@
                                 "type": "number",
                                 "format": "float"
                               },
-                              "comparePrice": {
+                              "discountPrice": {
                                 "type": "number",
                                 "format": "float"
                               },
@@ -63409,11 +63944,11 @@
                                     "sku": {
                                       "type": "string"
                                     },
-                                    "price": {
+                                    "basePrice": {
                                       "type": "number",
                                       "format": "float"
                                     },
-                                    "comparePrice": {
+                                    "discountPrice": {
                                       "type": "number",
                                       "format": "float"
                                     },
@@ -63470,9 +64005,6 @@
                                           "sortOrder": {
                                             "type": "integer"
                                           },
-                                          "isActive": {
-                                            "type": "boolean"
-                                          },
                                           "optionGroup": {
                                             "type": "object",
                                             "properties": {
@@ -63492,18 +64024,11 @@
                                                 "type": "string",
                                                 "enum": [
                                                   "select",
-                                                  "radio",
-                                                  "checkbox"
+                                                  "radio"
                                                 ]
-                                              },
-                                              "isRequired": {
-                                                "type": "boolean"
                                               },
                                               "sortOrder": {
                                                 "type": "integer"
-                                              },
-                                              "isActive": {
-                                                "type": "boolean"
                                               },
                                               "productListings": {
                                                 "type": "array",
@@ -67433,7 +67958,7 @@
                             "type": "number",
                             "format": "float"
                           },
-                          "comparePrice": {
+                          "discountPrice": {
                             "type": "number",
                             "format": "float"
                           },
@@ -67611,11 +68136,11 @@
                                 "sku": {
                                   "type": "string"
                                 },
-                                "price": {
+                                "basePrice": {
                                   "type": "number",
                                   "format": "float"
                                 },
-                                "comparePrice": {
+                                "discountPrice": {
                                   "type": "number",
                                   "format": "float"
                                 },
@@ -67672,9 +68197,6 @@
                                       "sortOrder": {
                                         "type": "integer"
                                       },
-                                      "isActive": {
-                                        "type": "boolean"
-                                      },
                                       "optionGroup": {
                                         "type": "object",
                                         "properties": {
@@ -67694,18 +68216,11 @@
                                             "type": "string",
                                             "enum": [
                                               "select",
-                                              "radio",
-                                              "checkbox"
+                                              "radio"
                                             ]
-                                          },
-                                          "isRequired": {
-                                            "type": "boolean"
                                           },
                                           "sortOrder": {
                                             "type": "integer"
-                                          },
-                                          "isActive": {
-                                            "type": "boolean"
                                           },
                                           "productListings": {
                                             "type": "array",
@@ -71211,7 +71726,7 @@
                                             "type": "number",
                                             "format": "float"
                                           },
-                                          "comparePrice": {
+                                          "discountPrice": {
                                             "type": "number",
                                             "format": "float"
                                           },
@@ -71389,11 +71904,11 @@
                                                 "sku": {
                                                   "type": "string"
                                                 },
-                                                "price": {
+                                                "basePrice": {
                                                   "type": "number",
                                                   "format": "float"
                                                 },
-                                                "comparePrice": {
+                                                "discountPrice": {
                                                   "type": "number",
                                                   "format": "float"
                                                 },
@@ -71450,9 +71965,6 @@
                                                       "sortOrder": {
                                                         "type": "integer"
                                                       },
-                                                      "isActive": {
-                                                        "type": "boolean"
-                                                      },
                                                       "optionGroup": {
                                                         "type": "object",
                                                         "properties": {
@@ -71472,18 +71984,11 @@
                                                             "type": "string",
                                                             "enum": [
                                                               "select",
-                                                              "radio",
-                                                              "checkbox"
+                                                              "radio"
                                                             ]
-                                                          },
-                                                          "isRequired": {
-                                                            "type": "boolean"
                                                           },
                                                           "sortOrder": {
                                                             "type": "integer"
-                                                          },
-                                                          "isActive": {
-                                                            "type": "boolean"
                                                           },
                                                           "productListings": {
                                                             "type": "array",
@@ -73007,7 +73512,7 @@
                 "type": "number",
                 "format": "float"
               },
-              "comparePrice": {
+              "discountPrice": {
                 "type": "number",
                 "format": "float"
               },
@@ -73180,7 +73685,7 @@
             "type": "number",
             "format": "float"
           },
-          "comparePrice": {
+          "discountPrice": {
             "type": "number",
             "format": "float"
           },
@@ -74977,7 +75482,7 @@
                                       "type": "number",
                                       "format": "float"
                                     },
-                                    "comparePrice": {
+                                    "discountPrice": {
                                       "type": "number",
                                       "format": "float"
                                     },
@@ -75155,11 +75660,11 @@
                                           "sku": {
                                             "type": "string"
                                           },
-                                          "price": {
+                                          "basePrice": {
                                             "type": "number",
                                             "format": "float"
                                           },
-                                          "comparePrice": {
+                                          "discountPrice": {
                                             "type": "number",
                                             "format": "float"
                                           },
@@ -75216,9 +75721,6 @@
                                                 "sortOrder": {
                                                   "type": "integer"
                                                 },
-                                                "isActive": {
-                                                  "type": "boolean"
-                                                },
                                                 "optionGroup": {
                                                   "type": "object",
                                                   "properties": {
@@ -75238,18 +75740,11 @@
                                                       "type": "string",
                                                       "enum": [
                                                         "select",
-                                                        "radio",
-                                                        "checkbox"
+                                                        "radio"
                                                       ]
-                                                    },
-                                                    "isRequired": {
-                                                      "type": "boolean"
                                                     },
                                                     "sortOrder": {
                                                       "type": "integer"
-                                                    },
-                                                    "isActive": {
-                                                      "type": "boolean"
                                                     },
                                                     "productListings": {
                                                       "type": "array",
@@ -76682,7 +77177,7 @@
           "data": {
             "required": [
               "sku",
-              "price",
+              "basePrice",
               "inventory",
               "productListing"
             ],
@@ -76691,11 +77186,11 @@
               "sku": {
                 "type": "string"
               },
-              "price": {
+              "basePrice": {
                 "type": "number",
                 "format": "float"
               },
-              "comparePrice": {
+              "discountPrice": {
                 "type": "number",
                 "format": "float"
               },
@@ -76817,7 +77312,7 @@
         "type": "object",
         "required": [
           "sku",
-          "price",
+          "basePrice",
           "inventory",
           "productListing"
         ],
@@ -76831,11 +77326,11 @@
           "sku": {
             "type": "string"
           },
-          "price": {
+          "basePrice": {
             "type": "number",
             "format": "float"
           },
-          "comparePrice": {
+          "discountPrice": {
             "type": "number",
             "format": "float"
           },
@@ -76893,7 +77388,7 @@
                 "type": "number",
                 "format": "float"
               },
-              "comparePrice": {
+              "discountPrice": {
                 "type": "number",
                 "format": "float"
               },
@@ -78681,11 +79176,11 @@
                                         "sku": {
                                           "type": "string"
                                         },
-                                        "price": {
+                                        "basePrice": {
                                           "type": "number",
                                           "format": "float"
                                         },
-                                        "comparePrice": {
+                                        "discountPrice": {
                                           "type": "number",
                                           "format": "float"
                                         },
@@ -78742,9 +79237,6 @@
                                               "sortOrder": {
                                                 "type": "integer"
                                               },
-                                              "isActive": {
-                                                "type": "boolean"
-                                              },
                                               "optionGroup": {
                                                 "type": "object",
                                                 "properties": {
@@ -78764,18 +79256,11 @@
                                                     "type": "string",
                                                     "enum": [
                                                       "select",
-                                                      "radio",
-                                                      "checkbox"
+                                                      "radio"
                                                     ]
-                                                  },
-                                                  "isRequired": {
-                                                    "type": "boolean"
                                                   },
                                                   "sortOrder": {
                                                     "type": "integer"
-                                                  },
-                                                  "isActive": {
-                                                    "type": "boolean"
                                                   },
                                                   "productListings": {
                                                     "type": "array",
@@ -81859,7 +82344,7 @@
                             "type": "number",
                             "format": "float"
                           },
-                          "comparePrice": {
+                          "discountPrice": {
                             "type": "number",
                             "format": "float"
                           },
@@ -82037,11 +82522,11 @@
                                 "sku": {
                                   "type": "string"
                                 },
-                                "price": {
+                                "basePrice": {
                                   "type": "number",
                                   "format": "float"
                                 },
-                                "comparePrice": {
+                                "discountPrice": {
                                   "type": "number",
                                   "format": "float"
                                 },
@@ -82098,9 +82583,6 @@
                                       "sortOrder": {
                                         "type": "integer"
                                       },
-                                      "isActive": {
-                                        "type": "boolean"
-                                      },
                                       "optionGroup": {
                                         "type": "object",
                                         "properties": {
@@ -82120,18 +82602,11 @@
                                             "type": "string",
                                             "enum": [
                                               "select",
-                                              "radio",
-                                              "checkbox"
+                                              "radio"
                                             ]
-                                          },
-                                          "isRequired": {
-                                            "type": "boolean"
                                           },
                                           "sortOrder": {
                                             "type": "integer"
-                                          },
-                                          "isActive": {
-                                            "type": "boolean"
                                           },
                                           "productListings": {
                                             "type": "array",
@@ -85647,7 +86122,7 @@
                                       "type": "number",
                                       "format": "float"
                                     },
-                                    "comparePrice": {
+                                    "discountPrice": {
                                       "type": "number",
                                       "format": "float"
                                     },
@@ -85825,11 +86300,11 @@
                                           "sku": {
                                             "type": "string"
                                           },
-                                          "price": {
+                                          "basePrice": {
                                             "type": "number",
                                             "format": "float"
                                           },
-                                          "comparePrice": {
+                                          "discountPrice": {
                                             "type": "number",
                                             "format": "float"
                                           },
@@ -85886,9 +86361,6 @@
                                                 "sortOrder": {
                                                   "type": "integer"
                                                 },
-                                                "isActive": {
-                                                  "type": "boolean"
-                                                },
                                                 "optionGroup": {
                                                   "type": "object",
                                                   "properties": {
@@ -85908,18 +86380,11 @@
                                                       "type": "string",
                                                       "enum": [
                                                         "select",
-                                                        "radio",
-                                                        "checkbox"
+                                                        "radio"
                                                       ]
-                                                    },
-                                                    "isRequired": {
-                                                      "type": "boolean"
                                                     },
                                                     "sortOrder": {
                                                       "type": "integer"
-                                                    },
-                                                    "isActive": {
-                                                      "type": "boolean"
                                                     },
                                                     "productListings": {
                                                       "type": "array",
@@ -88951,7 +89416,7 @@
                             "type": "number",
                             "format": "float"
                           },
-                          "comparePrice": {
+                          "discountPrice": {
                             "type": "number",
                             "format": "float"
                           },
@@ -89129,11 +89594,11 @@
                                 "sku": {
                                   "type": "string"
                                 },
-                                "price": {
+                                "basePrice": {
                                   "type": "number",
                                   "format": "float"
                                 },
-                                "comparePrice": {
+                                "discountPrice": {
                                   "type": "number",
                                   "format": "float"
                                 },
@@ -89190,9 +89655,6 @@
                                       "sortOrder": {
                                         "type": "integer"
                                       },
-                                      "isActive": {
-                                        "type": "boolean"
-                                      },
                                       "optionGroup": {
                                         "type": "object",
                                         "properties": {
@@ -89212,18 +89674,11 @@
                                             "type": "string",
                                             "enum": [
                                               "select",
-                                              "radio",
-                                              "checkbox"
+                                              "radio"
                                             ]
-                                          },
-                                          "isRequired": {
-                                            "type": "boolean"
                                           },
                                           "sortOrder": {
                                             "type": "integer"
-                                          },
-                                          "isActive": {
-                                            "type": "boolean"
                                           },
                                           "productListings": {
                                             "type": "array",
@@ -92450,7 +92905,7 @@
                             "type": "number",
                             "format": "float"
                           },
-                          "comparePrice": {
+                          "discountPrice": {
                             "type": "number",
                             "format": "float"
                           },
@@ -92628,11 +93083,11 @@
                                 "sku": {
                                   "type": "string"
                                 },
-                                "price": {
+                                "basePrice": {
                                   "type": "number",
                                   "format": "float"
                                 },
-                                "comparePrice": {
+                                "discountPrice": {
                                   "type": "number",
                                   "format": "float"
                                 },
@@ -92689,9 +93144,6 @@
                                       "sortOrder": {
                                         "type": "integer"
                                       },
-                                      "isActive": {
-                                        "type": "boolean"
-                                      },
                                       "optionGroup": {
                                         "type": "object",
                                         "properties": {
@@ -92711,18 +93163,11 @@
                                             "type": "string",
                                             "enum": [
                                               "select",
-                                              "radio",
-                                              "checkbox"
+                                              "radio"
                                             ]
-                                          },
-                                          "isRequired": {
-                                            "type": "boolean"
                                           },
                                           "sortOrder": {
                                             "type": "integer"
-                                          },
-                                          "isActive": {
-                                            "type": "boolean"
                                           },
                                           "productListings": {
                                             "type": "array",
@@ -95957,7 +96402,7 @@
                             "type": "number",
                             "format": "float"
                           },
-                          "comparePrice": {
+                          "discountPrice": {
                             "type": "number",
                             "format": "float"
                           },
@@ -96135,11 +96580,11 @@
                                 "sku": {
                                   "type": "string"
                                 },
-                                "price": {
+                                "basePrice": {
                                   "type": "number",
                                   "format": "float"
                                 },
-                                "comparePrice": {
+                                "discountPrice": {
                                   "type": "number",
                                   "format": "float"
                                 },
@@ -96196,9 +96641,6 @@
                                       "sortOrder": {
                                         "type": "integer"
                                       },
-                                      "isActive": {
-                                        "type": "boolean"
-                                      },
                                       "optionGroup": {
                                         "type": "object",
                                         "properties": {
@@ -96218,18 +96660,11 @@
                                             "type": "string",
                                             "enum": [
                                               "select",
-                                              "radio",
-                                              "checkbox"
+                                              "radio"
                                             ]
-                                          },
-                                          "isRequired": {
-                                            "type": "boolean"
                                           },
                                           "sortOrder": {
                                             "type": "integer"
-                                          },
-                                          "isActive": {
-                                            "type": "boolean"
                                           },
                                           "productListings": {
                                             "type": "array",

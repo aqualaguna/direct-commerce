@@ -72,10 +72,8 @@ export default {
       // Get orders with pagination
       const orders = await strapi.documents('api::order.order').findMany({
         filters,
-        pagination: {
-          page: parseInt(page),
-          pageSize: Math.min(parseInt(pageSize), 100)
-        },
+        limit: Math.min(parseInt(pageSize), 100),
+        start: (parseInt(page) - 1) * Math.min(parseInt(pageSize), 100),
         populate: ['user', 'items', 'items.productListing']
       });
 
@@ -368,11 +366,9 @@ export default {
 
       const orders = await strapi.documents('api::order.order').findMany({
         filters,
-        sort: { createdAt: 'desc' },
-        pagination: {
-          page: parseInt(page),
-          pageSize: Math.min(parseInt(pageSize), 100)
-        },
+        sort: 'createdAt:desc',
+        limit: Math.min(parseInt(pageSize), 100),
+        start: (parseInt(page) - 1) * Math.min(parseInt(pageSize), 100),
         populate: ['items']
       });
 

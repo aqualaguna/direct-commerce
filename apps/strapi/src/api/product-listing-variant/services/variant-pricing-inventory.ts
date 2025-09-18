@@ -44,7 +44,7 @@ export default ({ strapi }) => ({
 
     return {
       originalPrice: variant.price,
-      comparePrice: variant.comparePrice,
+      discountPrice: variant.discountPrice,
       finalPrice: Math.round(finalPrice * 100) / 100, // Round to 2 decimal places
       currency: options.currency || 'USD',
     };

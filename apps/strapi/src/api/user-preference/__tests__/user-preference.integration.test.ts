@@ -2,13 +2,13 @@
  * User Preference Integration Tests
  * 
  * Comprehensive integration tests for User Preference module covering:
- * - User preference creation and updates
+ * - User preference retrieval and updates via /me endpoints
+ * - Category-specific preference management
  * - Preference validation and constraints
- * - Preference inheritance and defaults
- * - Preference categories and organization
- * - Preference privacy and access control
- * - Preference bulk operations
- * - Preference cleanup on user deletion
+ * - Default preference creation
+ * - Preference reset functionality
+ * - GDPR compliance (export functionality)
+ * - Authentication and authorization
  */
 
 import request from 'supertest';
@@ -29,11 +29,6 @@ describe('User Preference Integration Tests', () => {
     }
   });
 
-  // Add delay between tests to avoid rate limiting
-  afterEach(async () => {
-    await new Promise(resolve => setTimeout(resolve, 1500));
-  });
-  
   // Test data factories
   const createTestUserData = (overrides = {}) => ({
     username: `prefuser${timestamp}_${Math.random().toString(36).substr(2, 9)}`,
@@ -42,45 +37,18 @@ describe('User Preference Integration Tests', () => {
     ...overrides,
   });
 
-  const createTestUserPreferenceData = (overrides = {}) => ({
-    // Communication preferences
-    emailMarketing: false,
-    smsNotifications: false,
-    orderUpdates: true,
-    promotionalEmails: false,
-    communicationConsentDate: new Date().toISOString(),
-    
-    // Notification preferences
-    orderStatusNotifications: true,
-    promotionalNotifications: false,
-    securityNotifications: true,
-    emailNotifications: true,
-    smsNotificationEnabled: false,
-    notificationFrequency: 'immediate',
-    
-    // Security preferences
-    twoFactorEnabled: false,
-    sessionTimeout: 3600,
-    deviceTracking: true,
-    loginNotifications: true,
-    
-    // Localization preferences
-    language: 'en',
-    currency: 'USD',
-    timezone: 'UTC',
-    dateFormat: 'MM_DD_YYYY',
-    numberFormat: 'COMMA_DOT',
-    theme: 'auto',
-    ...overrides,
-  });
-
   const createTestUser = async () => {
     const userData = createTestUserData();
     const registerResponse = await request(SERVER_URL)
       .post('/api/auth/local/register')
       .send(userData)
-      .timeout(10000)
-      .expect(200);
+      .timeout(10000);
+    
+    // Debug: Log the response to see what's happening
+    
+    if (registerResponse.status !== 200) {
+      throw new Error(`User registration failed with status ${registerResponse.status}: ${JSON.stringify(registerResponse.body)}`);
+    }
     
     return {
       user: registerResponse.body.user,
@@ -92,24 +60,22 @@ describe('User Preference Integration Tests', () => {
   describe('API Health Check', () => {
     it('should be able to connect to the user-preference API', async () => {
       const response = await request(SERVER_URL)
-        .get('/api/user-preferences')
+        .get('/api/user-preferences/me')
         .timeout(10000);
       
-      // Should return 401 (unauthorized) since no token provided
-      expect(response.status).toBe(401);
+      expect(response.status).toBe(403);
     });
 
-    it('should handle invalid preference ID gracefully', async () => {
+    it('should handle invalid category gracefully', async () => {
       const response = await request(SERVER_URL)
-        .get('/api/user-preferences/invalid-id')
+        .get('/api/user-preferences/me/invalid-category')
         .timeout(10000);
 
-      // Should return 404 (not found) for invalid ID
-      expect(response.status).toBe(404);
+      expect(response.status).toBe(403);
     });
   });
 
-  describe('User Preference Creation and Updates', () => {
+  describe('User Preference Management', () => {
     let testUser: any;
     let authToken: string;
 
@@ -119,47 +85,49 @@ describe('User Preference Integration Tests', () => {
       authToken = userResult.token;
     });
 
-    it('should create user preference and verify response data', async () => {
-      const preferenceData = createTestUserPreferenceData({
-        user: testUser.id
-      });
-
-      // Create user preference via API
+    it('should verify authentication is working', async () => {
+      // Test authentication by calling a simple endpoint that requires auth
       const response = await request(SERVER_URL)
-        .post('/api/user-preferences')
+        .get('/api/users/me')
         .set('Authorization', `Bearer ${authToken}`)
-        .send({ data: preferenceData })
-        .timeout(10000)
-        .expect(201);
-
-      expect(response.body.data).toBeDefined();
-      expect(response.body.data.attributes).toBeDefined();
-      const attributes = response.body.data.attributes;
+        .timeout(10000);
       
-      expect(attributes.emailMarketing).toBe(preferenceData.emailMarketing);
-      expect(attributes.orderUpdates).toBe(preferenceData.orderUpdates);
-      expect(attributes.sessionTimeout).toBe(preferenceData.sessionTimeout);
-      expect(attributes.language).toBe(preferenceData.language);
-      expect(attributes.currency).toBe(preferenceData.currency);
-      expect(attributes.theme).toBe(preferenceData.theme);
+      
+      // This should work if authentication is working
+      expect(response.status).toBe(200);
     });
 
-    it('should update user preference', async () => {
-      // First create a preference
-      const preferenceData = createTestUserPreferenceData({
-        user: testUser.id
-      });
-
-      const createResponse = await request(SERVER_URL)
-        .post('/api/user-preferences')
+    it('should get user preferences and create defaults if none exist', async () => {
+      
+      const response = await request(SERVER_URL)
+        .get('/api/user-preferences/me')
         .set('Authorization', `Bearer ${authToken}`)
-        .send({ data: preferenceData })
+        .timeout(10000);
+      
+      expect(response.status).toBe(200);
+
+      expect(response.body.data).toBeDefined();
+      expect(response.body.meta.message).toContain('Default preferences created successfully');
+      
+      // Verify default values
+      const preferences = response.body.data;
+      expect(preferences.emailMarketing).toBe(false);
+      expect(preferences.orderUpdates).toBe(true);
+      expect(preferences.sessionTimeout).toBe(3600);
+      expect(preferences.language).toBe('en');
+      expect(preferences.currency).toBe('USD');
+      expect(preferences.theme).toBe('auto');
+    });
+
+    it('should update user preferences', async () => {
+      // First get/create preferences
+      await request(SERVER_URL)
+        .get('/api/user-preferences/me')
+        .set('Authorization', `Bearer ${authToken}`)
         .timeout(10000)
-        .expect(201);
+        .expect(200);
 
-      const preferenceId = createResponse.body.data.id;
-
-      // Update the preference
+      // Update preferences
       const updateData = {
         emailMarketing: true,
         theme: 'dark',
@@ -169,76 +137,293 @@ describe('User Preference Integration Tests', () => {
       };
 
       const response = await request(SERVER_URL)
-        .put(`/api/user-preferences/${preferenceId}`)
+        .put('/api/user-preferences/me')
         .set('Authorization', `Bearer ${authToken}`)
         .send({ data: updateData })
         .timeout(10000)
         .expect(200);
 
-      expect(response.body.data.attributes.emailMarketing).toBe(true);
-      expect(response.body.data.attributes.theme).toBe('dark');
-      expect(response.body.data.attributes.sessionTimeout).toBe(7200);
-      expect(response.body.data.attributes.language).toBe('es');
-      expect(response.body.data.attributes.currency).toBe('EUR');
+      expect(response.body.data.emailMarketing).toBe(true);
+      expect(response.body.data.theme).toBe('dark');
+      expect(response.body.data.sessionTimeout).toBe(7200);
+      expect(response.body.data.language).toBe('es');
+      expect(response.body.data.currency).toBe('EUR');
     });
 
-    it('should retrieve user preference by ID', async () => {
-      // Create a preference
-      const preferenceData = createTestUserPreferenceData({
-        user: testUser.id
-      });
+    it('should retrieve updated preferences', async () => {
+      // Update preferences first
+      const updateData = {
+        emailMarketing: true,
+        theme: 'dark'
+      };
 
-      const createResponse = await request(SERVER_URL)
-        .post('/api/user-preferences')
+      await request(SERVER_URL)
+        .put('/api/user-preferences/me')
         .set('Authorization', `Bearer ${authToken}`)
-        .send({ data: preferenceData })
+        .send({ data: updateData })
         .timeout(10000)
-        .expect(201);
+        .expect(200);
 
-      const preferenceId = createResponse.body.data.id;
-
-      // Retrieve the preference
+      // Retrieve preferences
       const response = await request(SERVER_URL)
-        .get(`/api/user-preferences/${preferenceId}`)
+        .get('/api/user-preferences/me')
         .set('Authorization', `Bearer ${authToken}`)
         .timeout(10000)
         .expect(200);
 
-      expect(response.body.data.id).toBe(preferenceId);
-      expect(response.body.data.attributes.user.data.id).toBe(testUser.id);
-      expect(response.body.data.attributes.emailMarketing).toBe(preferenceData.emailMarketing);
+      expect(response.body.data.emailMarketing).toBe(true);
+      expect(response.body.data.theme).toBe('dark');
     });
 
-    it('should delete user preference', async () => {
-      // Create a preference
-      const preferenceData = createTestUserPreferenceData({
-        user: testUser.id
-      });
+    it('should reset preferences to defaults', async () => {
+      // First update preferences
+      const updateData = {
+        emailMarketing: true,
+        theme: 'dark',
+        sessionTimeout: 7200
+      };
 
-      const createResponse = await request(SERVER_URL)
-        .post('/api/user-preferences')
+      await request(SERVER_URL)
+        .put('/api/user-preferences/me')
         .set('Authorization', `Bearer ${authToken}`)
-        .send({ data: preferenceData })
+        .send({ data: updateData })
         .timeout(10000)
-        .expect(201);
+        .expect(200);
 
-      const preferenceId = createResponse.body.data.id;
-
-      // Delete the preference
+      // Reset to defaults
       const response = await request(SERVER_URL)
-        .delete(`/api/user-preferences/${preferenceId}`)
+        .post('/api/user-preferences/me/reset')
+        .set('Authorization', `Bearer ${authToken}`)
+        .timeout(10000)
+        .expect(200);
+
+      expect(response.body.data.emailMarketing).toBe(false);
+      expect(response.body.data.theme).toBe('auto');
+      expect(response.body.data.sessionTimeout).toBe(3600);
+    });
+
+    it('should export user preferences', async () => {
+      // Update preferences first
+      const updateData = {
+        emailMarketing: true,
+        theme: 'dark'
+      };
+
+      await request(SERVER_URL)
+        .put('/api/user-preferences/me')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({ data: updateData })
+        .timeout(10000)
+        .expect(200);
+
+      // Export preferences
+      const response = await request(SERVER_URL)
+        .get('/api/user-preferences/me/export')
         .set('Authorization', `Bearer ${authToken}`)
         .timeout(10000)
         .expect(200);
 
       expect(response.body.data).toBeDefined();
+      expect(response.body.data.emailMarketing).toBe(true);
+      expect(response.body.data.theme).toBe('dark');
+      expect(response.body.meta.exportDate).toBeDefined();
+      expect(response.body.meta.userId).toBeDefined();
+    });
+  });
 
-      // Verify preference is deleted
+  describe('Category-Specific Preference Management', () => {
+    let testUser: any;
+    let authToken: string;
+
+    beforeEach(async () => {
+      const userResult = await createTestUser();
+      testUser = userResult.user;
+      authToken = userResult.token;
+    });
+
+    it('should get communication preferences category', async () => {
+      // First create preferences
       await request(SERVER_URL)
-        .get(`/api/user-preferences/${preferenceId}`)
+        .get('/api/user-preferences/me')
         .set('Authorization', `Bearer ${authToken}`)
         .timeout(10000)
-        .expect(404);
+        .expect(200);
+
+      const response = await request(SERVER_URL)
+        .get('/api/user-preferences/me/communication')
+        .set('Authorization', `Bearer ${authToken}`)
+        .timeout(10000)
+        .expect(200);
+
+      expect(response.body.data).toBeDefined();
+      expect(response.body.meta.category).toBe('communication');
+      expect(response.body.data).toHaveProperty('emailMarketing');
+      expect(response.body.data).toHaveProperty('smsNotifications');
+      expect(response.body.data).toHaveProperty('orderUpdates');
+      expect(response.body.data).toHaveProperty('promotionalEmails');
+    });
+
+    it('should update communication preferences category', async () => {
+      // First create preferences
+      await request(SERVER_URL)
+        .get('/api/user-preferences/me')
+        .set('Authorization', `Bearer ${authToken}`)
+        .timeout(10000)
+        .expect(200);
+
+      const updateData = {
+        emailMarketing: true,
+        smsNotifications: true,
+        orderUpdates: false,
+        promotionalEmails: true
+      };
+
+      const response = await request(SERVER_URL)
+        .patch('/api/user-preferences/me/communication')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({ data: updateData })
+        .timeout(10000)
+        .expect(200);
+
+      expect(response.body.data.emailMarketing).toBe(true);
+      expect(response.body.data.smsNotifications).toBe(true);
+      expect(response.body.data.orderUpdates).toBe(false);
+      expect(response.body.data.promotionalEmails).toBe(true);
+    });
+
+    it('should get notification preferences category', async () => {
+      // First create preferences
+      await request(SERVER_URL)
+        .get('/api/user-preferences/me')
+        .set('Authorization', `Bearer ${authToken}`)
+        .timeout(10000)
+        .expect(200);
+
+      const response = await request(SERVER_URL)
+        .get('/api/user-preferences/me/notifications')
+        .set('Authorization', `Bearer ${authToken}`)
+        .timeout(10000)
+        .expect(200);
+
+      expect(response.body.data).toBeDefined();
+      expect(response.body.meta.category).toBe('notifications');
+      expect(response.body.data).toHaveProperty('orderStatusNotifications');
+      expect(response.body.data).toHaveProperty('promotionalNotifications');
+      expect(response.body.data).toHaveProperty('securityNotifications');
+      expect(response.body.data).toHaveProperty('notificationFrequency');
+    });
+
+    it('should update notification preferences category', async () => {
+      const updateData = {
+        orderStatusNotifications: false,
+        promotionalNotifications: true,
+        notificationFrequency: 'daily'
+      };
+
+      const response = await request(SERVER_URL)
+        .patch('/api/user-preferences/me/notifications')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({ data: updateData })
+        .timeout(10000)
+        .expect(200);
+
+      expect(response.body.data.orderStatusNotifications).toBe(false);
+      expect(response.body.data.promotionalNotifications).toBe(true);
+      expect(response.body.data.notificationFrequency).toBe('daily');
+    });
+
+    it('should get security preferences category', async () => {
+      // First create preferences
+      await request(SERVER_URL)
+        .get('/api/user-preferences/me')
+        .set('Authorization', `Bearer ${authToken}`)
+        .timeout(10000)
+        .expect(200);
+
+      const response = await request(SERVER_URL)
+        .get('/api/user-preferences/me/security')
+        .set('Authorization', `Bearer ${authToken}`)
+        .timeout(10000)
+        .expect(200);
+
+      expect(response.body.data).toBeDefined();
+      expect(response.body.meta.category).toBe('security');
+      expect(response.body.data).toHaveProperty('twoFactorEnabled');
+      expect(response.body.data).toHaveProperty('sessionTimeout');
+      expect(response.body.data).toHaveProperty('deviceTracking');
+      expect(response.body.data).toHaveProperty('loginNotifications');
+    });
+
+    it('should update security preferences category', async () => {
+      const updateData = {
+        twoFactorEnabled: true,
+        sessionTimeout: 1800,
+        deviceTracking: false
+      };
+
+      const response = await request(SERVER_URL)
+        .patch('/api/user-preferences/me/security')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({ data: updateData })
+        .timeout(10000)
+        .expect(200);
+
+      expect(response.body.data.twoFactorEnabled).toBe(true);
+      expect(response.body.data.sessionTimeout).toBe(1800);
+      expect(response.body.data.deviceTracking).toBe(false);
+    });
+
+    it('should get localization preferences category', async () => {
+      // First create preferences
+      await request(SERVER_URL)
+        .get('/api/user-preferences/me')
+        .set('Authorization', `Bearer ${authToken}`)
+        .timeout(10000)
+        .expect(200);
+
+      const response = await request(SERVER_URL)
+        .get('/api/user-preferences/me/localization')
+        .set('Authorization', `Bearer ${authToken}`)
+        .timeout(10000)
+        .expect(200);
+
+      expect(response.body.data).toBeDefined();
+      expect(response.body.meta.category).toBe('localization');
+      expect(response.body.data).toHaveProperty('language');
+      expect(response.body.data).toHaveProperty('currency');
+      expect(response.body.data).toHaveProperty('timezone');
+      expect(response.body.data).toHaveProperty('theme');
+    });
+
+    it('should update localization preferences category', async () => {
+      const updateData = {
+        language: 'fr',
+        currency: 'EUR',
+        timezone: 'Europe/Paris',
+        theme: 'dark'
+      };
+
+      const response = await request(SERVER_URL)
+        .patch('/api/user-preferences/me/localization')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({ data: updateData })
+        .timeout(10000)
+        .expect(200);
+
+      expect(response.body.data.language).toBe('fr');
+      expect(response.body.data.currency).toBe('EUR');
+      expect(response.body.data.timezone).toBe('Europe/Paris');
+      expect(response.body.data.theme).toBe('dark');
+    });
+
+    it('should reject invalid category', async () => {
+      const response = await request(SERVER_URL)
+        .get('/api/user-preferences/me/invalid-category')
+        .set('Authorization', `Bearer ${authToken}`)
+        .timeout(10000)
+        .expect(400);
+
+      expect(response.body.error).toBeDefined();
     });
   });
 
@@ -256,19 +441,16 @@ describe('User Preference Integration Tests', () => {
       const validThemes = ['light', 'dark', 'auto'];
       
       for (const theme of validThemes) {
-        const preferenceData = createTestUserPreferenceData({
-          user: testUser.id,
-          theme: theme
-        });
+        const updateData = { theme };
 
         const response = await request(SERVER_URL)
-          .post('/api/user-preferences')
+          .put('/api/user-preferences/me')
           .set('Authorization', `Bearer ${authToken}`)
-          .send({ data: preferenceData })
+          .send({ data: updateData })
           .timeout(10000)
-          .expect(201);
+          .expect(200);
 
-        expect(response.body.data.attributes.theme).toBe(theme);
+        expect(response.body.data.theme).toBe(theme);
       }
     });
 
@@ -276,15 +458,12 @@ describe('User Preference Integration Tests', () => {
       const invalidThemes = ['purple', 'invalid', 'bright'];
       
       for (const theme of invalidThemes) {
-        const preferenceData = createTestUserPreferenceData({
-          user: testUser.id,
-          theme: theme
-        });
+        const updateData = { theme };
 
         const response = await request(SERVER_URL)
-          .post('/api/user-preferences')
+          .put('/api/user-preferences/me')
           .set('Authorization', `Bearer ${authToken}`)
-          .send({ data: preferenceData })
+          .send({ data: updateData })
           .timeout(10000)
           .expect(400);
 
@@ -296,19 +475,16 @@ describe('User Preference Integration Tests', () => {
       const validTimeouts = [300, 1800, 3600, 7200, 86400];
       
       for (const timeout of validTimeouts) {
-        const preferenceData = createTestUserPreferenceData({
-          user: testUser.id,
-          sessionTimeout: timeout
-        });
+        const updateData = { sessionTimeout: timeout };
 
         const response = await request(SERVER_URL)
-          .post('/api/user-preferences')
+          .put('/api/user-preferences/me')
           .set('Authorization', `Bearer ${authToken}`)
-          .send({ data: preferenceData })
+          .send({ data: updateData })
           .timeout(10000)
-          .expect(201);
+          .expect(200);
 
-        expect(response.body.data.attributes.sessionTimeout).toBe(timeout);
+        expect(response.body.data.sessionTimeout).toBe(timeout);
       }
     });
 
@@ -316,15 +492,12 @@ describe('User Preference Integration Tests', () => {
       const invalidTimeouts = [299, 86401, -1, 0];
       
       for (const timeout of invalidTimeouts) {
-        const preferenceData = createTestUserPreferenceData({
-          user: testUser.id,
-          sessionTimeout: timeout
-        });
+        const updateData = { sessionTimeout: timeout };
 
         const response = await request(SERVER_URL)
-          .post('/api/user-preferences')
+          .put('/api/user-preferences/me')
           .set('Authorization', `Bearer ${authToken}`)
-          .send({ data: preferenceData })
+          .send({ data: updateData })
           .timeout(10000)
           .expect(400);
 
@@ -336,19 +509,16 @@ describe('User Preference Integration Tests', () => {
       const validFrequencies = ['immediate', 'daily', 'weekly', 'disabled'];
       
       for (const frequency of validFrequencies) {
-        const preferenceData = createTestUserPreferenceData({
-          user: testUser.id,
-          notificationFrequency: frequency
-        });
+        const updateData = { notificationFrequency: frequency };
 
         const response = await request(SERVER_URL)
-          .post('/api/user-preferences')
+          .put('/api/user-preferences/me')
           .set('Authorization', `Bearer ${authToken}`)
-          .send({ data: preferenceData })
+          .send({ data: updateData })
           .timeout(10000)
-          .expect(201);
+          .expect(200);
 
-        expect(response.body.data.attributes.notificationFrequency).toBe(frequency);
+        expect(response.body.data.notificationFrequency).toBe(frequency);
       }
     });
 
@@ -356,19 +526,16 @@ describe('User Preference Integration Tests', () => {
       const validCurrencies = ['USD', 'EUR', 'GBP', 'JPY'];
       
       for (const currency of validCurrencies) {
-        const preferenceData = createTestUserPreferenceData({
-          user: testUser.id,
-          currency: currency
-        });
+        const updateData = { currency };
 
         const response = await request(SERVER_URL)
-          .post('/api/user-preferences')
+          .put('/api/user-preferences/me')
           .set('Authorization', `Bearer ${authToken}`)
-          .send({ data: preferenceData })
+          .send({ data: updateData })
           .timeout(10000)
-          .expect(201);
+          .expect(200);
 
-        expect(response.body.data.attributes.currency).toBe(currency);
+        expect(response.body.data.currency).toBe(currency);
       }
     });
 
@@ -376,15 +543,12 @@ describe('User Preference Integration Tests', () => {
       const invalidCurrencies = ['US', 'EURO', 'POUND', 'VERYLONGCODE'];
       
       for (const currency of invalidCurrencies) {
-        const preferenceData = createTestUserPreferenceData({
-          user: testUser.id,
-          currency: currency
-        });
+        const updateData = { currency };
 
         const response = await request(SERVER_URL)
-          .post('/api/user-preferences')
+          .put('/api/user-preferences/me')
           .set('Authorization', `Bearer ${authToken}`)
-          .send({ data: preferenceData })
+          .send({ data: updateData })
           .timeout(10000)
           .expect(400);
 
@@ -396,19 +560,16 @@ describe('User Preference Integration Tests', () => {
       const validLanguages = ['en', 'es', 'fr', 'de', 'ja'];
       
       for (const language of validLanguages) {
-        const preferenceData = createTestUserPreferenceData({
-          user: testUser.id,
-          language: language
-        });
+        const updateData = { language };
 
         const response = await request(SERVER_URL)
-          .post('/api/user-preferences')
+          .put('/api/user-preferences/me')
           .set('Authorization', `Bearer ${authToken}`)
-          .send({ data: preferenceData })
+          .send({ data: updateData })
           .timeout(10000)
-          .expect(201);
+          .expect(200);
 
-        expect(response.body.data.attributes.language).toBe(language);
+        expect(response.body.data.language).toBe(language);
       }
     });
 
@@ -416,15 +577,12 @@ describe('User Preference Integration Tests', () => {
       const invalidLanguages = ['verylongcodethatexceeds10chars', 'extremelylonglanguagecode'];
       
       for (const language of invalidLanguages) {
-        const preferenceData = createTestUserPreferenceData({
-          user: testUser.id,
-          language: language
-        });
+        const updateData = { language };
 
         const response = await request(SERVER_URL)
-          .post('/api/user-preferences')
+          .put('/api/user-preferences/me')
           .set('Authorization', `Bearer ${authToken}`)
-          .send({ data: preferenceData })
+          .send({ data: updateData })
           .timeout(10000)
           .expect(400);
 
@@ -433,568 +591,57 @@ describe('User Preference Integration Tests', () => {
     });
   });
 
-  describe('Preference Inheritance and Defaults', () => {
-    let testUser: any;
-    let authToken: string;
-
-    beforeEach(async () => {
-      const userResult = await createTestUser();
-      testUser = userResult.user;
-      authToken = userResult.token;
-    });
-
-    it('should create preference with default values when minimal data provided', async () => {
-      const minimalData = {
-        user: testUser.id
-      };
-
-      const response = await request(SERVER_URL)
-        .post('/api/user-preferences')
-        .set('Authorization', `Bearer ${authToken}`)
-        .send({ data: minimalData })
+  describe('Authentication and Authorization', () => {
+    it('should require authentication for all preference operations', async () => {
+      // Test GET without auth
+      await request(SERVER_URL)
+        .get('/api/user-preferences/me')
         .timeout(10000)
-        .expect(201);
+        .expect(403);
 
-      const attributes = response.body.data.attributes;
-      
-      // Check default values from schema
-      expect(attributes.emailMarketing).toBe(false);
-      expect(attributes.smsNotifications).toBe(false);
-      expect(attributes.orderUpdates).toBe(true);
-      expect(attributes.promotionalEmails).toBe(false);
-      expect(attributes.orderStatusNotifications).toBe(true);
-      expect(attributes.promotionalNotifications).toBe(false);
-      expect(attributes.securityNotifications).toBe(true);
-      expect(attributes.emailNotifications).toBe(true);
-      expect(attributes.smsNotificationEnabled).toBe(false);
-      expect(attributes.notificationFrequency).toBe('immediate');
-      expect(attributes.twoFactorEnabled).toBe(false);
-      expect(attributes.sessionTimeout).toBe(3600);
-      expect(attributes.deviceTracking).toBe(true);
-      expect(attributes.loginNotifications).toBe(true);
-      expect(attributes.language).toBe('en');
-      expect(attributes.currency).toBe('USD');
-      expect(attributes.timezone).toBe('UTC');
-      expect(attributes.dateFormat).toBe('MM_DD_YYYY');
-      expect(attributes.numberFormat).toBe('COMMA_DOT');
-      expect(attributes.theme).toBe('auto');
-    });
-
-    it('should preserve existing values when updating specific fields', async () => {
-      // Create preference with specific values
-      const initialData = createTestUserPreferenceData({
-        user: testUser.id,
-        emailMarketing: true,
-        theme: 'dark',
-        language: 'es',
-        sessionTimeout: 7200
-      });
-
-      const createResponse = await request(SERVER_URL)
-        .post('/api/user-preferences')
-        .set('Authorization', `Bearer ${authToken}`)
-        .send({ data: initialData })
+      // Test PUT without auth
+      await request(SERVER_URL)
+        .put('/api/user-preferences/me')
+        .send({ data: { theme: 'dark' } })
         .timeout(10000)
-        .expect(201);
+        .expect(403);
 
-      const preferenceId = createResponse.body.data.id;
-
-      // Update only specific fields
-      const updateData = {
-        currency: 'EUR'
-      };
-
-      const response = await request(SERVER_URL)
-        .put(`/api/user-preferences/${preferenceId}`)
-        .set('Authorization', `Bearer ${authToken}`)
-        .send({ data: updateData })
+      // Test PATCH without auth
+      await request(SERVER_URL)
+        .patch('/api/user-preferences/me/communication')
+        .send({ data: { emailMarketing: true } })
         .timeout(10000)
-        .expect(200);
+        .expect(403);
 
-      const attributes = response.body.data.attributes;
-      
-      // Check that updated field changed
-      expect(attributes.currency).toBe('EUR');
-      
-      // Check that other fields remained unchanged
-      expect(attributes.emailMarketing).toBe(true);
-      expect(attributes.theme).toBe('dark');
-      expect(attributes.language).toBe('es');
-      expect(attributes.sessionTimeout).toBe(7200);
-    });
-
-    it('should handle communication consent date updates', async () => {
-      const preferenceData = createTestUserPreferenceData({
-        user: testUser.id,
-        emailMarketing: true,
-        communicationConsentDate: new Date().toISOString()
-      });
-
-      const response = await request(SERVER_URL)
-        .post('/api/user-preferences')
-        .set('Authorization', `Bearer ${authToken}`)
-        .send({ data: preferenceData })
+      // Test POST reset without auth
+      await request(SERVER_URL)
+        .post('/api/user-preferences/me/reset')
         .timeout(10000)
-        .expect(201);
+        .expect(403);
 
-      expect(response.body.data.attributes.communicationConsentDate).toBeDefined();
-      expect(response.body.data.attributes.emailMarketing).toBe(true);
-    });
-  });
-
-  describe('Preference Categories and Organization', () => {
-    let testUser: any;
-    let authToken: string;
-
-    beforeEach(async () => {
-      const userResult = await createTestUser();
-      testUser = userResult.user;
-      authToken = userResult.token;
-    });
-
-    it('should handle communication preferences category', async () => {
-      const communicationData = {
-        user: testUser.id,
-        emailMarketing: true,
-        smsNotifications: true,
-        orderUpdates: false,
-        promotionalEmails: true,
-        communicationConsentDate: new Date().toISOString()
-      };
-
-      const response = await request(SERVER_URL)
-        .post('/api/user-preferences')
-        .set('Authorization', `Bearer ${authToken}`)
-        .send({ data: communicationData })
+      // Test GET export without auth
+      await request(SERVER_URL)
+        .get('/api/user-preferences/me/export')
         .timeout(10000)
-        .expect(201);
-
-      const attributes = response.body.data.attributes;
-      expect(attributes.emailMarketing).toBe(true);
-      expect(attributes.smsNotifications).toBe(true);
-      expect(attributes.orderUpdates).toBe(false);
-      expect(attributes.promotionalEmails).toBe(true);
-      expect(attributes.communicationConsentDate).toBeDefined();
+        .expect(403);
     });
 
-    it('should handle notification preferences category', async () => {
-      const notificationData = {
-        user: testUser.id,
-        orderStatusNotifications: false,
-        promotionalNotifications: true,
-        securityNotifications: false,
-        emailNotifications: false,
-        smsNotificationEnabled: true,
-        notificationFrequency: 'daily'
-      };
-
-      const response = await request(SERVER_URL)
-        .post('/api/user-preferences')
-        .set('Authorization', `Bearer ${authToken}`)
-        .send({ data: notificationData })
-        .timeout(10000)
-        .expect(201);
-
-      const attributes = response.body.data.attributes;
-      expect(attributes.orderStatusNotifications).toBe(false);
-      expect(attributes.promotionalNotifications).toBe(true);
-      expect(attributes.securityNotifications).toBe(false);
-      expect(attributes.emailNotifications).toBe(false);
-      expect(attributes.smsNotificationEnabled).toBe(true);
-      expect(attributes.notificationFrequency).toBe('daily');
-    });
-
-    it('should handle security preferences category', async () => {
-      const securityData = {
-        user: testUser.id,
-        twoFactorEnabled: true,
-        sessionTimeout: 1800,
-        deviceTracking: false,
-        loginNotifications: false,
-        lastPasswordChange: new Date().toISOString()
-      };
-
-      const response = await request(SERVER_URL)
-        .post('/api/user-preferences')
-        .set('Authorization', `Bearer ${authToken}`)
-        .send({ data: securityData })
-        .timeout(10000)
-        .expect(201);
-
-      const attributes = response.body.data.attributes;
-      expect(attributes.twoFactorEnabled).toBe(true);
-      expect(attributes.sessionTimeout).toBe(1800);
-      expect(attributes.deviceTracking).toBe(false);
-      expect(attributes.loginNotifications).toBe(false);
-      expect(attributes.lastPasswordChange).toBeDefined();
-    });
-
-    it('should handle localization preferences category', async () => {
-      const localizationData = {
-        user: testUser.id,
-        language: 'fr',
-        currency: 'EUR',
-        timezone: 'Europe/Paris',
-        dateFormat: 'DD_MM_YYYY',
-        numberFormat: 'DOT_COMMA',
-        theme: 'dark'
-      };
-
-      const response = await request(SERVER_URL)
-        .post('/api/user-preferences')
-        .set('Authorization', `Bearer ${authToken}`)
-        .send({ data: localizationData })
-        .timeout(10000)
-        .expect(201);
-
-      const attributes = response.body.data.attributes;
-      expect(attributes.language).toBe('fr');
-      expect(attributes.currency).toBe('EUR');
-      expect(attributes.timezone).toBe('Europe/Paris');
-      expect(attributes.dateFormat).toBe('DD_MM_YYYY');
-      expect(attributes.numberFormat).toBe('DOT_COMMA');
-      expect(attributes.theme).toBe('dark');
-    });
-  });
-
-  describe('Preference Privacy and Access Control', () => {
-    let testUser1: any;
-    let testUser2: any;
-    let authToken1: string;
-    let authToken2: string;
-
-    beforeEach(async () => {
-      const userResult1 = await createTestUser();
-      testUser1 = userResult1.user;
-      authToken1 = userResult1.token;
-
-      const userResult2 = await createTestUser();
-      testUser2 = userResult2.user;
-      authToken2 = userResult2.token;
-    });
-
-    it('should prevent users from accessing other users preferences', async () => {
-      // Create preference for user 1
-      const preferenceData = createTestUserPreferenceData({
-        user: testUser1.id
-      });
-
-      const createResponse = await request(SERVER_URL)
-        .post('/api/user-preferences')
-        .set('Authorization', `Bearer ${authToken1}`)
-        .send({ data: preferenceData })
-        .timeout(10000)
-        .expect(201);
-
-      const preferenceId = createResponse.body.data.id;
-
-      // Try to access user 1's preference with user 2's token
-      const response = await request(SERVER_URL)
-        .get(`/api/user-preferences/${preferenceId}`)
-        .set('Authorization', `Bearer ${authToken2}`)
-        .timeout(10000);
-
-      // Should return 403 (forbidden) - user cannot access other user's preference
-      expect(response.status).toBe(403);
-    });
-
-    it('should prevent users from updating other users preferences', async () => {
-      // Create preference for user 1
-      const preferenceData = createTestUserPreferenceData({
-        user: testUser1.id
-      });
-
-      const createResponse = await request(SERVER_URL)
-        .post('/api/user-preferences')
-        .set('Authorization', `Bearer ${authToken1}`)
-        .send({ data: preferenceData })
-        .timeout(10000)
-        .expect(201);
-
-      const preferenceId = createResponse.body.data.id;
-
-      // Try to update user 1's preference with user 2's token
-      const updateData = { theme: 'dark' };
-      const response = await request(SERVER_URL)
-        .put(`/api/user-preferences/${preferenceId}`)
-        .set('Authorization', `Bearer ${authToken2}`)
-        .send({ data: updateData })
-        .timeout(10000);
-
-      // Should return 403 (forbidden) - user cannot update other user's preference
-      expect(response.status).toBe(403);
-    });
-
-    it('should prevent users from deleting other users preferences', async () => {
-      // Create preference for user 1
-      const preferenceData = createTestUserPreferenceData({
-        user: testUser1.id
-      });
-
-      const createResponse = await request(SERVER_URL)
-        .post('/api/user-preferences')
-        .set('Authorization', `Bearer ${authToken1}`)
-        .send({ data: preferenceData })
-        .timeout(10000)
-        .expect(201);
-
-      const preferenceId = createResponse.body.data.id;
-
-      // Try to delete user 1's preference with user 2's token
-      const response = await request(SERVER_URL)
-        .delete(`/api/user-preferences/${preferenceId}`)
-        .set('Authorization', `Bearer ${authToken2}`)
-        .timeout(10000);
-
-      // Should return 403 (forbidden) - user cannot delete other user's preference
-      expect(response.status).toBe(403);
-    });
-
-    it('should require authentication for preference operations', async () => {
-      const preferenceData = createTestUserPreferenceData({
-        user: testUser1.id
-      });
-
-      // Try to create preference without authentication
-      const response = await request(SERVER_URL)
-        .post('/api/user-preferences')
-        .send({ data: preferenceData })
-        .timeout(10000);
-
-      // Should return 401 (unauthorized) - no authentication provided
-      expect(response.status).toBe(401);
-    });
-
-    it('should allow admin to access all preferences', async () => {
-      // Create preference for user 1
-      const preferenceData = createTestUserPreferenceData({
-        user: testUser1.id
-      });
-
-      const createResponse = await request(SERVER_URL)
-        .post('/api/user-preferences')
-        .set('Authorization', `Bearer ${authToken1}`)
-        .send({ data: preferenceData })
-        .timeout(10000)
-        .expect(201);
-
-      const preferenceId = createResponse.body.data.id;
-
-      // Admin should be able to access the preference
-      const response = await request(SERVER_URL)
-        .get(`/api/user-preferences/${preferenceId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
-        .timeout(10000)
-        .expect(200);
-
-      expect(response.body.data.id).toBe(preferenceId);
-    });
-  });
-
-  describe('Preference Bulk Operations', () => {
-    let testUser: any;
-    let authToken: string;
-
-    beforeEach(async () => {
-      const userResult = await createTestUser();
-      testUser = userResult.user;
-      authToken = userResult.token;
-    });
-
-    it('should retrieve multiple preferences with pagination', async () => {
-      // Create multiple preferences for the same user (if allowed by schema)
-      const preferenceData1 = createTestUserPreferenceData({
-        user: testUser.id,
-        theme: 'light'
-      });
-
-      const preferenceData2 = createTestUserPreferenceData({
-        user: testUser.id,
-        theme: 'dark'
-      });
+    it('should handle invalid authentication tokens', async () => {
+      const invalidToken = 'invalid.jwt.token';
 
       await request(SERVER_URL)
-        .post('/api/user-preferences')
-        .set('Authorization', `Bearer ${authToken}`)
-        .send({ data: preferenceData1 })
+        .get('/api/user-preferences/me')
+        .set('Authorization', `Bearer ${invalidToken}`)
         .timeout(10000)
-        .expect(201);
-
-      await request(SERVER_URL)
-        .post('/api/user-preferences')
-        .set('Authorization', `Bearer ${authToken}`)
-        .send({ data: preferenceData2 })
-        .timeout(10000)
-        .expect(201);
-
-      // Retrieve preferences with pagination
-      const response = await request(SERVER_URL)
-        .get('/api/user-preferences?pagination[page]=1&pagination[pageSize]=10')
-        .set('Authorization', `Bearer ${authToken}`)
-        .timeout(10000)
-        .expect(200);
-
-      expect(response.body.data).toBeDefined();
-      expect(Array.isArray(response.body.data)).toBe(true);
+        .expect(401);
     });
 
-    it('should filter preferences by user', async () => {
-      // Create preference
-      const preferenceData = createTestUserPreferenceData({
-        user: testUser.id
-      });
-
+    it('should handle malformed authorization headers', async () => {
       await request(SERVER_URL)
-        .post('/api/user-preferences')
-        .set('Authorization', `Bearer ${authToken}`)
-        .send({ data: preferenceData })
+        .get('/api/user-preferences/me')
+        .set('Authorization', 'InvalidFormat')
         .timeout(10000)
-        .expect(201);
-
-      // Filter preferences by user
-      const response = await request(SERVER_URL)
-        .get(`/api/user-preferences?filters[user][id][$eq]=${testUser.id}`)
-        .set('Authorization', `Bearer ${authToken}`)
-        .timeout(10000)
-        .expect(200);
-
-      expect(response.body.data).toBeDefined();
-      expect(Array.isArray(response.body.data)).toBe(true);
-    });
-
-    it('should sort preferences by creation date', async () => {
-      // Create multiple preferences
-      const preferenceData1 = createTestUserPreferenceData({
-        user: testUser.id,
-        theme: 'light'
-      });
-
-      const preferenceData2 = createTestUserPreferenceData({
-        user: testUser.id,
-        theme: 'dark'
-      });
-
-      await request(SERVER_URL)
-        .post('/api/user-preferences')
-        .set('Authorization', `Bearer ${authToken}`)
-        .send({ data: preferenceData1 })
-        .timeout(10000)
-        .expect(201);
-
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Ensure different timestamps
-
-      await request(SERVER_URL)
-        .post('/api/user-preferences')
-        .set('Authorization', `Bearer ${authToken}`)
-        .send({ data: preferenceData2 })
-        .timeout(10000)
-        .expect(201);
-
-      // Sort preferences by creation date
-      const response = await request(SERVER_URL)
-        .get('/api/user-preferences?sort=createdAt:desc')
-        .set('Authorization', `Bearer ${authToken}`)
-        .timeout(10000)
-        .expect(200);
-
-      expect(response.body.data).toBeDefined();
-      expect(Array.isArray(response.body.data)).toBe(true);
-    });
-  });
-
-  describe('Preference Cleanup on User Deletion', () => {
-    let testUser: any;
-    let authToken: string;
-
-    beforeEach(async () => {
-      const userResult = await createTestUser();
-      testUser = userResult.user;
-      authToken = userResult.token;
-    });
-
-    it('should handle preference cleanup when user is deleted', async () => {
-      // Create preference for user
-      const preferenceData = createTestUserPreferenceData({
-        user: testUser.id
-      });
-
-      const createResponse = await request(SERVER_URL)
-        .post('/api/user-preferences')
-        .set('Authorization', `Bearer ${authToken}`)
-        .send({ data: preferenceData })
-        .timeout(10000)
-        .expect(201);
-
-      const preferenceId = createResponse.body.data.id;
-
-      // Delete the user (this should trigger preference cleanup)
-      const deleteResponse = await request(SERVER_URL)
-        .delete(`/api/users/${testUser.id}`)
-        .set('Authorization', `Bearer ${adminToken}`)
-        .timeout(10000);
-
-      // Handle different possible responses
-      if (deleteResponse.status === 200) {
-        // If user deletion is successful, preference should be cleaned up
-        await request(SERVER_URL)
-          .get(`/api/user-preferences/${preferenceId}`)
-          .set('Authorization', `Bearer ${adminToken}`)
-          .timeout(10000)
-          .expect(404);
-      } else {
-        // If user deletion is not allowed, preference should still exist
-        const response = await request(SERVER_URL)
-          .get(`/api/user-preferences/${preferenceId}`)
-          .set('Authorization', `Bearer ${adminToken}`)
-          .timeout(10000);
-
-        // Preference may still exist (200) or be deleted with user (404)
-        expect([200, 404]).toContain(response.status);
-      }
-    });
-
-    it('should maintain data integrity when user is deleted', async () => {
-      // Create preference for user
-      const preferenceData = createTestUserPreferenceData({
-        user: testUser.id
-      });
-
-      const createResponse = await request(SERVER_URL)
-        .post('/api/user-preferences')
-        .set('Authorization', `Bearer ${authToken}`)
-        .send({ data: preferenceData })
-        .timeout(10000)
-        .expect(201);
-
-      const preferenceId = createResponse.body.data.id;
-
-      // Verify preference exists and has correct user relationship
-      const getResponse = await request(SERVER_URL)
-        .get(`/api/user-preferences/${preferenceId}`)
-        .set('Authorization', `Bearer ${authToken}`)
-        .timeout(10000)
-        .expect(200);
-
-      expect(getResponse.body.data.attributes.user.data.id).toBe(testUser.id);
-
-      // Attempt to delete user
-      await request(SERVER_URL)
-        .delete(`/api/users/${testUser.id}`)
-        .set('Authorization', `Bearer ${adminToken}`)
-        .timeout(10000);
-
-      // Verify preference relationship integrity
-      const finalResponse = await request(SERVER_URL)
-        .get(`/api/user-preferences/${preferenceId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
-        .timeout(10000);
-
-      // Preference should either be deleted or have null user relationship
-      if (finalResponse.status === 200) {
-        expect(finalResponse.body.data.attributes.user.data).toBeNull();
-      } else {
-        expect(finalResponse.status).toBe(404);
-      }
+        .expect(403);
     });
   });
 
@@ -1010,7 +657,7 @@ describe('User Preference Integration Tests', () => {
 
     it('should handle malformed request data', async () => {
       const response = await request(SERVER_URL)
-        .post('/api/user-preferences')
+        .put('/api/user-preferences/me')
         .set('Authorization', `Bearer ${authToken}`)
         .send('invalid-json-data')
         .timeout(10000)
@@ -1019,74 +666,64 @@ describe('User Preference Integration Tests', () => {
       expect(response.body.error).toBeDefined();
     });
 
-    it('should handle missing required fields', async () => {
+    it('should handle missing data in request body', async () => {
       const response = await request(SERVER_URL)
-        .post('/api/user-preferences')
+        .put('/api/user-preferences/me')
         .set('Authorization', `Bearer ${authToken}`)
-        .send({ data: {} })
+        .send({})
         .timeout(10000)
         .expect(400);
 
       expect(response.body.error).toBeDefined();
     });
 
-    it('should handle concurrent preference creation', async () => {
-      const preferenceData1 = createTestUserPreferenceData({
-        user: testUser.id,
-        theme: 'light'
-      });
-
-      const preferenceData2 = createTestUserPreferenceData({
-        user: testUser.id,
-        theme: 'dark'
-      });
-
-      // Create preferences sequentially to avoid rate limiting
-      const response1 = await request(SERVER_URL)
-        .post('/api/user-preferences')
-        .set('Authorization', `Bearer ${authToken}`)
-        .send({ data: preferenceData1 })
-        .timeout(10000);
-      
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      const response2 = await request(SERVER_URL)
-        .post('/api/user-preferences')
-        .set('Authorization', `Bearer ${authToken}`)
-        .send({ data: preferenceData2 })
-        .timeout(10000);
-
-      // Both should succeed - creation can return 200 (updated) or 201 (created)
-      expect([200, 201]).toContain(response1.status);
-      expect([200, 201]).toContain(response2.status);
-    });
-
-    it('should handle request timeout scenarios', async () => {
-      const preferenceData = createTestUserPreferenceData({
-        user: testUser.id
-      });
-
+    it('should handle empty data object', async () => {
       const response = await request(SERVER_URL)
-        .post('/api/user-preferences')
+        .put('/api/user-preferences/me')
         .set('Authorization', `Bearer ${authToken}`)
-        .send({ data: preferenceData })
-        .timeout(10000) // Normal timeout
-        .expect(201);
+        .send({ data: {} })
+        .timeout(10000)
+        .expect(200); // Empty data should be valid (no updates)
 
       expect(response.body.data).toBeDefined();
     });
 
-    it('should handle invalid user ID in preference creation', async () => {
-      const preferenceData = createTestUserPreferenceData({
-        user: 99999 // Non-existent user ID
-      });
+    it('should handle request timeout scenarios', async () => {
+      const updateData = { theme: 'dark' };
 
       const response = await request(SERVER_URL)
-        .post('/api/user-preferences')
+        .put('/api/user-preferences/me')
         .set('Authorization', `Bearer ${authToken}`)
-        .send({ data: preferenceData })
+        .send({ data: updateData })
+        .timeout(10000) // Normal timeout
+        .expect(200);
+
+      expect(response.body.data).toBeDefined();
+    });
+
+    it('should handle invalid category in category-specific endpoints', async () => {
+      const response = await request(SERVER_URL)
+        .get('/api/user-preferences/me/invalid-category')
+        .set('Authorization', `Bearer ${authToken}`)
         .timeout(10000)
-        .expect(405);
+        .expect(400);
+
+      expect(response.body.error).toBeDefined();
+    });
+
+    it('should handle invalid data types in updates', async () => {
+      const invalidData = {
+        sessionTimeout: 'not-a-number',
+        theme: 123,
+        emailMarketing: 'not-a-boolean'
+      };
+
+      const response = await request(SERVER_URL)
+        .put('/api/user-preferences/me')
+        .set('Authorization', `Bearer ${authToken}`)
+        .send({ data: invalidData })
+        .timeout(10000)
+        .expect(400);
 
       expect(response.body.error).toBeDefined();
     });

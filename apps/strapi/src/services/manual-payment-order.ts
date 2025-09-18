@@ -196,7 +196,7 @@ export default ({ strapi }: { strapi: any }) => ({
           order: orderId
         },
         populate: ['paymentMethod', 'confirmedBy'],
-        sort: { createdAt: 'desc' }
+        sort: 'createdAt:desc'
       })
 
       return {
@@ -288,11 +288,9 @@ export default ({ strapi }: { strapi: any }) => ({
           status: 'pending'
         },
         populate: ['user', 'paymentMethod'],
-        sort: { createdAt: 'asc' },
-        pagination: {
-          page,
-          pageSize
-        }
+        sort: 'createdAt:asc',
+        limit: pageSize,
+        start: (page - 1) * pageSize,
       })
 
       return {

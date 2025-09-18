@@ -253,26 +253,26 @@ export default ({ strapi }: { strapi: any }): CartCalculationService => ({
       // For now, using simplified logic
       let discountAmount = 0;
 
-      switch (discountCode.toUpperCase()) {
-        case 'WELCOME10':
-          discountAmount = Math.round(subtotal * 0.10); // 10% off
-          break;
-        case 'SAVE20':
-          discountAmount = Math.round(subtotal * 0.20); // 20% off
-          break;
-        case 'FREESHIP':
-          // This would be handled in shipping calculation
-          discountAmount = 0;
-          break;
-        default:
-          // Check if it's a fixed amount discount
-          if (discountCode.startsWith('SAVE')) {
-            const amount = parseInt(discountCode.substring(4));
-            if (!isNaN(amount)) {
-              discountAmount = amount * 100; // Convert to cents
-            }
-          }
-      }
+      // switch (discountCode.toUpperCase()) {
+      //   case 'WELCOME10':
+      //     discountAmount = Math.round(subtotal * 0.10); // 10% off
+      //     break;
+      //   case 'SAVE20':
+      //     discountAmount = Math.round(subtotal * 0.20); // 20% off
+      //     break;
+      //   case 'FREESHIP':
+      //     // This would be handled in shipping calculation
+      //     discountAmount = 0;
+      //     break;
+      //   default:
+      //     // Check if it's a fixed amount discount
+      //     if (discountCode.startsWith('SAVE')) {
+      //       const amount = parseInt(discountCode.substring(4));
+      //       if (!isNaN(amount)) {
+      //         discountAmount = amount * 100; // Convert to cents
+      //       }
+      //     }
+      // }
 
       // Ensure discount doesn't exceed subtotal
       return Math.min(discountAmount, subtotal);

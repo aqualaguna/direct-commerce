@@ -19,9 +19,6 @@ const mockStrapi = {
     update: jest.fn() as jest.MockedFunction<any>,
     delete: jest.fn() as jest.MockedFunction<any>,
     count: jest.fn() as jest.MockedFunction<any>,
-    publish: jest.fn() as jest.MockedFunction<any>,
-    unpublish: jest.fn() as jest.MockedFunction<any>,
-    discardDraft: jest.fn() as jest.MockedFunction<any>,
   })),
   log: {
     error: jest.fn(),
@@ -81,7 +78,6 @@ describe('Option Value Controller', () => {
           value: 'S',
           displayName: 'Small',
           sortOrder: 1,
-          status: 'published',
           createdAt: '2025-01-26T10:00:00Z',
         },
         {
@@ -89,7 +85,6 @@ describe('Option Value Controller', () => {
           value: 'M',
           displayName: 'Medium',
           sortOrder: 2,
-          status: 'published',
           createdAt: '2025-01-26T11:00:00Z',
         },
       ];
@@ -103,9 +98,6 @@ describe('Option Value Controller', () => {
         update: jest.fn(),
         delete: jest.fn(),
         count: jest.fn(),
-        publish: jest.fn(),
-        unpublish: jest.fn(),
-        discardDraft: jest.fn(),
       } as any);
 
       // Ensure context has proper structure
@@ -121,7 +113,7 @@ describe('Option Value Controller', () => {
       expect(
         mockStrapi.documents('api::option-value.option-value').findMany
       ).toHaveBeenCalledWith({
-        filters: { status: 'published' },
+        filters: {},
         sort: { sortOrder: 'asc', createdAt: 'desc' },
         pagination: { page: 1, pageSize: 25 },
         populate: ['optionGroup', 'variants'],
@@ -135,7 +127,6 @@ describe('Option Value Controller', () => {
           value: 'S',
           displayName: 'Small',
           sortOrder: 1,
-          status: 'published',
         },
       ];
 
@@ -155,9 +146,6 @@ describe('Option Value Controller', () => {
         update: jest.fn(),
         delete: jest.fn(),
         count: jest.fn(),
-        publish: jest.fn(),
-        unpublish: jest.fn(),
-        discardDraft: jest.fn(),
       } as any);
 
       const result = await optionValueController.find(mockContext);
@@ -166,7 +154,7 @@ describe('Option Value Controller', () => {
       expect(
         mockStrapi.documents('api::option-value.option-value').findMany
       ).toHaveBeenCalledWith({
-        filters: { optionGroup: 'size-group', status: 'published' },
+        filters: { optionGroup: 'size-group'},
         sort: { value: 'asc' },
         pagination: { page: 2, pageSize: 10 },
         populate: ['optionGroup', 'variants'],
@@ -185,9 +173,6 @@ describe('Option Value Controller', () => {
         update: jest.fn(),
         delete: jest.fn(),
         count: jest.fn(),
-        publish: jest.fn(),
-        unpublish: jest.fn(),
-        discardDraft: jest.fn(),
       } as any);
 
       await optionValueController.find(mockContext);
@@ -209,7 +194,6 @@ describe('Option Value Controller', () => {
         value: 'S',
         displayName: 'Small',
         sortOrder: 1,
-        status: 'published',
       };
 
       mockContext.params = { documentId: 'size-s' };
@@ -223,9 +207,6 @@ describe('Option Value Controller', () => {
         update: jest.fn(),
         delete: jest.fn(),
         count: jest.fn(),
-        publish: jest.fn(),
-        unpublish: jest.fn(),
-        discardDraft: jest.fn(),
       } as any);
 
       const result = await optionValueController.findOne(mockContext);
@@ -288,7 +269,6 @@ describe('Option Value Controller', () => {
         value: 'S',
         displayName: 'Small',
         sortOrder: 1,
-        status: 'draft',
       };
 
       mockContext.request.body = {
@@ -365,7 +345,6 @@ describe('Option Value Controller', () => {
         value: 'S',
         displayName: 'Small Size',
         sortOrder: 1,
-        status: 'published',
       };
 
       mockContext.params = { documentId: 'size-s' };
@@ -436,9 +415,6 @@ describe('Option Value Controller', () => {
         update: jest.fn(),
         delete: jest.fn().mockResolvedValue(undefined as never),
         count: jest.fn(),
-        publish: jest.fn(),
-        unpublish: jest.fn(),
-        discardDraft: jest.fn(),
       } as any);
 
       const result = await optionValueController.delete(mockContext);
@@ -510,7 +486,7 @@ describe('Option Value Controller', () => {
       expect(
         mockStrapi.documents('api::option-value.option-value').findMany
       ).toHaveBeenCalledWith({
-        filters: { optionGroup: 'size-group', status: 'published' },
+        filters: { optionGroup: 'size-group' },
         sort: { sortOrder: 'asc' },
         populate: ['optionGroup'],
       });
@@ -527,41 +503,6 @@ describe('Option Value Controller', () => {
     });
   });
 
-  describe('findActive', () => {
-    it('should return only active option values', async () => {
-      const mockActiveOptionValues = [
-        {
-          documentId: 'size-s',
-          value: 'S',
-          displayName: 'Small',
-          sortOrder: 1,
-          isActive: true,
-        },
-        {
-          documentId: 'size-m',
-          value: 'M',
-          displayName: 'Medium',
-          sortOrder: 2,
-          isActive: true,
-        },
-      ];
-
-      mockStrapi
-        .documents('api::option-value.option-value')
-        .findMany.mockResolvedValue(mockActiveOptionValues);
-
-      const result = await optionValueController.findActive(mockContext);
-
-      expect(result).toEqual(mockActiveOptionValues);
-      expect(
-        mockStrapi.documents('api::option-value.option-value').findMany
-      ).toHaveBeenCalledWith({
-        filters: { isActive: true, status: 'published' },
-        sort: { sortOrder: 'asc' },
-        populate: ['optionGroup'],
-      });
-    });
-  });
 
   describe('findByProductListing', () => {
     it('should return option values for a specific product listing', async () => {
@@ -599,9 +540,6 @@ describe('Option Value Controller', () => {
         update: jest.fn(),
         delete: jest.fn(),
         count: jest.fn(),
-        publish: jest.fn(),
-        unpublish: jest.fn(),
-        discardDraft: jest.fn(),
       } as any);
 
       const result =
@@ -619,7 +557,6 @@ describe('Option Value Controller', () => {
       ).toHaveBeenCalledWith({
         filters: {
           optionGroup: { $in: ['size-group', 'color-group'] },
-          status: 'published',
         },
         sort: { sortOrder: 'asc' },
         populate: ['optionGroup'],

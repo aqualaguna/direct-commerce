@@ -61,7 +61,8 @@ export default factories.createCoreService(
           'api::inventory.inventory'
         ).findMany({
           filters: { product: productId },
-          pagination: { page: 1, pageSize: 1 },
+          limit: 1,
+          start: 0,
         });
 
         if (existingInventory.data?.length > 0) {

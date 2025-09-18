@@ -41,8 +41,9 @@ export default ({ strapi }: { strapi: any }) => ({
       // Get all activities for this session
       const activities = await strapi.documents('api::checkout-activity.checkout-activity').findMany({
         filters: { checkoutSessionId },
-        sort: { timestamp: 'asc' },
-        pagination: { page: 1, pageSize: 1000 }
+        sort: 'timestamp:asc',
+        limit: 1000,
+        start: 0,
       });
 
       if (activities.length === 0) {
@@ -136,8 +137,9 @@ export default ({ strapi }: { strapi: any }) => ({
             $lte: end
           }
         },
-        sort: { timestamp: 'asc' },
-        pagination: { page: 1, pageSize: 10000 }
+        sort: 'timestamp:asc',
+        limit: 10000,
+        start: 0,
       });
 
       // Get all step exit events in date range
@@ -149,8 +151,9 @@ export default ({ strapi }: { strapi: any }) => ({
             $lte: end
           }
         },
-        sort: { timestamp: 'asc' },
-        pagination: { page: 1, pageSize: 10000 }
+        sort: 'timestamp:asc',
+        limit: 10000,
+        start: 0,
       });
 
       // Get all completion events in date range
@@ -162,8 +165,9 @@ export default ({ strapi }: { strapi: any }) => ({
             $lte: end
           }
         },
-        sort: { timestamp: 'asc' },
-        pagination: { page: 1, pageSize: 10000 }
+        sort: 'timestamp:asc',
+        limit: 10000,
+        start: 0,
       });
 
       // Define checkout steps in order
@@ -231,8 +235,9 @@ export default ({ strapi }: { strapi: any }) => ({
             $lte: end
           }
         },
-        sort: { timestamp: 'asc' },
-        pagination: { page: 1, pageSize: 10000 }
+        sort: 'timestamp:asc',
+        limit: 10000,
+        start: 0,
       });
 
       // Group activities by session
@@ -336,8 +341,9 @@ export default ({ strapi }: { strapi: any }) => ({
             $gte: oneHourAgo
           }
         },
-        sort: { timestamp: 'desc' },
-        pagination: { page: 1, pageSize: 1000 }
+        sort: 'timestamp:desc',
+        limit: 1000,
+        start: 0,
       });
 
       // Get daily activities
@@ -347,8 +353,9 @@ export default ({ strapi }: { strapi: any }) => ({
             $gte: oneDayAgo
           }
         },
-        sort: { timestamp: 'desc' },
-        pagination: { page: 1, pageSize: 10000 }
+        sort: 'timestamp:desc',
+        limit: 10000,
+        start: 0,
       });
 
       // Calculate metrics

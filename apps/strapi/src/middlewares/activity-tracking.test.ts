@@ -61,6 +61,10 @@ describe('Activity Tracking Middleware', () => {
         },
         socket: { remoteAddress: '192.168.1.1' }
       },
+      response: {
+        body: null
+      },
+      status: 200, // Set default status to 200 for successful requests
       query: {},
       method: 'POST'
     };
@@ -101,7 +105,27 @@ describe('Activity Tracking Middleware', () => {
         data: expect.objectContaining({
           user: 'user-123',
           activityType: 'page_view',
-          success: true
+          success: true,
+          activityData: expect.objectContaining({
+            url: '/api/products',
+            method: 'GET',
+            timestamp: expect.any(String)
+          }),
+          deviceInfo: expect.objectContaining({
+            browser: null,
+            device: null,
+            mobile: false,
+            os: 'Windows'
+          }),
+          ipAddress: '192.168.1.0',
+          location: 'New York, NY, US',
+          sessionId: 'session-123',
+          userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          sessionDuration: expect.any(Number),
+          metadata: expect.objectContaining({
+            timestamp: expect.any(String),
+            serverTime: expect.any(Number)
+          })
         })
       });
     });
@@ -125,7 +149,29 @@ describe('Activity Tracking Middleware', () => {
         data: expect.objectContaining({
           user: 'user-123',
           activityType: 'login',
-          success: true
+          success: true,
+          activityData: expect.objectContaining({
+            action: 'login',
+            endpoint: '/api/auth/local',
+            method: 'POST',
+            url: '/api/auth/local',
+            timestamp: expect.any(String)
+          }),
+          deviceInfo: expect.objectContaining({
+            browser: null,
+            device: null,
+            mobile: false,
+            os: 'Windows'
+          }),
+          ipAddress: '192.168.1.0',
+          location: 'New York, NY, US',
+          sessionId: 'session-123',
+          userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          sessionDuration: expect.any(Number),
+          metadata: expect.objectContaining({
+            timestamp: expect.any(String),
+            serverTime: expect.any(Number)
+          })
         })
       });
     });
@@ -141,6 +187,7 @@ describe('Activity Tracking Middleware', () => {
       mockContext.state.user = mockUser;
       mockContext.request.url = '/api/auth/local';
       mockContext.method = 'POST';
+      mockContext.status = 401; // Set status to 401 for failed request
       
       const testError = new Error('Authentication failed');
       mockNext.mockRejectedValueOnce(testError);
@@ -153,7 +200,28 @@ describe('Activity Tracking Middleware', () => {
           user: 'user-123',
           activityType: 'login',
           success: false,
-          errorMessage: 'Authentication failed'
+          errorMessage: 'Authentication failed',
+          activityData: expect.objectContaining({
+            action: 'login',
+            endpoint: '/api/auth/local',
+            method: 'POST',
+            url: '/api/auth/local',
+            timestamp: expect.any(String)
+          }),
+          deviceInfo: expect.objectContaining({
+            browser: null,
+            device: null,
+            mobile: false,
+            os: 'Windows'
+          }),
+          ipAddress: '192.168.1.0',
+          location: 'New York, NY, US',
+          sessionId: 'session-123',
+          userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          metadata: expect.objectContaining({
+            timestamp: expect.any(String),
+            serverTime: expect.any(Number)
+          })
         })
       });
     });
@@ -204,7 +272,19 @@ describe('Activity Tracking Middleware', () => {
       
       expect(mockStrapi.documents('api::user-activity.user-activity').create).toHaveBeenCalledWith({
         data: expect.objectContaining({
-          activityType: 'login'
+          activityType: 'login',
+          activityData: expect.objectContaining({
+            action: 'login',
+            endpoint: '/api/auth/local',
+            method: 'POST',
+            url: '/api/auth/local',
+            timestamp: expect.any(String)
+          }),
+          sessionDuration: expect.any(Number),
+          metadata: expect.objectContaining({
+            timestamp: expect.any(String),
+            serverTime: expect.any(Number)
+          })
         })
       });
     });
@@ -217,7 +297,19 @@ describe('Activity Tracking Middleware', () => {
       
       expect(mockStrapi.documents('api::user-activity.user-activity').create).toHaveBeenCalledWith({
         data: expect.objectContaining({
-          activityType: 'account_created'
+          activityType: 'account_created',
+          activityData: expect.objectContaining({
+            action: 'login',
+            endpoint: '/api/auth/local/register',
+            method: 'POST',
+            url: '/api/auth/local/register',
+            timestamp: expect.any(String)
+          }),
+          sessionDuration: expect.any(Number),
+          metadata: expect.objectContaining({
+            timestamp: expect.any(String),
+            serverTime: expect.any(Number)
+          })
         })
       });
     });
@@ -230,7 +322,19 @@ describe('Activity Tracking Middleware', () => {
       
       expect(mockStrapi.documents('api::user-activity.user-activity').create).toHaveBeenCalledWith({
         data: expect.objectContaining({
-          activityType: 'profile_update'
+          activityType: 'profile_update',
+          activityData: expect.objectContaining({
+            action: 'update_profile',
+            endpoint: '/api/users/me',
+            method: 'PUT',
+            url: '/api/users/me',
+            timestamp: expect.any(String)
+          }),
+          sessionDuration: expect.any(Number),
+          metadata: expect.objectContaining({
+            timestamp: expect.any(String),
+            serverTime: expect.any(Number)
+          })
         })
       });
     });
@@ -243,7 +347,19 @@ describe('Activity Tracking Middleware', () => {
       
       expect(mockStrapi.documents('api::user-activity.user-activity').create).toHaveBeenCalledWith({
         data: expect.objectContaining({
-          activityType: 'preference_change'
+          activityType: 'preference_change',
+          activityData: expect.objectContaining({
+            action: 'update_preferences',
+            endpoint: '/api/user-preferences',
+            method: 'PUT',
+            url: '/api/user-preferences',
+            timestamp: expect.any(String)
+          }),
+          sessionDuration: expect.any(Number),
+          metadata: expect.objectContaining({
+            timestamp: expect.any(String),
+            serverTime: expect.any(Number)
+          })
         })
       });
     });

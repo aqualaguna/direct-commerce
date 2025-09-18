@@ -154,7 +154,8 @@ export default ({ strapi }: { strapi: any }) => ({
       const activities = await strapi.documents('api::checkout-activity.checkout-activity').findMany({
         filters,
         sort,
-        pagination,
+        limit: pagination.pageSize,
+        start: (pagination.page - 1) * pagination.pageSize,
         populate: ['userId']
       });
 

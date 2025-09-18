@@ -238,10 +238,8 @@ export default ({ strapi }: { strapi: any }) => ({
           { dueDate: 'asc' },
           { createdAt: 'asc' }
         ],
-        pagination: {
-          page,
-          pageSize
-        }
+        limit: pageSize,
+        start: (page - 1) * pageSize,
       })
 
       return {
@@ -377,7 +375,7 @@ export default ({ strapi }: { strapi: any }) => ({
       const reviews = await strapi.documents('api::payment-review.payment-review').findMany({
         filters,
         populate: ['manualPayment', 'assignedTo'],
-        sort: { createdAt: 'desc' }
+        sort: 'createdAt:desc'
       })
 
       return {

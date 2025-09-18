@@ -101,8 +101,9 @@ export default factories.createCoreService(
           .documents('api::product.product')
           .findMany({
             filters,
-            sort: options.sort || { createdAt: 'desc' },
-            pagination: options.pagination || { page: 1, pageSize: 25 },
+            sort: options.sort || 'createdAt:desc',
+            limit: options.pagination?.pageSize || 25,
+            start: (options.pagination?.page || 1) - 1 * (options.pagination?.pageSize || 25),
             populate: {
               category: {
                 fields: ['id', 'name', 'slug'],
@@ -134,8 +135,9 @@ export default factories.createCoreService(
           .documents('api::product.product')
           .findMany({
             filters,
-            sort: options.sort || { createdAt: 'desc' },
-            pagination: options.pagination || { page: 1, pageSize: 25 },
+            sort: options.sort || 'createdAt:desc',
+            limit: options.pagination?.pageSize || 25,
+            start: (options.pagination?.page || 1) - 1 * (options.pagination?.pageSize || 25),
             populate: {
               category: {
                 fields: ['id', 'name', 'slug'],
@@ -243,8 +245,9 @@ export default factories.createCoreService(
           .documents('api::product.product')
           .findMany({
             filters,
-            sort: options.sort || { createdAt: 'desc' },
-            pagination: options.pagination || { page: 1, pageSize: 25 },
+            sort: options.sort || 'createdAt:desc',
+            limit: options.pagination?.pageSize || 25,
+            start: (options.pagination?.page || 1) - 1 * (options.pagination?.pageSize || 25),
             populate: {
               category: {
                 fields: ['id', 'name', 'slug'],

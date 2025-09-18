@@ -148,9 +148,9 @@ export default factories.createCoreController(
         // Validate required fields with proper type checking
         const requiredFields: (keyof ProductData)[] = [
           'name',
-          'description',
           'sku',
           'inventory',
+          'status',
         ];
 
         for (const field of requiredFields) {
@@ -174,6 +174,14 @@ export default factories.createCoreController(
 
         if ((existingProducts as unknown[]).length > 0) {
           return ctx.badRequest('SKU must be unique');
+        }
+
+        if (data.description) {
+          data.description = '';
+        }
+        
+        if(!['draft', 'active', 'inactive'].includes(data.status)) {
+          return ctx.badRequest('Invalid status');
         }
 
         // Create product using Document Service API
@@ -609,14 +617,9 @@ export default factories.createCoreController(
           .documents('api::product.product')
           .findMany({
             filters,
-            sort: { createdAt: 'desc' },
-            pagination: {
-              page: Math.max(1, parseInt(String(query.page || 1))),
-              pageSize: Math.min(
-                Math.max(1, parseInt(String(query.pageSize || 25))),
-                100
-              ),
-            },
+            sort: 'createdAt:desc',
+            limit: Math.min(parseInt(String(query.pageSize || 25)), 100),
+            start: (parseInt(String(query.page || 1)) - 1) * Math.min(parseInt(String(query.pageSize || 25)), 100),
             populate: {
               category: {
                 fields: ['id', 'name', 'slug'], // Use documentId instead of id

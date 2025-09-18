@@ -318,7 +318,7 @@ export default ({ strapi }: { strapi: any }) => ({
           manualPayment: manualPaymentId
         },
         populate: ['confirmedBy', 'orderStatusUpdate'],
-        sort: { confirmedAt: 'desc' }
+        sort: 'confirmedAt:desc'
       })
 
       return {

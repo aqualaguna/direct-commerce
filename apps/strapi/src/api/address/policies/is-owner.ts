@@ -4,7 +4,7 @@
 
 export default async (policyContext: any, config: any, { strapi }: any) => {
   const { user } = policyContext.state;
-  const { id } = policyContext.params;
+  const { documentId } = policyContext.params;
 
   if (!user) {
     return false;
@@ -16,14 +16,11 @@ export default async (policyContext: any, config: any, { strapi }: any) => {
   }
 
   // For specific address operations, check if user owns the address
-  if (id) {
-    const address = await strapi.entityService.findOne(
-      'api::address.address',
-      id,
-      {
-        populate: ['user'],
-      }
-    );
+  if (documentId) {
+    const address = await strapi.documents('api::address.address').findOne({
+      documentId,
+      populate: ['user'],
+    });
 
     if (!address) {
       return false;

@@ -139,16 +139,27 @@ export default {
 
     // Validate phone number
     if (profileData.phone) {
-      const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
-      if (!phoneRegex.test(profileData.phone.replace(/\s/g, ''))) {
-        errors.push('Invalid phone number format');
+      // Ensure phone is a string
+      if (typeof profileData.phone !== 'string') {
+        errors.push('Phone number must be a string');
+      } else {
+        // More flexible phone regex that accepts common formats
+        const phoneRegex = /^[\+]?[1-9][\d\s\-\(\)]{7,19}$/;
+        const cleanPhone = profileData.phone.replace(/[\s\-\(\)]/g, '');
+        if (!phoneRegex.test(profileData.phone) || cleanPhone.length < 8 || cleanPhone.length > 20) {
+          errors.push('Invalid phone number format');
+        }
       }
     }
 
     // Validate website URL
     if (profileData.website) {
       try {
-        new URL(profileData.website);
+        const url = new URL(profileData.website);
+        // Only allow http and https protocols
+        if (!['http:', 'https:'].includes(url.protocol)) {
+          errors.push('Invalid website URL');
+        }
       } catch {
         errors.push('Invalid website URL');
       }
@@ -168,6 +179,11 @@ export default {
     // Validate bio length
     if (profileData.bio && profileData.bio.length > 500) {
       errors.push('Bio must be less than 500 characters');
+    }
+
+    // Validate gender
+    if (profileData.gender && !['male', 'female', 'other', 'prefer-not-to-say'].includes(profileData.gender)) {
+      errors.push('Gender must be male, female, other, or prefer-not-to-say');
     }
 
     return {

@@ -280,7 +280,7 @@ export default {
           const variant = await strapi.documents('api::product-listing-variant.product-listing-variant').findOne({
             documentId: item.variant.documentId
           });
-          currentPrice = variant?.price || 0;
+          currentPrice = variant?.basePrice || 0;
         } else {
           const product = await strapi.documents('api::product-listing.product-listing').findOne({
             documentId: item.product.documentId

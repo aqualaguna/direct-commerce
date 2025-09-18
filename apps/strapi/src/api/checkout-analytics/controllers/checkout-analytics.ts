@@ -60,8 +60,9 @@ export default {
       // Get activities using Document Service API
       const activities = await strapi.documents('api::checkout-activity.checkout-activity').findMany({
         filters,
-        sort: { timestamp: 'desc' },
-        pagination,
+        sort: 'timestamp:desc',
+        limit: pagination.pageSize,
+        start: (pagination.page - 1) * pagination.pageSize,
         populate: ['userId']
       });
 
@@ -273,8 +274,9 @@ export default {
           $lte: new Date(endDate)
         }
       },
-      sort: { timestamp: 'asc' },
-      pagination: { page: 1, pageSize: 10000 }
+      sort: 'timestamp:asc',
+      limit: 10000,
+      start: 0,
     });
 
     return activities;

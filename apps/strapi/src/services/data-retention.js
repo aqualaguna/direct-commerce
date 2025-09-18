@@ -157,7 +157,8 @@ module.exports = {
           }
         },
         fields: ['documentId'],
-        pagination: { page: 1, pageSize: 1000 }
+        limit: 1000,
+        start: 0,
       });
 
       const activitiesData = oldActivities.data || oldActivities || [];
@@ -199,7 +200,8 @@ module.exports = {
           }
         },
         fields: ['documentId'],
-        pagination: { page: 1, pageSize: 1000 }
+        limit: 1000,
+        start: 0,
       });
 
       const activitiesData = failedActivities.data || failedActivities || [];
@@ -245,7 +247,8 @@ module.exports = {
           }
         },
         fields: ['documentId'],
-        pagination: { page: 1, pageSize: 100 }
+        limit: 100,
+        start: 0,
       });
 
       processedCount = (sessionActivities.data || sessionActivities || []).length;
@@ -277,7 +280,8 @@ module.exports = {
           }
         },
         fields: ['documentId', 'ipAddress', 'userAgent'],
-        pagination: { page: 1, pageSize: 500 }
+        limit: 500,
+        start: 0,
       });
 
       const activitiesData = oldActivities.data || oldActivities || [];
@@ -322,8 +326,9 @@ module.exports = {
     try {
       // Find potential duplicates (same user, same activity type, within 1 minute)
       const activities = await strapi.documents('api::user-activity.user-activity').findMany({
-        sort: { createdAt: 'desc' },
-        pagination: { page: 1, pageSize: 2000 }
+        sort: 'createdAt:desc',
+        limit: 2000,
+        start: 0,
       });
 
       const activitiesData = activities.data || activities || [];
@@ -374,7 +379,8 @@ module.exports = {
             $lt: cutoffDate
           }
         },
-        pagination: { page: 1, pageSize: 100 }
+        limit: 100,
+        start: 0,
       });
 
       const activitiesData = oldActivities.data || oldActivities || [];

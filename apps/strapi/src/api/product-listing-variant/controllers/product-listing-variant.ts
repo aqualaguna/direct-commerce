@@ -18,9 +18,7 @@ export default factories.createCoreController(
         } as any;
 
         // Apply sorting with validation
-        const sort = (query.sort as Record<string, any>) || {
-          createdAt: 'desc',
-        };
+        const sort = (query.sort as Record<string, any>) || 'createdAt:desc';
 
         // Apply pagination with improved validation
         const pagination = {
@@ -37,7 +35,8 @@ export default factories.createCoreController(
           .findMany({
             filters,
             sort,
-            pagination,
+            limit: pagination.pageSize,
+            start: (pagination.page - 1) * pagination.pageSize,
             populate: ['productListing', 'optionValues', 'images'],
           });
 
@@ -78,9 +77,11 @@ export default factories.createCoreController(
     async create(ctx) {
       try {
         const { data } = ctx.request.body;
-
-        if (!data.sku || !data.price || !data.productListing) {
-          return ctx.badRequest('SKU, price, and product listing are required');
+        const validationService = strapi.service('api::product-listing-variant.product-listing-variant-validation');
+        const validationResult = await validationService.validateVariantData(data);
+        
+        if (!validationResult.isValid) {
+          return ctx.badRequest("Validation failed", validationResult.errors);
         }
 
         // Use Document Service API for creation
@@ -165,7 +166,7 @@ export default factories.createCoreController(
           .documents('api::product-listing-variant.product-listing-variant')
           .findMany({
             filters,
-            sort: { createdAt: 'asc' },
+            sort: 'createdAt:asc',
             populate: ['optionValues', 'images'],
           });
 

@@ -30,7 +30,7 @@ export default ({ strapi }: { strapi: any }) => ({
         filters: {
           isActive: true
         },
-        sort: { name: 'asc' }
+        sort: 'name:asc'
       })
 
       return {

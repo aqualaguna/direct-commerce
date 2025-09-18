@@ -26,9 +26,7 @@ export default factories.createCoreService(
           .documents('api::category.category')
           .findMany({
             filters,
-            pagination: {
-              limit: 1,
-            },
+            limit: 1,
           });
 
         return categories.length > 0 ? categories[0] : null;
@@ -100,9 +98,7 @@ export default factories.createCoreService(
           .findMany({
             filters,
             sort: { sortOrder: 'desc' },
-            pagination: {
-              limit: 1,
-            },
+            limit: 1,
           });
 
         if (categories.length === 0) {
@@ -127,7 +123,7 @@ export default factories.createCoreService(
           .findMany({
             filters: {
             },
-            sort: { sortOrder: 'asc', name: 'asc' },
+            sort: 'name:asc',
             populate: {
               parent: true,
               children: true,
@@ -458,7 +454,7 @@ export default factories.createCoreService(
             filters: {
               category: { $in: categoryIds } as any,
             },
-            sort: { createdAt: 'desc' },
+            sort: 'createdAt:desc',
             populate: {
               category: {
                 fields: ['id', 'name', 'slug'] as any,
@@ -585,7 +581,7 @@ export default factories.createCoreService(
             filters: {
               category: { $null: true } as any,
             },
-            sort: { createdAt: 'desc' },
+            sort: 'createdAt:desc',
           });
 
         return products;
@@ -607,13 +603,13 @@ export default factories.createCoreService(
               parent: { $null: true } as any,
               isActive: true,
             },
-            sort: { sortOrder: 'asc', name: 'asc' },
+            sort: 'name:asc',
             populate: {
               children: {
                 filters: {
                   isActive: true,
                 },
-                sort: { sortOrder: 'asc', name: 'asc' },
+                sort: 'name:asc',
                 fields: ['id', 'name', 'slug', 'sortOrder'],
               },
             },
@@ -724,7 +720,7 @@ export default factories.createCoreService(
           .documents('api::category.category')
           .findMany({
             filters,
-            sort: { sortOrder: 'asc', name: 'asc' },
+            sort: 'name:asc',
             fields: ['id', 'name', 'slug', 'sortOrder'],
           });
 
@@ -750,7 +746,7 @@ export default factories.createCoreService(
               ],
               isActive: true,
             },
-            sort: { name: 'asc' },
+            sort: 'name:asc',
             limit,
             populate: {
               parent: {

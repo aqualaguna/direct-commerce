@@ -40,7 +40,7 @@
       "type": "decimal",
       "min": 0
     },
-    "comparePrice": {
+    "discountPrice": {
       "type": "decimal",
       "min": 0
     },

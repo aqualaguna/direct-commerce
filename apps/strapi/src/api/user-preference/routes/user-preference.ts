@@ -35,36 +35,6 @@ export default {
         }
       }
     },
-    // Get specific preference category
-    {
-      method: 'GET',
-      path: '/user-preferences/me/:category',
-      handler: 'user-preference.getMyPreferenceCategory',
-      config: {
-        policies: ['global::is-authenticated'],
-        description: 'Get specific preference category (communication, notifications, security, localization)',
-        tag: {
-          plugin: 'user-preference',
-          name: 'User Preferences',
-          actionType: 'read'
-        }
-      }
-    },
-    // Update specific preference category
-    {
-      method: 'PATCH',
-      path: '/user-preferences/me/:category',
-      handler: 'user-preference.updateMyPreferenceCategory',
-      config: {
-        policies: ['global::is-authenticated'],
-        description: 'Update specific preference category',
-        tag: {
-          plugin: 'user-preference',
-          name: 'User Preferences',
-          actionType: 'update'
-        }
-      }
-    },
     // Reset preferences to defaults
     {
       method: 'POST',
@@ -92,6 +62,36 @@ export default {
           plugin: 'user-preference',
           name: 'User Preferences',
           actionType: 'read'
+        }
+      }
+    },
+    // Get specific preference category
+    {
+      method: 'GET',
+      path: '/user-preferences/me/:category',
+      handler: 'user-preference.getMyPreferenceCategory',
+      config: {
+        policies: ['global::is-authenticated'],
+        description: 'Get specific preference category (communication, notifications, security, localization)',
+        tag: {
+          plugin: 'user-preference',
+          name: 'User Preferences',
+          actionType: 'read'
+        }
+      }
+    },
+    // Update specific preference category
+    {
+      method: 'PATCH',
+      path: '/user-preferences/me/:category',
+      handler: 'user-preference.updateMyPreferenceCategory',
+      config: {
+        policies: ['global::is-authenticated'],
+        description: 'Update specific preference category',
+        tag: {
+          plugin: 'user-preference',
+          name: 'User Preferences',
+          actionType: 'update'
         }
       }
     }

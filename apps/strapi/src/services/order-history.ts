@@ -270,11 +270,9 @@ export default {
 
       const history = await strapi.documents('api::order-history.order-history').findMany({
         filters,
-        sort: { createdAt: 'desc' },
-        pagination: {
-          page: query.page || 1,
-          pageSize: Math.min(query.pageSize || 25, 100)
-        },
+        sort: 'createdAt:desc',
+        limit: query.pageSize || 25,
+        start: (query.page - 1) * (query.pageSize || 25),
         populate: ['order', 'changedBy']
       });
 
@@ -345,8 +343,9 @@ export default {
 
       const history = await strapi.documents('api::order-history.order-history').findMany({
         filters,
-        sort: { createdAt: 'desc' },
-        pagination: { page, pageSize },
+        sort: 'createdAt:desc',
+        limit: pageSize,
+        start: (page - 1) * pageSize,
         populate: ['order', 'changedBy']
       });
 

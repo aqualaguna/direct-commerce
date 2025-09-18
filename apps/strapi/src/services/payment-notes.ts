@@ -117,8 +117,9 @@ export default ({ strapi }: { strapi: any }) => ({
 
       const paymentNotes = await strapi.documents('api::payment-comment.payment-comment').findMany({
         filters: queryFilters,
-        sort: { createdAt: 'desc' },
-        pagination,
+        sort: 'createdAt:desc',
+        limit: pagination.pageSize,
+        start: (pagination.page - 1) * pagination.pageSize,
         populate: ['manualPayment', 'author']
       })
 
@@ -271,7 +272,7 @@ export default ({ strapi }: { strapi: any }) => ({
 
       const notes = await strapi.documents('api::payment-comment.payment-comment').findMany({
         filters,
-        sort: { createdAt: 'desc' },
+        sort: 'createdAt:desc',
         populate: ['author']
       })
 

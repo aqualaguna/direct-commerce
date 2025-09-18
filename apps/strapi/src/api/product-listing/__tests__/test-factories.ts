@@ -9,12 +9,10 @@ import request from 'supertest';
 
 export interface TestProductData {
   name: string;
+  brand: string;
   sku: string;
-  basePrice: number;
-  comparePrice?: number;
   inventory: number;
-  isActive: boolean;
-  status: 'draft' | 'published';
+  status: 'draft' | 'active' | 'inactive';
 }
 
 export interface TestCategoryData {
@@ -22,7 +20,6 @@ export interface TestCategoryData {
   slug: string;
   description: string;
   isActive: boolean;
-  status: 'draft' | 'published';
 }
 
 export interface TestProductListingData {
@@ -31,20 +28,18 @@ export interface TestProductListingData {
   shortDescription?: string;
   type: 'single' | 'variant';
   basePrice?: number;
-  comparePrice?: number;
+  discountPrice?: number;
   isActive: boolean;
   featured: boolean;
-  product: string;
-  category?: string;
+  product: any;
+  category?: any;
   images?: any[];
-  status: 'draft' | 'published';
 }
 
 export interface TestOptionGroupData {
   name: string;
   displayName: string;
   type: 'single' | 'multiple';
-  isRequired: boolean;
   isActive: boolean;
   status: 'draft' | 'published';
 }
@@ -60,8 +55,8 @@ export interface TestOptionValueData {
 
 export interface TestProductListingVariantData {
   sku: string;
-  price: number;
-  comparePrice?: number;
+  basePrice: number;
+  discountPrice?: number;
   inventory: number;
   isActive: boolean;
   weight?: number;
@@ -96,11 +91,9 @@ export class TestDataFactories {
     const productData: TestProductData = {
       name: `Test Product ${this.timestamp}`,
       sku: `TEST-PROD-${this.timestamp}`,
-      basePrice: 29.99,
-      comparePrice: 39.99,
+      brand: `Test Brand ${this.timestamp}`,
       inventory: 100,
-      isActive: true,
-      status: 'published',
+      status: 'active',
       ...overrides
     };
 
@@ -126,7 +119,6 @@ export class TestDataFactories {
       slug: `test-category-${this.timestamp}`,
       description: 'Test category for integration tests',
       isActive: true,
-      status: 'published',
       ...overrides
     };
 
@@ -158,13 +150,12 @@ export class TestDataFactories {
       description: 'Test product listing description for integration testing',
       shortDescription: 'Short description for testing',
       type: 'single',
-      basePrice: 29.99,
-      comparePrice: 39.99,
+      basePrice: 49.99,
+      discountPrice: 39.99,
       isActive: true,
       featured: false,
       product: overrides.product,
       images: [],
-      status: 'published',
       ...overrides
     };
 
@@ -189,7 +180,6 @@ export class TestDataFactories {
       name: `Test Option Group ${this.timestamp}`,
       displayName: 'Size',
       type: 'single',
-      isRequired: true,
       isActive: true,
       status: 'published',
       ...overrides
@@ -253,8 +243,8 @@ export class TestDataFactories {
 
     const variantData: TestProductListingVariantData = {
       sku: `TEST-VARIANT-${this.timestamp}`,
-      price: 34.99,
-      comparePrice: 44.99,
+      basePrice: 134.99,
+      discountPrice: 44.99,
       inventory: 50,
       isActive: true,
       weight: 1.5,
@@ -369,7 +359,7 @@ export class TestDataFactories {
       const variant = await this.createProductListingVariant({
         productListing: productListing.documentId,
         sku: `COMPLETE-VARIANT-${i + 1}-${this.timestamp}`,
-        price: 29.99 + (i * 10),
+        basePrice: 29.99 + (i * 10),
         inventory: 20 + (i * 5),
         optionValues: [optionValues[i % optionValues.length].documentId]
       });

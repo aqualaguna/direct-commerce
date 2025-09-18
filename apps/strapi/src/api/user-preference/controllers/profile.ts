@@ -151,7 +151,7 @@ export default {
 
       // Validate file type
       const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
-      if (!allowedTypes.includes(file.type)) {
+      if (!allowedTypes.includes(file.mimetype)) {
         return ctx.badRequest('Profile picture must be JPEG, PNG, or WebP format');
       }
 

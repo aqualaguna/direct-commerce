@@ -216,7 +216,7 @@ export default ({ strapi }: { strapi: any }) => ({
           order: orderId
         },
         populate: ['updatedBy', 'paymentConfirmation'],
-        sort: { createdAt: 'desc' }
+        sort: 'createdAt:desc'
       })
 
       return {
@@ -281,7 +281,7 @@ export default ({ strapi }: { strapi: any }) => ({
       // Get most common status transitions
       const statusUpdates = await strapi.documents('api::order-status-update.order-status-update').findMany({
         fields: ['previousStatus', 'newStatus'],
-        sort: { createdAt: 'desc' },
+        sort: 'createdAt:desc',
         pagination: { page: 1, pageSize: 1000 }
       })
 
@@ -365,11 +365,9 @@ export default ({ strapi }: { strapi: any }) => ({
           status
         },
         populate: ['user', 'items'],
-        sort: { createdAt: 'desc' },
-        pagination: {
-          page,
-          pageSize
-        }
+        sort: 'createdAt:desc',
+        limit: pageSize,
+        start: (page - 1) * pageSize,
       })
 
       return {
@@ -395,7 +393,7 @@ export default ({ strapi }: { strapi: any }) => ({
           order: orderId
         },
         populate: ['updatedBy', 'paymentConfirmation'],
-        sort: { createdAt: 'asc' }
+        sort: 'createdAt:asc'
       })
 
       // Create timeline of status changes

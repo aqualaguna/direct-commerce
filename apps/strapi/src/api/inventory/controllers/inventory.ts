@@ -267,7 +267,8 @@ export default factories.createCoreController(
               fields: ['id', 'username', 'email'],
             },
           },
-          pagination: { page: 1, pageSize: 1 },
+          limit: 1,
+          start: 0,
         });
 
         if (!inventory.data?.length) {
@@ -302,11 +303,9 @@ export default factories.createCoreController(
                 fields: ['documentId', 'title', 'sku', 'price'],
               },
             },
-            sort: { quantity: 'asc' },
-            pagination: {
-              page: parseInt(String(page)),
-              pageSize: parseInt(String(pageSize)),
-            },
+            sort: 'quantity:asc',
+            limit: pageSize,
+            start: (page - 1) * pageSize,
           });
 
         ctx.body = lowStockInventory;
@@ -365,11 +364,9 @@ export default factories.createCoreController(
                 fields: ['id', 'username', 'email'],
               },
             },
-            sort: { timestamp: 'desc' },
-            pagination: {
-              page: parseInt(String(page)),
-              pageSize: parseInt(String(pageSize)),
-            },
+            sort: 'timestamp:desc',
+            limit: pageSize,
+            start: (page - 1) * pageSize,
           });
 
         ctx.body = history;

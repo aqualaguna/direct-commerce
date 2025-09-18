@@ -232,6 +232,7 @@ describe('Product Controller', () => {
         description: 'New product description',
         sku: 'NEW-001',
         inventory: 10,
+        status: 'active',
       };
 
       const mockCreatedProduct = { documentId: 'doc123', ...productData };
@@ -244,9 +245,7 @@ describe('Product Controller', () => {
         badRequest: jest.fn(),
         throw: jest.fn(),
       };
-
       const result = await controller.create(ctx);
-
       expect(result.data).toEqual(mockCreatedProduct);
       expect(mockDocumentService.create).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -264,6 +263,7 @@ describe('Product Controller', () => {
         description: 'New product description',
         sku: 'EXISTING-SKU',
         inventory: 10,
+        status: 'active',
       };
 
       // Mock existing product with same SKU

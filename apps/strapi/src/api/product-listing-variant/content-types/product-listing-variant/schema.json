@@ -18,12 +18,12 @@
       "unique": true,
       "maxLength": 100
     },
-    "price": {
+    "basePrice": {
       "type": "decimal",
       "required": true,
       "min": 0
     },
-    "comparePrice": {
+    "discountPrice": {
       "type": "decimal",
       "min": 0
     },

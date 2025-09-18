@@ -138,11 +138,9 @@ export default factories.createCoreController('api::manual-payment.manual-paymen
       const payments = await strapi.documents('api::manual-payment.manual-payment').findMany({
         filters,
         populate: ['user', 'paymentMethod'],
-        sort: { createdAt: 'asc' },
-        pagination: {
-          page: parseInt(page as string),
-          pageSize: parseInt(pageSize as string)
-        }
+        sort: 'createdAt:asc',
+        limit: parseInt(pageSize as string),
+        start: (parseInt(page as string) - 1) * parseInt(pageSize as string)
       })
 
       return ctx.ok(payments)

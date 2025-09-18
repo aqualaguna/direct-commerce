@@ -164,7 +164,8 @@ export default factories.createCoreController(
           .findMany({
             filters,
             sort,
-            pagination,
+            limit: pagination.pageSize,
+            start: (pagination.page - 1) * pagination.pageSize,
             populate,
           });
 
@@ -570,7 +571,8 @@ export default factories.createCoreController(
           .findMany({
             filters,
             sort,
-            pagination,
+            limit: pagination.pageSize,
+            start: (pagination.page - 1) * pagination.pageSize,
             populate: {
               category: {
                 fields: ['id', 'name', 'slug'] as any,

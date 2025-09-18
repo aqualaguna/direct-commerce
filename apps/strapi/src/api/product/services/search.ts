@@ -118,13 +118,13 @@ export default factories.createCoreService(
         let sort: any = {};
         switch (sortBy) {
           case 'title':
-            sort = { name: sortOrder };
+            sort = `name:${sortOrder}`;
             break;
           case 'newest':
-            sort = { createdAt: 'desc' };
+            sort = 'createdAt:desc';
             break;
           case 'oldest':
-            sort = { createdAt: 'asc' };
+            sort = 'createdAt:asc';
             break;
           case 'relevance':
           default:
@@ -137,7 +137,8 @@ export default factories.createCoreService(
           .findMany({
             filters,
             sort,
-            pagination: { page, pageSize },
+            limit: pageSize,
+            start: (page - 1) * pageSize,
             populate: {
               category: {
                 fields: ['id', 'name', 'slug'],
@@ -273,7 +274,8 @@ export default factories.createCoreService(
               ],
             },
             fields: ['name', 'brand', 'sku'],
-            pagination: { page: 1, pageSize: limit * 2 },
+            limit: limit * 2,
+            start: 0,
           } as any);
 
         // Extract unique suggestions

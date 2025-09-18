@@ -37,8 +37,8 @@ describe('Product Listing and Variant Relationships Integration Tests', () => {
     const productData = {
       name: `Test Product ${timestamp}`,
       sku: `TEST-PROD-${timestamp}`,
-      basePrice: 29.99,
-      comparePrice: 39.99,
+      basePrice: 129.99,
+      discountPrice: 39.99,
       inventory: 100,
       isActive: true,
       status: 'published'
@@ -95,7 +95,6 @@ describe('Product Listing and Variant Relationships Integration Tests', () => {
       name: `Test Option Group ${timestamp}`,
       displayName: 'Size',
       type: 'single',
-      isRequired: true,
       isActive: true,
       status: 'published'
     };
@@ -226,8 +225,8 @@ describe('Product Listing and Variant Relationships Integration Tests', () => {
       const variantData = [
         {
           sku: `VARIANT-SMALL-${timestamp}`,
-          price: 24.99,
-          comparePrice: 29.99,
+          basePrice: 24.99,
+          discountPrice: 29.99,
           inventory: 50,
           isActive: true,
           weight: 1.0,
@@ -237,8 +236,8 @@ describe('Product Listing and Variant Relationships Integration Tests', () => {
         },
         {
           sku: `VARIANT-MEDIUM-${timestamp}`,
-          price: 29.99,
-          comparePrice: 34.99,
+          basePrice: 29.99,
+          discountPrice: 34.99,
           inventory: 75,
           isActive: true,
           weight: 1.2,
@@ -248,8 +247,8 @@ describe('Product Listing and Variant Relationships Integration Tests', () => {
         },
         {
           sku: `VARIANT-LARGE-${timestamp}`,
-          price: 34.99,
-          comparePrice: 39.99,
+          basePrice: 134.99,
+          discountPrice: 39.99,
           inventory: 25,
           isActive: true,
           weight: 1.5,
@@ -317,8 +316,8 @@ describe('Product Listing and Variant Relationships Integration Tests', () => {
     it('should verify variant inheritance from product listing', async () => {
       // Update product listing base price
       const updateData = {
-        basePrice: 39.99,
-        comparePrice: 49.99
+        basePrice: 139.99,
+        discountPrice: 49.99
       };
 
       await request(SERVER_URL)
@@ -337,8 +336,8 @@ describe('Product Listing and Variant Relationships Integration Tests', () => {
           .timeout(10000);
 
         // Variants should maintain their original pricing, not inherit from product listing
-        expect(response.body.price).toBe(variant.price);
-        expect(response.body.comparePrice).toBe(variant.comparePrice);
+        expect(response.body.basePrice).toBe(variant.basePrice);
+        expect(response.body.discountPrice).toBe(variant.discountPrice);
       }
     });
   });

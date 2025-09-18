@@ -22,7 +22,9 @@ module.exports = {
             $lte: end
           }
         },
-        sort: { createdAt: 'desc' },
+        sort: 'createdAt:desc',
+        limit: 10000,
+        start: 0,
         pagination: { page: 1, pageSize: 10000 } // Adjust as needed
       });
 
@@ -58,7 +60,8 @@ module.exports = {
             $lte: end
           }
         },
-        pagination: { page: 1, pageSize: 10000 }
+        limit: 10000,
+        start: 0,
       });
 
       const activityData = activities.data || activities || [];
@@ -136,7 +139,7 @@ module.exports = {
             $lte: endDate
           }
         },
-        sort: { createdAt: 'desc' }
+        sort: 'createdAt:desc',
       });
 
       const activityData = activities.data || activities || [];
@@ -232,7 +235,7 @@ module.exports = {
             $lte: endDate
           }
         },
-        sort: { createdAt: 'desc' }
+        sort: 'createdAt:desc',
       });
 
       const activities = loginActivities.data || loginActivities || [];

@@ -46,10 +46,10 @@ const mockStrapi = {
       return {
         calculatePrice: jest
           .fn<any>()
-          .mockResolvedValue({ price: 29.99, comparePrice: 39.99 }),
+          .mockResolvedValue({ basePrice: 129.99, discountPrice: 39.99 }),
         calculateVariantPrice: jest.fn<any>().mockResolvedValue({
-          price: 29.99,
-          comparePrice: 39.99,
+          basePrice: 129.99,
+          discountPrice: 39.99,
           discount: 25,
         }),
         checkAvailability: jest
@@ -748,8 +748,8 @@ describe('Product Listing Variant Controller', () => {
   describe('calculatePrice', () => {
     it('should calculate variant price with discounts', async () => {
       const mockPriceCalculation = {
-        price: 29.99,
-        comparePrice: 39.99,
+        basePrice: 129.99,
+        discountPrice: 39.99,
         discount: 25.0,
       };
 

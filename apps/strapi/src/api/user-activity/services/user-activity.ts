@@ -47,7 +47,7 @@ export default factories.createCoreService(
               fields: ['id', 'username', 'email']
             }
           },
-          sort: { createdAt: 'desc' }
+          sort: 'createdAt:desc'
         });
 
         return activities;

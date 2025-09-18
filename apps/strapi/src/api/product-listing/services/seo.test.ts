@@ -12,8 +12,8 @@ describe('SEO Service', () => {
     description:
       'This is a test product description that is long enough to be meaningful.',
     shortDescription: 'Test product short description',
-    price: 29.99,
-    comparePrice: 39.99,
+    basePrice: 129.99,
+    discountPrice: 39.99,
     sku: 'TEST-001',
     inventory: 10,
     slug: 'test-product',
@@ -185,7 +185,7 @@ describe('SEO Service', () => {
       expect(result.name).toBe('Test Product');
       expect(result.description).toBe('Test product short description');
       expect(result.sku).toBe('TEST-001');
-      expect(result.offers.price).toBe(29.99);
+      expect(result.offers.price).toBe(129.99);
       expect(result.offers.priceCurrency).toBe('USD');
       expect(result.offers.availability).toBe('https://schema.org/InStock');
     });
@@ -194,7 +194,7 @@ describe('SEO Service', () => {
       const result = seoService.generateStructuredData(mockProduct);
 
       expect(result.offers.highPrice).toBe(39.99);
-      expect(result.offers.lowPrice).toBe(29.99);
+      expect(result.offers.lowPrice).toBe(39.99);
     });
 
     it('should include category when available', () => {
@@ -349,7 +349,7 @@ describe('SEO Service', () => {
 
       const result = await seoService.optimizeSEOData(seoData, mockProduct);
 
-      expect(result.metaDescription).toContain('$29.99');
+      expect(result.metaDescription).toContain('$129.99');
     });
 
     it('should not modify if no space available', async () => {

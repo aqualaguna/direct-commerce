@@ -5,7 +5,7 @@
 
 import type { Core } from '@strapi/strapi';
 import type { Context, Next } from 'koa';
-import { defaultConfig, type ActivityTrackingConfig } from './activity-tracking.config';
+import { defaultConfig, type ActivityTrackingConfig } from './activity-tracking-config';
 import { 
   generateSessionId, 
   trackActivity, 

@@ -112,7 +112,8 @@ export default {
             { sessionId: { $notNull: true } }
           ]
         },
-        pagination: { page: 1, pageSize: 1000 }
+        limit: 1000,
+        start: 0,
       });
 
       let anonymizedCount = 0;

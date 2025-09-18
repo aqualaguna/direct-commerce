@@ -62,7 +62,7 @@ async function setupPublicPermissions(strapi: Core.Strapi) {
 
 
         // Get the default permissions configuration from plugins config
-        const pluginsConfig: any = strapi.config.get('plugin.users-permissions');
+        const pluginsConfig: any = strapi.config.get('plugin::users-permissions');
         const defaultPermissions = pluginsConfig?.defaultPermissions?.public;
         const defaultPermissionsAuthenticated = pluginsConfig?.defaultPermissions?.authenticated;
 
@@ -72,7 +72,7 @@ async function setupPublicPermissions(strapi: Core.Strapi) {
         }
 
         const { publicContentTypes, publicActions } = defaultPermissions;
-        const { authenticatedContentTypes, authenticatedActions } = defaultPermissionsAuthenticated;
+        const { authenticatedContentTypes, authenticatedActions, customPermissions } = defaultPermissionsAuthenticated;
 
         // Set up permissions for both public and authenticated roles
         const permissions = [];
@@ -115,6 +115,11 @@ async function setupPublicPermissions(strapi: Core.Strapi) {
                         role: authenticatedRole.id
                     });
                 }
+            }
+        }
+        if (customPermissions) {
+            for (const permission of customPermissions) {
+                permissions.push({...permission, role: authenticatedRole.id});
             }
         }
 

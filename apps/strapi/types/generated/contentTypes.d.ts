@@ -1301,7 +1301,7 @@ export interface ApiOptionGroupOptionGroup extends Struct.CollectionTypeSchema {
     singularName: 'option-group';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
     createdAt: Schema.Attribute.DateTime;
@@ -1313,8 +1313,6 @@ export interface ApiOptionGroupOptionGroup extends Struct.CollectionTypeSchema {
         maxLength: 100;
         minLength: 1;
       }>;
-    isActive: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
-    isRequired: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
@@ -1323,7 +1321,6 @@ export interface ApiOptionGroupOptionGroup extends Struct.CollectionTypeSchema {
       Schema.Attribute.Private;
     name: Schema.Attribute.String &
       Schema.Attribute.Required &
-      Schema.Attribute.Unique &
       Schema.Attribute.SetMinMaxLength<{
         maxLength: 50;
         minLength: 1;
@@ -1338,7 +1335,7 @@ export interface ApiOptionGroupOptionGroup extends Struct.CollectionTypeSchema {
     >;
     publishedAt: Schema.Attribute.DateTime;
     sortOrder: Schema.Attribute.Integer & Schema.Attribute.DefaultTo<0>;
-    type: Schema.Attribute.Enumeration<['select', 'radio', 'checkbox']> &
+    type: Schema.Attribute.Enumeration<['select', 'radio']> &
       Schema.Attribute.Required &
       Schema.Attribute.DefaultTo<'select'>;
     updatedAt: Schema.Attribute.DateTime;
@@ -1356,7 +1353,7 @@ export interface ApiOptionValueOptionValue extends Struct.CollectionTypeSchema {
     singularName: 'option-value';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
     createdAt: Schema.Attribute.DateTime;
@@ -1368,7 +1365,6 @@ export interface ApiOptionValueOptionValue extends Struct.CollectionTypeSchema {
         maxLength: 100;
         minLength: 1;
       }>;
-    isActive: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
@@ -2421,7 +2417,8 @@ export interface ApiProductListingVariantProductListingVariant
     draftAndPublish: true;
   };
   attributes: {
-    comparePrice: Schema.Attribute.Decimal &
+    basePrice: Schema.Attribute.Decimal &
+      Schema.Attribute.Required &
       Schema.Attribute.SetMinMax<
         {
           min: 0;
@@ -2431,6 +2428,13 @@ export interface ApiProductListingVariantProductListingVariant
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+    discountPrice: Schema.Attribute.Decimal &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 0;
+        },
+        number
+      >;
     height: Schema.Attribute.Decimal &
       Schema.Attribute.SetMinMax<
         {
@@ -2466,14 +2470,6 @@ export interface ApiProductListingVariantProductListingVariant
       'manyToMany',
       'api::option-value.option-value'
     >;
-    price: Schema.Attribute.Decimal &
-      Schema.Attribute.Required &
-      Schema.Attribute.SetMinMax<
-        {
-          min: 0;
-        },
-        number
-      >;
     productListing: Schema.Attribute.Relation<
       'manyToOne',
       'api::product-listing.product-listing'
@@ -2527,17 +2523,17 @@ export interface ApiProductListingProductListing
         number
       >;
     category: Schema.Attribute.Relation<'manyToOne', 'api::category.category'>;
-    comparePrice: Schema.Attribute.Decimal &
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    description: Schema.Attribute.RichText & Schema.Attribute.Required;
+    discountPrice: Schema.Attribute.Decimal &
       Schema.Attribute.SetMinMax<
         {
           min: 0;
         },
         number
       >;
-    createdAt: Schema.Attribute.DateTime;
-    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    description: Schema.Attribute.RichText & Schema.Attribute.Required;
     featured: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
     images: Schema.Attribute.Media<'images', true> &
       Schema.Attribute.Required &

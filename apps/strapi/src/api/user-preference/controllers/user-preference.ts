@@ -17,7 +17,7 @@ export default {
       }
 
       const preferences = await strapi.documents('api::user-preference.user-preference').findFirst({
-        filters: { user: user.documentId }
+        filters: { user: { documentId: user.documentId } }
       });
 
       if (!preferences) {
@@ -61,7 +61,7 @@ export default {
       }
 
       const preferences = await strapi.documents('api::user-preference.user-preference').findFirst({
-        filters: { user: user.documentId }
+        filters: { user: { documentId: user.documentId } }
       });
 
       if (!preferences) {
@@ -123,7 +123,7 @@ export default {
 
       // Find existing preferences or create new ones
       let preferences = await strapi.documents('api::user-preference.user-preference').findFirst({
-        filters: { user: user.documentId }
+        filters: { user: { documentId: user.documentId } }
       });
 
       if (preferences) {
@@ -184,7 +184,7 @@ export default {
 
       // Get existing preferences
       let preferences = await strapi.documents('api::user-preference.user-preference').findFirst({
-        filters: { user: user.documentId }
+        filters: { user: { documentId: user.documentId } }
       });
 
       if (!preferences) {
@@ -228,7 +228,7 @@ export default {
 
       // Find existing preferences
       const existingPreferences = await strapi.documents('api::user-preference.user-preference').findFirst({
-        filters: { user: user.documentId }
+        filters: { user: { documentId: user.documentId } }
       });
 
       if (existingPreferences) {
@@ -265,7 +265,7 @@ export default {
       }
 
       const preferences = await strapi.documents('api::user-preference.user-preference').findFirst({
-        filters: { user: user.documentId }
+        filters: { user: { documentId: user.documentId } }
       });
 
       if (!preferences) {
@@ -327,7 +327,7 @@ export default {
     }
 
     // Validate session timeout
-    if (data.sessionTimeout && (typeof data.sessionTimeout !== 'number' || data.sessionTimeout < 300 || data.sessionTimeout > 86400)) {
+    if (data.sessionTimeout !== undefined && data.sessionTimeout !== null && (typeof data.sessionTimeout !== 'number' || data.sessionTimeout < 300 || data.sessionTimeout > 86400)) {
       errors.push('Session timeout must be between 300 and 86400 seconds');
     }
 

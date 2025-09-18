@@ -19,9 +19,6 @@ const mockStrapi = {
     update: jest.fn() as jest.MockedFunction<any>,
     delete: jest.fn() as jest.MockedFunction<any>,
     count: jest.fn() as jest.MockedFunction<any>,
-    publish: jest.fn() as jest.MockedFunction<any>,
-    unpublish: jest.fn() as jest.MockedFunction<any>,
-    discardDraft: jest.fn() as jest.MockedFunction<any>,
   })),
   service: jest.fn(serviceName => {
     if (serviceName === 'api::option-group.option-group-management') {
@@ -96,9 +93,7 @@ describe('Option Group Controller', () => {
           name: 'Size',
           displayName: 'Size',
           type: 'select',
-          isRequired: true,
           sortOrder: 1,
-          status: 'published',
           createdAt: '2025-01-26T10:00:00Z',
         },
         {
@@ -106,9 +101,7 @@ describe('Option Group Controller', () => {
           name: 'Color',
           displayName: 'Color',
           type: 'select',
-          isRequired: true,
           sortOrder: 2,
-          status: 'published',
           createdAt: '2025-01-26T11:00:00Z',
         },
       ];
@@ -122,9 +115,6 @@ describe('Option Group Controller', () => {
         update: jest.fn(),
         delete: jest.fn(),
         count: jest.fn(),
-        publish: jest.fn(),
-        unpublish: jest.fn(),
-        discardDraft: jest.fn(),
       } as any);
 
       // Ensure context has proper structure
@@ -140,7 +130,7 @@ describe('Option Group Controller', () => {
       expect(
         mockStrapi.documents('api::option-group.option-group').findMany
       ).toHaveBeenCalledWith({
-        filters: { status: 'published' },
+        filters: {  },
         sort: { sortOrder: 'asc', createdAt: 'desc' },
         pagination: { page: 1, pageSize: 25 },
         populate: ['optionValues', 'productListings'],
@@ -154,9 +144,7 @@ describe('Option Group Controller', () => {
           name: 'Size',
           displayName: 'Size',
           type: 'select',
-          isRequired: true,
           sortOrder: 1,
-          status: 'published',
         },
       ];
 
@@ -177,7 +165,7 @@ describe('Option Group Controller', () => {
       expect(
         mockStrapi.documents('api::option-group.option-group').findMany
       ).toHaveBeenCalledWith({
-        filters: { type: 'select', status: 'published' },
+        filters: { type: 'select'},
         sort: { name: 'asc' },
         pagination: { page: 2, pageSize: 10 },
         populate: ['optionValues', 'productListings'],
@@ -209,9 +197,7 @@ describe('Option Group Controller', () => {
         name: 'Size',
         displayName: 'Size',
         type: 'select',
-        isRequired: true,
         sortOrder: 1,
-        status: 'published',
       };
 
       mockContext.params = { documentId: 'size-group' };
@@ -279,9 +265,7 @@ describe('Option Group Controller', () => {
         name: 'Size',
         displayName: 'Size',
         type: 'select',
-        isRequired: true,
         sortOrder: 1,
-        status: 'draft',
       };
 
       mockContext.request.body = {
@@ -289,7 +273,6 @@ describe('Option Group Controller', () => {
           name: 'Size',
           displayName: 'Size',
           type: 'select',
-          isRequired: true,
         },
       };
 
@@ -307,7 +290,6 @@ describe('Option Group Controller', () => {
           name: 'Size',
           displayName: 'Size',
           type: 'select',
-          isRequired: true,
         },
         populate: ['optionValues', 'productListings'],
       });
@@ -350,9 +332,6 @@ describe('Option Group Controller', () => {
         update: jest.fn(),
         delete: jest.fn(),
         count: jest.fn(),
-        publish: jest.fn(),
-        unpublish: jest.fn(),
-        discardDraft: jest.fn(),
       } as any);
 
       await optionGroupController.create(mockContext);
@@ -395,9 +374,7 @@ describe('Option Group Controller', () => {
         name: 'Size',
         displayName: 'Product Size',
         type: 'select',
-        isRequired: true,
         sortOrder: 1,
-        status: 'published',
       };
 
       mockContext.params = { documentId: 'size-group' };
@@ -468,9 +445,6 @@ describe('Option Group Controller', () => {
         update: jest.fn(),
         delete: jest.fn().mockResolvedValue(undefined as never),
         count: jest.fn(),
-        publish: jest.fn(),
-        unpublish: jest.fn(),
-        discardDraft: jest.fn(),
       } as any);
 
       const result = await optionGroupController.delete(mockContext);
@@ -520,7 +494,6 @@ describe('Option Group Controller', () => {
           name: 'Size',
           displayName: 'Size',
           type: 'select',
-          isRequired: true,
           sortOrder: 1,
         },
         {
@@ -528,7 +501,6 @@ describe('Option Group Controller', () => {
           name: 'Color',
           displayName: 'Color',
           type: 'select',
-          isRequired: true,
           sortOrder: 2,
         },
       ];
@@ -547,7 +519,6 @@ describe('Option Group Controller', () => {
       ).toHaveBeenCalledWith({
         filters: {
           productListings: 'product-listing-doc-id',
-          status: 'published',
         },
         sort: { sortOrder: 'asc' },
         populate: ['optionValues'],
@@ -565,46 +536,6 @@ describe('Option Group Controller', () => {
     });
   });
 
-  describe('findActive', () => {
-    it('should return only active option groups', async () => {
-      const mockActiveOptionGroups = [
-        {
-          documentId: 'size-group',
-          name: 'Size',
-          displayName: 'Size',
-          type: 'select',
-          isRequired: true,
-          sortOrder: 1,
-          isActive: true,
-        },
-        {
-          documentId: 'color-group',
-          name: 'Color',
-          displayName: 'Color',
-          type: 'select',
-          isRequired: true,
-          sortOrder: 2,
-          isActive: true,
-        },
-      ];
-
-      mockStrapi
-        .documents('api::option-group.option-group')
-        .findMany.mockResolvedValue(mockActiveOptionGroups);
-
-      const result = await optionGroupController.findActive(mockContext);
-
-      expect(result).toEqual(mockActiveOptionGroups);
-      expect(
-        mockStrapi.documents('api::option-group.option-group').findMany
-      ).toHaveBeenCalledWith({
-        filters: { isActive: true, status: 'published' },
-        sort: { sortOrder: 'asc' },
-        populate: ['optionValues'],
-      });
-    });
-  });
-
   describe('createWithDefaultValues', () => {
     it('should create option group with default option values', async () => {
       const mockOptionGroup = {
@@ -612,9 +543,7 @@ describe('Option Group Controller', () => {
         name: 'Size',
         displayName: 'Size',
         type: 'select',
-        isRequired: true,
         sortOrder: 1,
-        status: 'draft',
       };
 
       const mockDefaultValues = [
@@ -628,7 +557,6 @@ describe('Option Group Controller', () => {
           name: 'Size',
           displayName: 'Size',
           type: 'select',
-          isRequired: true,
           defaultValues: [
             { value: 'S', displayName: 'Small' },
             { value: 'M', displayName: 'Medium' },
@@ -647,9 +575,6 @@ describe('Option Group Controller', () => {
         update: jest.fn(),
         delete: jest.fn(),
         count: jest.fn(),
-        publish: jest.fn(),
-        unpublish: jest.fn(),
-        discardDraft: jest.fn(),
       } as any);
 
       const managementService = mockStrapi.service(
@@ -676,9 +601,7 @@ describe('Option Group Controller', () => {
         name: 'Size',
         displayName: 'Size',
         type: 'select',
-        isRequired: true,
         sortOrder: 1,
-        status: 'draft',
       };
 
       mockContext.request.body = {
@@ -686,7 +609,6 @@ describe('Option Group Controller', () => {
           name: 'Size',
           displayName: 'Size',
           type: 'select',
-          isRequired: true,
           createDefaultValues: false,
         },
       };

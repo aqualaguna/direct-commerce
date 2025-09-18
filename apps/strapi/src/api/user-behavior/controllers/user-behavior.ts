@@ -107,8 +107,9 @@ export default factories.createCoreController(
       // Use Document Service API
       const behaviors = await strapi.documents('api::user-behavior.user-behavior').findMany({
         filters,
-        sort: { timestamp: 'desc' },
-        pagination,
+        sort: 'timestamp:desc',
+        limit: pagination.pageSize,
+        start: (pagination.page - 1) * pagination.pageSize,
         populate: ['user']
       })
 

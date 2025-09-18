@@ -31,7 +31,7 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
       // Get raw security event data
       const events = await strapi.documents('api::security-event.security-event').findMany({
         filters,
-        sort: { timestamp: 'desc' },
+        sort: 'timestamp:desc',
         populate: ['user', 'resolvedBy']
       })
 
@@ -349,8 +349,9 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
       // Get recent events
       const recentEvents = await strapi.documents('api::security-event.security-event').findMany({
         filters: {},
-        sort: { timestamp: 'desc' },
-        pagination: { page: 1, pageSize: 10 },
+        sort: 'timestamp:desc',
+        limit: 10,
+        start: 0,
         populate: ['user']
       })
 
@@ -360,7 +361,7 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
           severity: 'critical',
           resolved: false
         },
-        sort: { timestamp: 'desc' },
+        sort: 'timestamp:desc',
         populate: ['user']
       })
 

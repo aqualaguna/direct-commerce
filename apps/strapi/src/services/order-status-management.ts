@@ -349,7 +349,7 @@ export default {
     try {
       const statusHistory = await strapi.documents('api::order-status.order-status').findMany({
         filters: { order: orderId as any },
-        sort: { createdAt: 'desc' },
+        sort: 'createdAt:desc',
         populate: ['updatedBy']
       });
 
@@ -367,8 +367,9 @@ export default {
     try {
       const orders = await strapi.documents('api::order.order').findMany({
         filters: { status: status as any },
-        sort: { createdAt: 'desc' },
-        pagination: { page, pageSize },
+        sort: 'createdAt:desc',
+        limit: pageSize,
+        start: (page - 1) * pageSize,
         populate: ['user', 'items']
       });
 

@@ -30,8 +30,8 @@ export default ({ strapi }) => ({
     }
 
     // Validate type
-    if (data.type && !['select', 'radio', 'checkbox'].includes(data.type)) {
-      errors.push('Type must be select, radio, or checkbox');
+    if (data.type && !['select', 'radio'].includes(data.type)) {
+      errors.push('Type must be select, radio');
     }
 
     return {

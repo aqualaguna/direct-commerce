@@ -1,24 +1,26 @@
 export default ({ env }) => ({
-  // Disable upload plugin for test environment to avoid S3 warnings
-  ...(env('NODE_ENV') !== 'test' && {
-    upload: {
-      config: {
-        provider: 'aws-s3',
-        providerOptions: {
-          s3Options: {
-            accessKeyId: env('R2_ACCESS_KEY_ID'),
-            secretAccessKey: env('R2_SECRET_ACCESS_KEY'),
-            region: env('R2_REGION', 'auto'),
-            endpoint: env('R2_ENDPOINT'),
-            forcePathStyle: true,
-          },
-          params: {
-            Bucket: env('R2_BUCKET'),
-          },
+  upload: {
+    config: {
+      // Use local provider for test environment, S3 for production
+      provider: env('NODE_ENV') === 'test' ? 'local' : 'aws-s3',
+      providerOptions: env('NODE_ENV') === 'test' ? {
+        // Local file system configuration for testing
+        sizeLimit: 100000000, // 100MB
+      } : {
+        // S3 configuration for production
+        s3Options: {
+          accessKeyId: env('R2_ACCESS_KEY_ID'),
+          secretAccessKey: env('R2_SECRET_ACCESS_KEY'),
+          region: env('R2_REGION', 'auto'),
+          endpoint: env('R2_ENDPOINT'),
+          forcePathStyle: true,
+        },
+        params: {
+          Bucket: env('R2_BUCKET'),
         },
       },
     },
-  }),
+  },
   // Disable email plugin for test environment to avoid SendGrid warnings
   ...(env('NODE_ENV') !== 'test' && {
     email: {
@@ -82,7 +84,81 @@ export default ({ env }) => ({
             // Add more content types as needed
           ],
           // Actions that should be available for authenticated users
-          authenticatedActions: ['find', 'findOne', 'create', 'update', 'delete']
+          authenticatedActions: ['find', 'findOne', 'create', 'update', 'delete'],
+          customPermissions: [
+            {
+              action: 'api::user-preference.user-preference.getMyPreferences',
+              subject: null,
+              properties: {},
+              conditions: [],
+            },
+            {
+              action: 'api::user-preference.user-preference.updateMyPreferences',
+              subject: null,
+              properties: {},
+              conditions: [],
+            },
+            {
+              action: 'api::user-preference.user-preference.getMyPreferenceCategory',
+              subject: null,
+              properties: {},
+              conditions: [],
+            },
+            {
+              action: 'api::user-preference.user-preference.updateMyPreferenceCategory',
+              subject: null,
+              properties: {},
+              conditions: [],
+            },
+            {
+              action: 'api::user-preference.user-preference.resetMyPreferences',
+              subject: null,
+              properties: {},
+              conditions: [],
+            },
+            {
+              action: 'api::user-preference.user-preference.exportMyPreferences',
+              subject: null,
+              properties: {},
+              conditions: [],
+            },
+            {
+              action: 'api::user-preference.profile.getMyProfile',
+              subject: null,
+              properties: {},
+              conditions: [],
+            },
+            {
+              action: 'api::user-preference.profile.getProfile',
+              subject: null,
+              properties: {},
+              conditions: [],
+            },
+            {
+              action: 'api::user-preference.profile.updateMyProfile',
+              subject: null,
+              properties: {},
+              conditions: [],
+            },
+            {
+              action: 'api::user-preference.profile.getProfileCompletion',
+              subject: null,
+              properties: {},
+              conditions: [],
+            },
+            {
+              action: 'api::user-preference.profile.uploadProfilePicture',
+              subject: null,
+              properties: {},
+              conditions: [],
+            },
+            {
+              action: 'api::user-preference.profile.deleteProfilePicture',
+              subject: null,
+              properties: {},
+              conditions: [],
+            },
+          ]
         }
       },
     },
