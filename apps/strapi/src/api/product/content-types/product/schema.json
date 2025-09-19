@@ -47,12 +47,6 @@
       "type": "decimal",
       "min": 0
     },
-    "inventory": {
-      "type": "integer",
-      "required": true,
-      "min": 0,
-      "default": 0
-    },
     "status": {
       "type": "enumeration",
       "enum": ["draft", "active", "inactive"],
@@ -64,12 +58,6 @@
       "relation": "manyToOne",
       "target": "api::category.category",
       "inversedBy": "products"
-    },
-    "wishlistedBy": {
-      "type": "relation",
-      "relation": "manyToMany",
-      "target": "plugin::users-permissions.user",
-      "inversedBy": "wishlist"
     },
     "inventoryRecord": {
       "type": "relation",

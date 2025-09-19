@@ -42,7 +42,10 @@ export default factories.createCoreService('api::privacy-setting.privacy-setting
       };
 
       const privacySettings = await strapi.documents('api::privacy-setting.privacy-setting').create({
-        data: defaultSettings
+        data: defaultSettings,
+        populate: {
+          user: true,
+        }
       });
 
       return privacySettings;

@@ -73,7 +73,15 @@ export default ({ env }) => ({
             // Add more content types as needed
           ],
           // Actions that should be public for these content types
-          publicActions: ['find', 'findOne']
+          publicActions: ['find', 'findOne'],
+          customPermissions: [
+            {
+              action: 'api::user-behavior.user-behavior.track',
+              subject: null,
+              properties: {},
+              conditions: [],
+            },
+          ]
         },
         authenticated: {
           // List of content types that should be accessible by authenticated users
@@ -154,6 +162,60 @@ export default ({ env }) => ({
             },
             {
               action: 'api::user-preference.profile.deleteProfilePicture',
+              subject: null,
+              properties: {},
+              conditions: [],
+            },
+            {
+              action: 'api::user-behavior.user-behavior.track',
+              subject: null,
+              properties: {},
+              conditions: [],
+            },
+            {
+              action: 'api::privacy-setting.privacy-setting.getMyPrivacySettings',
+              subject: null,
+              properties: {},
+              conditions: [],
+            },
+            {
+              action: 'api::privacy-setting.privacy-setting.updateMyPrivacySettings',
+              subject: null,
+              properties: {},
+              conditions: [],
+            },
+            {
+              action: 'api::privacy-setting.privacy-setting.updateMyConsent',
+              subject: null,
+              properties: {},
+              conditions: [],
+            },
+            {
+              action: 'api::privacy-setting.privacy-setting.getMyConsentHistory',
+              subject: null,
+              properties: {},
+              conditions: [],
+            },
+            {
+              action: 'api::privacy-setting.privacy-setting.resetMyPrivacySettings',
+              subject: null,
+              properties: {},
+              conditions: [],
+            },
+            {
+              action: 'api::privacy-setting.privacy-setting.exportMyData',
+              subject: null,
+              properties: {},
+              conditions: [],
+            },
+            {
+              action: 'api::privacy-setting.privacy-setting.requestDataDeletion',
+              subject: null,
+              properties: {},
+              conditions: [],
+            },
+            {
+              action: 'api::privacy-setting.privacy-setting.deleteMyData',
               subject: null,
               properties: {},
               conditions: [],

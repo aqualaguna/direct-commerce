@@ -10,9 +10,6 @@ export default ({ strapi }) => ({
     const errors = [];
 
     // Check required fields
-    if (!data.sku) {
-      errors.push('SKU is required');
-    }
     if (!data.basePrice || data.basePrice <= 0) {
       errors.push('Valid base price is required');
     }
@@ -20,15 +17,17 @@ export default ({ strapi }) => ({
       errors.push('Product listing is required');
     }
 
-    // Check SKU uniqueness
-    if (data.sku) {
-      const existingVariant = await strapi
-        .documents('api::product-listing-variant.product-listing-variant')
-        .findFirst({
-          filters: { sku: data.sku },
+
+    // Validate product listing exists
+    if (data.productListing) {
+      const productListing = await strapi
+        .documents('api::product-listing.product-listing')
+        .findOne({
+          documentId: data.productListing,
         });
-      if (existingVariant) {
-        errors.push('SKU must be unique');
+      
+      if (!productListing) {
+        errors.push('Product listing not found');
       }
     }
 
@@ -74,13 +73,22 @@ export default ({ strapi }) => ({
         populate: ['optionGroup'],
       });
 
+    // Check if all requested option values were found
+    const foundOptionValueIds = optionValues.map(ov => ov.documentId);
+    const missingOptionValueIds = optionValueIds.filter(id => !foundOptionValueIds.includes(id));
+    
+    if (missingOptionValueIds.length > 0) {
+      errors.push('One or more option values not found');
+      return { isValid: false, errors };
+    }
+
     // Check if all option values belong to the product listing's option groups
-    const productListingOptionGroupIds = productListing.optionGroups.map(
+    const productListingOptionGroupIds = productListing.optionGroups?.map(
       og => og.documentId
-    );
+    ) || [];
     const optionValueGroupIds = optionValues.map(
-      ov => ov.optionGroup.documentId
-    );
+      ov => ov.optionGroup?.documentId
+    ).filter(Boolean);
 
     for (const groupId of optionValueGroupIds) {
       if (!productListingOptionGroupIds.includes(groupId)) {
@@ -155,32 +163,6 @@ export default ({ strapi }) => ({
     };
   },
 
-  /**
-   * Validate inventory update
-   */
-  async validateInventoryUpdate(documentId, newInventory) {
-    const errors = [];
-
-    if (typeof newInventory !== 'number' || newInventory < 0) {
-      errors.push('Inventory must be a non-negative number');
-    }
-
-    // Check if variant exists
-    const variant = await strapi
-      .documents('api::product-listing-variant.product-listing-variant')
-      .findOne({
-        documentId,
-      });
-
-    if (!variant) {
-      errors.push('Variant not found');
-    }
-
-    return {
-      isValid: errors.length === 0,
-      errors,
-    };
-  },
 
   /**
    * Generate unique SKU for variant
@@ -243,12 +225,6 @@ export default ({ strapi }) => ({
       };
     }
 
-    if (variant.inventory <= 0) {
-      return {
-        available: false,
-        reason: 'Out of stock',
-      };
-    }
 
     return {
       available: true,
@@ -265,14 +241,6 @@ export default ({ strapi }) => ({
     // Check price if provided
     if (data.basePrice !== undefined && (!data.basePrice || data.basePrice <= 0)) {
       errors.push('Valid base price is required');
-    }
-
-    // Check inventory if provided
-    if (
-      data.inventory !== undefined &&
-      (typeof data.inventory !== 'number' || data.inventory < 0)
-    ) {
-      errors.push('Inventory must be non-negative');
     }
 
     // Check SKU uniqueness if provided

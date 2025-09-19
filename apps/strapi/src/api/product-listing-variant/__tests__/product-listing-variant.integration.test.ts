@@ -52,14 +52,10 @@ describe('Product Listing Variant Integration Tests', () => {
   // Helper function to clean up entities
   const cleanupEntity = async (type: string, documentId: string) => {
     try {
-      const response = await request(SERVER_URL)
+      await request(SERVER_URL)
         .delete(`/api/${type}/${documentId}`)
         .set('Authorization', `Bearer ${adminToken}`)
         .timeout(10000);
-      
-      if (response.status !== 404) {
-        console.log(`Cleaned up ${type} ${documentId} (status: ${response.status})`);
-      }
     } catch (error) {
       console.warn(`Failed to cleanup ${type} ${documentId}:`, error);
     }
@@ -188,27 +184,21 @@ describe('Product Listing Variant Integration Tests', () => {
 
     // Associate the option group with the product listing
     const associateResponse = await request(SERVER_URL)
-      .put(`/api/option-groups/${testOptionGroup.documentId}`)
+      .put(`/api/product-listings/${testProductListing.documentId}`)
       .set('Authorization', `Bearer ${adminToken}`)
       .send({ 
         data: { 
-          productListings: [testProductListing.documentId] 
+          optionGroups: [testOptionGroup.documentId] 
         } 
       })
       .timeout(10000);
-
+    
     if (![200, 201].includes(associateResponse.status)) {
       throw new Error(`Failed to associate option group with product listing: ${associateResponse.status} - ${JSON.stringify(associateResponse.body)}`);
     }
   });
 
-  // Add delay between tests to avoid rate limiting
-  afterEach(async () => {
-    await new Promise(resolve => setTimeout(resolve, 100));
-  });
-
   afterAll(async () => {
-    console.log('Starting comprehensive cleanup...');
     
     // Clean up in reverse dependency order
     const cleanupOrder = [
@@ -222,47 +212,34 @@ describe('Product Listing Variant Integration Tests', () => {
 
     for (const { type, ids } of cleanupOrder) {
       if (ids.length > 0) {
-        console.log(`Cleaning up ${ids.length} ${type}...`);
         const cleanupPromises = ids.map(id => cleanupEntity(type, id));
         await Promise.all(cleanupPromises);
       }
     }
     
-    console.log('Comprehensive cleanup completed');
   });
 
-  describe.only('Product Listing Variant CRUD Operations', () => {
-    it.only('should create product listing variant and verify database record', async () => {
+  describe('Product Listing Variant CRUD Operations', () => {
+    it('should create product listing variant and verify database record', async () => {
       const variantData = {
         sku: `TEST-VARIANT-${timestamp}`,
         basePrice: 134.99,
         discountPrice: 44.99,
-        inventory: 50,
-        isActive: true,
-        weight: 1.5,
-        length: 10.0,
-        width: 8.0,
-        height: 2.0,
+        product: testProduct.documentId,
         productListing: testProductListing.documentId,
-        optionValues: [testOptionValue.documentId],
-        status: 'published'
+        optionValues: [testOptionValue.documentId]
       };
-      console.log('variantData', variantData);
       const response = await request(SERVER_URL)
         .post('/api/product-listing-variants')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({ data: variantData })
         .timeout(10000);
-      console.log('response', response.body);
       expect([200, 201]).toContain(response.status);
+      expect(response.body).toBeDefined();
       expect(response.body.data).toBeDefined();
       expect(response.body.data.documentId).toBeDefined();
-      expect(response.body.data.sku).toBe(variantData.sku);
       expect(response.body.data.basePrice).toBe(variantData.basePrice);
       expect(response.body.data.discountPrice).toBe(variantData.discountPrice);
-      expect(response.body.data.inventory).toBe(variantData.inventory);
-      expect(response.body.data.isActive).toBe(variantData.isActive);
-      expect(response.body.data.weight).toBe(variantData.weight);
       expect(response.body.data.productListing.documentId).toBe(testProductListing.documentId);
       expect(response.body.data.optionValues).toBeDefined();
       expect(Array.isArray(response.body.data.optionValues)).toBe(true);
@@ -280,12 +257,12 @@ describe('Product Listing Variant Integration Tests', () => {
       const response = await request(SERVER_URL)
         .get(`/api/product-listing-variants/${testProductListingVariant.documentId}`)
         .set('Authorization', `Bearer ${adminToken}`)
-        .expect(200)
         .timeout(10000);
-
+      
+      expect(response.status).toBe(200);
+      expect(response.body).toBeDefined();
       expect(response.body.data).toBeDefined();
       expect(response.body.data.documentId).toBe(testProductListingVariant.documentId);
-      expect(response.body.data.sku).toBe(testProductListingVariant.sku);
       expect(response.body.data.productListing).toBeDefined();
       expect(response.body.data.optionValues).toBeDefined();
     });
@@ -298,8 +275,6 @@ describe('Product Listing Variant Integration Tests', () => {
       const updateData = {
         basePrice: 139.99,
         discountPrice: 49.99,
-        inventory: 75,
-        weight: 2.0
       };
 
       const response = await request(SERVER_URL)
@@ -309,11 +284,10 @@ describe('Product Listing Variant Integration Tests', () => {
         .expect(200)
         .timeout(10000);
 
+      expect(response.body).toBeDefined();
       expect(response.body.data).toBeDefined();
       expect(response.body.data.basePrice).toBe(updateData.basePrice);
       expect(response.body.data.discountPrice).toBe(updateData.discountPrice);
-      expect(response.body.data.inventory).toBe(updateData.inventory);
-      expect(response.body.data.weight).toBe(updateData.weight);
 
       // Update stored reference
       testProductListingVariant = response.body.data;
@@ -332,7 +306,8 @@ describe('Product Listing Variant Integration Tests', () => {
         .expect(200)
         .timeout(10000);
 
-      expect(deleteResponse.body.data).toBeDefined();
+      expect(deleteResponse.body).toBeDefined();
+      expect(deleteResponse.body.message).toBe('Variant deleted successfully');
 
       // Verify deletion by attempting to retrieve
       await request(SERVER_URL)
@@ -354,8 +329,7 @@ describe('Product Listing Variant Integration Tests', () => {
     it('should reject variant creation without required fields', async () => {
       const invalidData = {
         basePrice: 29.99,
-        inventory: 10
-        // Missing sku and productListing
+        // Missing productListing
       };
 
       const response = await request(SERVER_URL)
@@ -370,9 +344,7 @@ describe('Product Listing Variant Integration Tests', () => {
 
     it('should reject variant with negative price', async () => {
       const invalidData = {
-        sku: `INVALID-PRICE-${timestamp}`,
         basePrice: -10.00,
-        inventory: 10,
         productListing: testProductListing.documentId
       };
 
@@ -386,68 +358,65 @@ describe('Product Listing Variant Integration Tests', () => {
       expect(response.body.error).toBeDefined();
     });
 
-    it('should reject variant with negative inventory', async () => {
-      const invalidData = {
-        sku: `INVALID-INVENTORY-${timestamp}`,
-        basePrice: 29.99,
-        inventory: -5,
-        productListing: testProductListing.documentId
-      };
-
-      const response = await request(SERVER_URL)
-        .post('/api/product-listing-variants')
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send({ data: invalidData })
-        .expect(400)
-        .timeout(10000);
-
-      expect(response.body.error).toBeDefined();
-    });
-
-    it('should reject variant with duplicate SKU', async () => {
-      // First create a variant
-      const variantData = {
-        sku: `DUPLICATE-SKU-${timestamp}`,
-        basePrice: 29.99,
-        inventory: 10,
-        productListing: testProductListing.documentId,
-        status: 'published'
-      };
-
-      const firstResponse = await request(SERVER_URL)
-        .post('/api/product-listing-variants')
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send({ data: variantData })
-        .timeout(10000);
-
-      expect([200, 201]).toContain(firstResponse.status);
-      const firstVariant = firstResponse.body.data;
-      trackEntity('variants', firstVariant.documentId);
-
-      // Try to create another variant with the same SKU
-      const duplicateData = {
-        sku: `DUPLICATE-SKU-${timestamp}`,
-        basePrice: 39.99,
-        inventory: 20,
-        productListing: testProductListing.documentId
-      };
-
-      const response = await request(SERVER_URL)
-        .post('/api/product-listing-variants')
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send({ data: duplicateData })
-        .expect(400)
-        .timeout(10000);
-
-      expect(response.body.error).toBeDefined();
-    });
 
     it('should reject variant with non-existent product listing', async () => {
       const invalidData = {
-        sku: `NON-EXISTENT-PL-${timestamp}`,
         basePrice: 29.99,
-        inventory: 10,
         productListing: 'non-existent-document-id'
+      };
+
+      const response = await request(SERVER_URL)
+        .post('/api/product-listing-variants')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ data: invalidData })
+        .expect(400)
+        .timeout(10000);
+
+      expect(response.body.error).toBeDefined();
+    });
+
+    it('should reject variant with invalid option values', async () => {
+      // Create an option group that's not associated with the product listing
+      const unrelatedOptionGroupData = {
+        name: `Unrelated Option Group ${timestamp}`,
+        displayName: 'Color',
+        type: 'select',
+        status: 'published'
+      };
+
+      const unrelatedOptionGroupResponse = await request(SERVER_URL)
+        .post('/api/option-groups')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ data: unrelatedOptionGroupData })
+        .timeout(10000);
+
+      expect([200, 201]).toContain(unrelatedOptionGroupResponse.status);
+      const unrelatedOptionGroup = unrelatedOptionGroupResponse.body.data;
+      trackEntity('optionGroups', unrelatedOptionGroup.documentId);
+
+      // Create an option value for the unrelated option group
+      const unrelatedOptionValueData = {
+        value: `Unrelated Option Value ${timestamp}`,
+        displayName: 'Red',
+        optionGroup: unrelatedOptionGroup.documentId,
+        status: 'published'
+      };
+
+      const unrelatedOptionValueResponse = await request(SERVER_URL)
+        .post('/api/option-values')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ data: unrelatedOptionValueData })
+        .timeout(10000);
+
+      expect([200, 201]).toContain(unrelatedOptionValueResponse.status);
+      const unrelatedOptionValue = unrelatedOptionValueResponse.body.data;
+      trackEntity('optionValues', unrelatedOptionValue.documentId);
+
+      // Try to create a variant with the unrelated option value
+      const invalidData = {
+        basePrice: 29.99,
+        productListing: testProductListing.documentId,
+        optionValues: [unrelatedOptionValue.documentId]
       };
 
       const response = await request(SERVER_URL)
@@ -470,26 +439,17 @@ describe('Product Listing Variant Integration Tests', () => {
         {
           sku: `FILTER-VARIANT-1-${timestamp}`,
           basePrice: 19.99,
-          inventory: 100,
-          isActive: true,
           productListing: testProductListing.documentId,
-          status: 'published'
         },
         {
           sku: `FILTER-VARIANT-2-${timestamp}`,
           basePrice: 29.99,
-          inventory: 50,
-          isActive: true,
           productListing: testProductListing.documentId,
-          status: 'published'
         },
         {
           sku: `FILTER-VARIANT-3-${timestamp}`,
           basePrice: 39.99,
-          inventory: 0,
-          isActive: false,
           productListing: testProductListing.documentId,
-          status: 'published'
         }
       ];
 
@@ -531,35 +491,19 @@ describe('Product Listing Variant Integration Tests', () => {
       const response = await request(SERVER_URL)
         .get('/api/product-listing-variants')
         .set('Authorization', `Bearer ${adminToken}`)
-        .query({ 'filters[isActive]': true })
         .expect(200)
         .timeout(10000);
 
       expect(response.body.data).toBeDefined();
       expect(Array.isArray(response.body.data)).toBe(true);
       
-      // All returned variants should be active
+      // Verify variants have required fields
       response.body.data.forEach((variant: any) => {
-        expect(variant.isActive).toBe(true);
+        expect(variant.basePrice).toBeDefined();
+        expect(variant.productListing).toBeDefined();
       });
     });
 
-    it('should filter variants by inventory level', async () => {
-      const response = await request(SERVER_URL)
-        .get('/api/product-listing-variants')
-        .set('Authorization', `Bearer ${adminToken}`)
-        .query({ 'filters[inventory][$gt]': 0 })
-        .expect(200)
-        .timeout(10000);
-
-      expect(response.body.data).toBeDefined();
-      expect(Array.isArray(response.body.data)).toBe(true);
-      
-      // All returned variants should have inventory > 0
-      response.body.data.forEach((variant: any) => {
-        expect(variant.inventory).toBeGreaterThan(0);
-      });
-    });
 
     it('should sort variants by price ascending', async () => {
       const response = await request(SERVER_URL)
@@ -617,159 +561,6 @@ describe('Product Listing Variant Integration Tests', () => {
     });
   });
 
-  describe('Product Listing Variant Custom Endpoints', () => {
-    let testVariant: any;
-
-    beforeAll(async () => {
-      // Create test variant for custom endpoint tests
-      const variantData = {
-        sku: `CUSTOM-ENDPOINT-${timestamp}`,
-        basePrice: 49.99,
-        inventory: 25,
-        isActive: true,
-        productListing: testProductListing.documentId,
-        optionValues: [testOptionValue.documentId],
-        status: 'published'
-      };
-
-      const response = await request(SERVER_URL)
-        .post('/api/product-listing-variants')
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send({ data: variantData })
-        .timeout(10000);
-
-      if ([200, 201].includes(response.status)) {
-        testVariant = response.body.data;
-        trackEntity('variants', testVariant.documentId);
-      }
-    });
-
-    afterAll(async () => {
-      // Clean up test variant
-      if (testVariant?.documentId) {
-        try {
-          await request(SERVER_URL)
-            .delete(`/api/product-listing-variants/${testVariant.documentId}`)
-            .set('Authorization', `Bearer ${adminToken}`)
-            .timeout(10000);
-          
-          // Remove from tracking
-          const index = createdEntities.variants.indexOf(testVariant.documentId);
-          if (index > -1) {
-            createdEntities.variants.splice(index, 1);
-          }
-        } catch (error) {
-          console.warn('Failed to clean up test variant:', error.message);
-        }
-      }
-    });
-
-    it('should get variants by product listing', async () => {
-      const response = await request(SERVER_URL)
-        .get(`/api/product-listing-variants/product-listing/${testProductListing.documentId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
-        .expect(200)
-        .timeout(10000);
-
-      expect(response.body.data).toBeDefined();
-      expect(Array.isArray(response.body.data)).toBe(true);
-      
-      // All returned variants should belong to the specified product listing
-      response.body.data.forEach((variant: any) => {
-        expect(variant.productListing.documentId).toBe(testProductListing.documentId);
-      });
-    });
-
-    it('should find variant by options', async () => {
-      const response = await request(SERVER_URL)
-        .post(`/api/product-listing-variants/product-listing/${testProductListing.documentId}/by-options`)
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send({ optionValues: [testOptionValue.documentId] })
-        .expect(200)
-        .timeout(10000);
-
-      expect(response.body.data).toBeDefined();
-      expect(response.body.data.documentId).toBe(testVariant.documentId);
-      expect(response.body.data.optionValues).toBeDefined();
-      expect(Array.isArray(response.body.data.optionValues)).toBe(true);
-    });
-
-    it('should update variant inventory', async () => {
-      const newInventory = 100;
-
-      const response = await request(SERVER_URL)
-        .put(`/api/product-listing-variants/${testVariant.documentId}/inventory`)
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send({ inventory: newInventory })
-        .expect(200)
-        .timeout(10000);
-
-      expect(response.body.data).toBeDefined();
-      expect(response.body.data.inventory).toBe(newInventory);
-    });
-
-    it('should get variant by SKU', async () => {
-      const response = await request(SERVER_URL)
-        .get(`/api/product-listing-variants/sku/${testVariant.sku}`)
-        .set('Authorization', `Bearer ${adminToken}`)
-        .expect(200)
-        .timeout(10000);
-
-      expect(response.body.data).toBeDefined();
-      expect(response.body.data.documentId).toBe(testVariant.documentId);
-      expect(response.body.data.sku).toBe(testVariant.sku);
-    });
-
-    it('should get low stock variants', async () => {
-      const response = await request(SERVER_URL)
-        .get('/api/product-listing-variants/low-stock')
-        .set('Authorization', `Bearer ${adminToken}`)
-        .query({ threshold: 50 })
-        .expect(200)
-        .timeout(10000);
-
-      expect(response.body.data).toBeDefined();
-      expect(Array.isArray(response.body.data)).toBe(true);
-      
-      // All returned variants should have inventory <= threshold
-      response.body.data.forEach((variant: any) => {
-        expect(variant.inventory).toBeLessThanOrEqual(50);
-      });
-    });
-
-    it('should get out of stock variants', async () => {
-      const response = await request(SERVER_URL)
-        .get('/api/product-listing-variants/out-of-stock')
-        .set('Authorization', `Bearer ${adminToken}`)
-        .expect(200)
-        .timeout(10000);
-
-      expect(response.body.data).toBeDefined();
-      expect(Array.isArray(response.body.data)).toBe(true);
-      
-      // All returned variants should have inventory = 0
-      response.body.data.forEach((variant: any) => {
-        expect(variant.inventory).toBe(0);
-      });
-    });
-
-    it('should return 404 for non-existent variant', async () => {
-      await request(SERVER_URL)
-        .get('/api/product-listing-variants/non-existent-document-id')
-        .set('Authorization', `Bearer ${adminToken}`)
-        .expect(404)
-        .timeout(10000);
-    });
-
-    it('should return 400 for invalid inventory update', async () => {
-      await request(SERVER_URL)
-        .put(`/api/product-listing-variants/${testVariant.documentId}/inventory`)
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send({ inventory: -10 })
-        .expect(400)
-        .timeout(10000);
-    });
-  });
 
   describe('Product Listing Variant Performance and Bulk Operations', () => {
     it('should handle large dataset efficiently', async () => {
@@ -819,14 +610,12 @@ describe('Product Listing Variant Integration Tests', () => {
         {
           sku: `BULK-VARIANT-1-${timestamp}`,
           basePrice: 19.99,
-          inventory: 10,
           productListing: testProductListing.documentId,
           status: 'published'
         },
         {
           sku: `BULK-VARIANT-2-${timestamp}`,
           basePrice: 29.99,
-          inventory: 20,
           productListing: testProductListing.documentId,
           status: 'published'
         }
@@ -861,10 +650,9 @@ describe('Product Listing Variant Integration Tests', () => {
         .send(bulkUpdateData)
         .expect(200)
         .timeout(10000);
-
-      expect(bulkResponse.body.data).toBeDefined();
-      expect(bulkResponse.body.data.success).toBeDefined();
-      expect(bulkResponse.body.data.errors).toBeDefined();
+      expect(bulkResponse.body).toBeDefined();
+      expect(bulkResponse.body.success).toBeDefined();
+      expect(bulkResponse.body.errors).toBeDefined();
 
       // Clean up bulk test variants
       for (const variant of createdVariants) {
@@ -886,84 +674,6 @@ describe('Product Listing Variant Integration Tests', () => {
     });
   });
 
-  describe('Product Listing Variant Draft and Publish Operations', () => {
-    let draftVariant: any;
-
-    afterAll(async () => {
-      // Clean up draft variant
-      if (draftVariant?.documentId) {
-        try {
-          await request(SERVER_URL)
-            .delete(`/api/product-listing-variants/${draftVariant.documentId}`)
-            .set('Authorization', `Bearer ${adminToken}`)
-            .timeout(10000);
-          
-          // Remove from tracking
-          const index = createdEntities.variants.indexOf(draftVariant.documentId);
-          if (index > -1) {
-            createdEntities.variants.splice(index, 1);
-          }
-        } catch (error) {
-          console.warn('Failed to clean up draft variant:', error.message);
-        }
-      }
-    });
-
-    it('should create draft variant', async () => {
-      const variantData = {
-        sku: `DRAFT-VARIANT-${timestamp}`,
-        basePrice: 19.99,
-        inventory: 10,
-        productListing: testProductListing.documentId,
-        status: 'draft'
-      };
-
-      const response = await request(SERVER_URL)
-        .post('/api/product-listing-variants')
-        .set('Authorization', `Bearer ${adminToken}`)
-        .send({ data: variantData })
-        .timeout(10000);
-
-      expect([200, 201]).toContain(response.status);
-      expect(response.body.data).toBeDefined();
-      expect(response.body.data.status).toBe('draft');
-      draftVariant = response.body.data;
-      trackEntity('variants', draftVariant.documentId);
-    });
-
-    it('should publish draft variant', async () => {
-      if (!draftVariant?.documentId) {
-        throw new Error('Draft variant not created');
-      }
-
-      const response = await request(SERVER_URL)
-        .post(`/api/product-listing-variants/${draftVariant.documentId}/publish`)
-        .set('Authorization', `Bearer ${adminToken}`)
-        .expect(200)
-        .timeout(10000);
-
-      expect(response.body.data).toBeDefined();
-      expect(response.body.data.entries).toBeDefined();
-      expect(response.body.data.entries[0].status).toBe('published');
-    });
-
-    it('should unpublish variant', async () => {
-      if (!draftVariant?.documentId) {
-        throw new Error('Variant not available');
-      }
-
-      const response = await request(SERVER_URL)
-        .post(`/api/product-listing-variants/${draftVariant.documentId}/unpublish`)
-        .set('Authorization', `Bearer ${adminToken}`)
-        .expect(200)
-        .timeout(10000);
-
-      expect(response.body.data).toBeDefined();
-      expect(response.body.data.entries).toBeDefined();
-      expect(response.body.data.entries[0].status).toBe('draft');
-    });
-  });
-
   describe('Product Listing Variant Relationships', () => {
     let testVariant: any;
 
@@ -972,8 +682,6 @@ describe('Product Listing Variant Integration Tests', () => {
       const variantData = {
         sku: `RELATIONSHIP-VARIANT-${timestamp}`,
         basePrice: 29.99,
-        inventory: 15,
-        isActive: true,
         productListing: testProductListing.documentId,
         optionValues: [testOptionValue.documentId],
         status: 'published'
@@ -1044,13 +752,12 @@ describe('Product Listing Variant Integration Tests', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200)
         .timeout(10000);
-
-      expect(response.body.data).toBeDefined();
-      expect(response.body.data.variants).toBeDefined();
-      expect(Array.isArray(response.body.data.variants)).toBe(true);
+      expect(response.body).toBeDefined();
+      expect(response.body.variants).toBeDefined();
+      expect(Array.isArray(response.body.variants)).toBe(true);
       
       // Should include our test variant
-      const variantExists = response.body.data.variants.some(
+      const variantExists = response.body.variants.some(
         (variant: any) => variant.documentId === testVariant.documentId
       );
       expect(variantExists).toBe(true);

@@ -276,12 +276,30 @@ export default {
     for (const item of order.items) {
       if (item.productListingVariant) {
         // Reserve variant inventory
-        await strapi.documents('api::product-listing-variant.product-listing-variant').update({
+        // Update inventory through the product's inventory record
+        const variant = await strapi.documents('api::product-listing-variant.product-listing-variant').findOne({
           documentId: item.productListingVariant.documentId,
-          data: {
-            inventory: item.productListingVariant.inventory - item.quantity
-          }
+          populate: ['product']
         });
+        
+        if (!variant?.product) {
+          continue;
+        }
+        
+        const product = await strapi.documents('api::product.product').findOne({
+          documentId: variant.product.documentId,
+          populate: ['inventoryRecord']
+        });
+        
+        if (product?.inventoryRecord) {
+          await strapi.documents('api::inventory.inventory').update({
+            documentId: product.inventoryRecord.documentId,
+            data: {
+              available: product.inventoryRecord.available - item.quantity,
+              reserved: product.inventoryRecord.reserved + item.quantity
+            }
+          });
+        }
       } else if (item.productListing) {
         // TODO: Reserve product inventory
         // await strapi.documents('api::product-listing.product-listing').update({

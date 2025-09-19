@@ -1,7 +1,10 @@
 'use strict'
 
+import { Core, factories } from '@strapi/strapi'
 
-export default ({ strapi }: { strapi: any }) => ({
+export default factories.createCoreService(
+  'api::user-behavior.analytics' as any,
+  ({ strapi }: { strapi: Core.Strapi }) => ({
   async getBehaviorAnalytics(params: any) {
     try {
       const { userId, behaviorType, startDate, endDate, groupBy = 'day' } = params
@@ -10,7 +13,7 @@ export default ({ strapi }: { strapi: any }) => ({
       const filters: any = {}
       
       if (userId) {
-        filters.user = userId
+        filters.user = { documentId: userId }
       }
       
       if (behaviorType) {
@@ -34,26 +37,30 @@ export default ({ strapi }: { strapi: any }) => ({
         populate: ['user']
       })
 
+      // Ensure behaviors is an array
+      const safeBehaviors = Array.isArray(behaviors) ? behaviors : []
+
       // Aggregate data based on groupBy parameter
-      const aggregatedData = this.aggregateBehaviorData(behaviors, groupBy)
+      const aggregatedData = this.aggregateBehaviorData(safeBehaviors, groupBy)
 
       // Calculate additional metrics
-      const metrics = this.calculateBehaviorMetrics(behaviors)
+      const metrics = this.calculateBehaviorMetrics(safeBehaviors)
 
       return {
         data: aggregatedData,
         metrics,
         summary: {
-          totalBehaviors: behaviors.length,
-          uniqueUsers: new Set(behaviors.map(b => b.user?.id).filter(Boolean)).size,
+          totalBehaviors: safeBehaviors.length,
+          uniqueUsers: new Set(safeBehaviors.map(b => b?.user?.id).filter(Boolean)).size,
           dateRange: {
-            start: startDate || behaviors[0]?.timestamp,
-            end: endDate || behaviors[behaviors.length - 1]?.timestamp
+            start: startDate || (safeBehaviors[0]?.timestamp || null),
+            end: endDate || (safeBehaviors[safeBehaviors.length - 1]?.timestamp || null)
           }
         }
       }
     } catch (error) {
       strapi.log.error('Error getting behavior analytics:', error)
+      strapi.log.error('Error stack:', error.stack)
       throw error
     }
   },
@@ -61,29 +68,40 @@ export default ({ strapi }: { strapi: any }) => ({
   aggregateBehaviorData(behaviors: any[], groupBy: string) {
     const aggregated: any = {}
 
+    if (!behaviors || !Array.isArray(behaviors)) {
+      return []
+    }
+
     behaviors.forEach(behavior => {
+      if (!behavior) return
+
       let key: string
 
-      switch (groupBy) {
-        case 'hour':
-          key = new Date(behavior.timestamp).toISOString().slice(0, 13) + ':00:00.000Z'
-          break
-        case 'day':
-          key = new Date(behavior.timestamp).toISOString().slice(0, 10)
-          break
-        case 'week':
-          const date = new Date(behavior.timestamp)
-          const weekStart = new Date(date.setDate(date.getDate() - date.getDay()))
-          key = weekStart.toISOString().slice(0, 10)
-          break
-        case 'month':
-          key = new Date(behavior.timestamp).toISOString().slice(0, 7)
-          break
-        case 'behaviorType':
-          key = behavior.behaviorType
-          break
-        default:
-          key = new Date(behavior.timestamp).toISOString().slice(0, 10)
+      try {
+        switch (groupBy) {
+          case 'hour':
+            key = new Date(behavior.timestamp).toISOString().slice(0, 13) + ':00:00.000Z'
+            break
+          case 'day':
+            key = new Date(behavior.timestamp).toISOString().slice(0, 10)
+            break
+          case 'week':
+            const date = new Date(behavior.timestamp)
+            const weekStart = new Date(date.setDate(date.getDate() - date.getDay()))
+            key = weekStart.toISOString().slice(0, 10)
+            break
+          case 'month':
+            key = new Date(behavior.timestamp).toISOString().slice(0, 7)
+            break
+          case 'behaviorType':
+            key = behavior.behaviorType || 'unknown'
+            break
+          default:
+            key = new Date(behavior.timestamp).toISOString().slice(0, 10)
+        }
+      } catch (error) {
+        console.warn('Error processing behavior timestamp:', error)
+        key = 'unknown'
       }
 
       if (!aggregated[key]) {
@@ -96,13 +114,16 @@ export default ({ strapi }: { strapi: any }) => ({
       }
 
       aggregated[key].count++
-      aggregated[key].uniqueUsers.add(behavior.user?.id)
+      if (behavior.user?.id) {
+        aggregated[key].uniqueUsers.add(behavior.user.id)
+      }
 
       // Count by behavior type
-      if (!aggregated[key].behaviors[behavior.behaviorType]) {
-        aggregated[key].behaviors[behavior.behaviorType] = 0
+      const behaviorType = behavior.behaviorType || 'unknown'
+      if (!aggregated[key].behaviors[behaviorType]) {
+        aggregated[key].behaviors[behaviorType] = 0
       }
-      aggregated[key].behaviors[behavior.behaviorType]++
+      aggregated[key].behaviors[behaviorType]++
     })
 
     // Convert Sets to counts and sort by period
@@ -135,55 +156,66 @@ export default ({ strapi }: { strapi: any }) => ({
       topSearchQueries: {}
     }
 
+    if (!behaviors || !Array.isArray(behaviors)) {
+      return metrics
+    }
+
     const timeSpentValues: number[] = []
     const scrollDepthValues: number[] = []
 
     behaviors.forEach(behavior => {
-      // Behavior type distribution
-      if (!metrics.behaviorTypeDistribution[behavior.behaviorType]) {
-        metrics.behaviorTypeDistribution[behavior.behaviorType] = 0
-      }
-      metrics.behaviorTypeDistribution[behavior.behaviorType]++
+      if (!behavior) return
 
-      // Device type distribution
-      const deviceType = behavior.deviceInfo?.type || 'unknown'
-      if (!metrics.deviceTypeDistribution[deviceType]) {
-        metrics.deviceTypeDistribution[deviceType] = 0
-      }
-      metrics.deviceTypeDistribution[deviceType]++
-
-      // Time spent statistics
-      if (behavior.timeSpent && behavior.timeSpent > 0) {
-        timeSpentValues.push(behavior.timeSpent)
-      }
-
-      // Scroll depth statistics
-      if (behavior.scrollDepth && behavior.scrollDepth >= 0) {
-        scrollDepthValues.push(behavior.scrollDepth)
-      }
-
-      // Top pages
-      if (behavior.pageUrl) {
-        if (!metrics.topPages[behavior.pageUrl]) {
-          metrics.topPages[behavior.pageUrl] = 0
+      try {
+        // Behavior type distribution
+        const behaviorType = behavior.behaviorType || 'unknown'
+        if (!metrics.behaviorTypeDistribution[behaviorType]) {
+          metrics.behaviorTypeDistribution[behaviorType] = 0
         }
-        metrics.topPages[behavior.pageUrl]++
-      }
+        metrics.behaviorTypeDistribution[behaviorType]++
 
-      // Top products
-      if (behavior.productId) {
-        if (!metrics.topProducts[behavior.productId]) {
-          metrics.topProducts[behavior.productId] = 0
+        // Device type distribution
+        const deviceType = behavior.deviceInfo?.type || 'unknown'
+        if (!metrics.deviceTypeDistribution[deviceType]) {
+          metrics.deviceTypeDistribution[deviceType] = 0
         }
-        metrics.topProducts[behavior.productId]++
-      }
+        metrics.deviceTypeDistribution[deviceType]++
 
-      // Top search queries
-      if (behavior.searchQuery) {
-        if (!metrics.topSearchQueries[behavior.searchQuery]) {
-          metrics.topSearchQueries[behavior.searchQuery] = 0
+        // Time spent statistics
+        if (behavior.timeSpent && typeof behavior.timeSpent === 'number' && behavior.timeSpent > 0) {
+          timeSpentValues.push(behavior.timeSpent)
         }
-        metrics.topSearchQueries[behavior.searchQuery]++
+
+        // Scroll depth statistics
+        if (behavior.scrollDepth && typeof behavior.scrollDepth === 'number' && behavior.scrollDepth >= 0) {
+          scrollDepthValues.push(behavior.scrollDepth)
+        }
+
+        // Top pages
+        if (behavior.pageUrl && typeof behavior.pageUrl === 'string') {
+          if (!metrics.topPages[behavior.pageUrl]) {
+            metrics.topPages[behavior.pageUrl] = 0
+          }
+          metrics.topPages[behavior.pageUrl]++
+        }
+
+        // Top products
+        if (behavior.productId && typeof behavior.productId === 'string') {
+          if (!metrics.topProducts[behavior.productId]) {
+            metrics.topProducts[behavior.productId] = 0
+          }
+          metrics.topProducts[behavior.productId]++
+        }
+
+        // Top search queries
+        if (behavior.searchQuery && typeof behavior.searchQuery === 'string') {
+          if (!metrics.topSearchQueries[behavior.searchQuery]) {
+            metrics.topSearchQueries[behavior.searchQuery] = 0
+          }
+          metrics.topSearchQueries[behavior.searchQuery]++
+        }
+      } catch (error) {
+        console.warn('Error processing behavior for metrics:', error)
       }
     })
 
@@ -230,7 +262,7 @@ export default ({ strapi }: { strapi: any }) => ({
   async getUserBehaviorPatterns(userId: string) {
     try {
       const behaviors = await strapi.documents('api::user-behavior.user-behavior').findMany({
-        filters: { user: userId },
+        filters: { user: { documentId: userId } },
         sort: 'timestamp:desc',
         limit: 100,
         start: 0
@@ -301,4 +333,5 @@ export default ({ strapi }: { strapi: any }) => ({
 
     return hours
   }
-})
+  })
+)

@@ -83,20 +83,6 @@ export default {
           actionType: 'find'
         }
       }
-    },
-    {
-      method: 'POST',
-      path: '/security-events/:documentId/resolve',
-      handler: 'security-event.resolveEvent',
-      config: {
-        policies: ['global::is-admin'],
-        description: 'Resolve a security event',
-        tag: {
-          plugin: 'security-event',
-          name: 'Security Event Resolution',
-          actionType: 'update'
-        }
-      }
     }
   ]
 }

@@ -63,6 +63,32 @@ const extraRoutes = [
       policies: ['global::is-authenticated'],
     },
   },
+
+  // Wishlist management routes
+  {
+    method: 'POST',
+    path: '/product-listings/:documentId/wishlist',
+    handler: 'api::product-listing.product-listing.addToWishlist',
+    config: {
+      policies: ['global::is-authenticated'],
+    },
+  },
+  {
+    method: 'DELETE',
+    path: '/product-listings/:documentId/wishlist',
+    handler: 'api::product-listing.product-listing.removeFromWishlist',
+    config: {
+      policies: ['global::is-authenticated'],
+    },
+  },
+  {
+    method: 'GET',
+    path: '/product-listings/wishlist',
+    handler: 'api::product-listing.product-listing.getWishlist',
+    config: {
+      policies: ['global::is-authenticated'],
+    },
+  },
 ];
 
 // Create a custom router that extends the core routes

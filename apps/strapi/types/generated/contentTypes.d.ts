@@ -2414,7 +2414,7 @@ export interface ApiProductListingVariantProductListingVariant
     singularName: 'product-listing-variant';
   };
   options: {
-    draftAndPublish: true;
+    draftAndPublish: false;
   };
   attributes: {
     basePrice: Schema.Attribute.Decimal &
@@ -2436,15 +2436,6 @@ export interface ApiProductListingVariantProductListingVariant
         number
       >;
     images: Schema.Attribute.Media<'images'>;
-    inventory: Schema.Attribute.Integer &
-      Schema.Attribute.Required &
-      Schema.Attribute.SetMinMax<
-        {
-          min: 0;
-        },
-        number
-      > &
-      Schema.Attribute.DefaultTo<0>;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
@@ -2545,6 +2536,10 @@ export interface ApiProductListingProductListing
       'oneToMany',
       'api::product-listing-variant.product-listing-variant'
     >;
+    wishlistedBy: Schema.Attribute.Relation<
+      'manyToMany',
+      'plugin::users-permissions.user'
+    >;
   };
 }
 
@@ -2580,15 +2575,6 @@ export interface ApiProductProduct extends Struct.CollectionTypeSchema {
         },
         number
       >;
-    inventory: Schema.Attribute.Integer &
-      Schema.Attribute.Required &
-      Schema.Attribute.SetMinMax<
-        {
-          min: 0;
-        },
-        number
-      > &
-      Schema.Attribute.DefaultTo<0>;
     inventoryRecord: Schema.Attribute.Relation<
       'oneToOne',
       'api::inventory.inventory'
@@ -2642,10 +2628,6 @@ export interface ApiProductProduct extends Struct.CollectionTypeSchema {
         },
         number
       >;
-    wishlistedBy: Schema.Attribute.Relation<
-      'manyToMany',
-      'plugin::users-permissions.user'
-    >;
   };
 }
 
@@ -2722,10 +2704,7 @@ export interface ApiSecurityEventSecurityEvent
       }>;
     resolved: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
     resolvedAt: Schema.Attribute.DateTime;
-    resolvedBy: Schema.Attribute.Relation<
-      'manyToOne',
-      'plugin::users-permissions.user'
-    >;
+    resolvedBy: Schema.Attribute.Relation<'manyToOne', 'admin::user'>;
     severity: Schema.Attribute.Enumeration<
       ['low', 'medium', 'high', 'critical']
     > &
@@ -2915,6 +2894,8 @@ export interface ApiUserBehaviorUserBehavior
         'sort_change',
         'review_submit',
         'rating_give',
+        'concurrent_test',
+        'preference_change',
       ]
     > &
       Schema.Attribute.Required;
@@ -3651,7 +3632,10 @@ export interface PluginUsersPermissionsUser
       Schema.Attribute.SetMinMaxLength<{
         maxLength: 255;
       }>;
-    wishlist: Schema.Attribute.Relation<'manyToMany', 'api::product.product'>;
+    wishlist: Schema.Attribute.Relation<
+      'manyToMany',
+      'api::product-listing.product-listing'
+    >;
   };
 }
 

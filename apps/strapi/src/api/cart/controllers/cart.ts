@@ -122,7 +122,7 @@ export default factories.createCoreController('api::cart.cart', ({ strapi }) => 
       if (variantId) {
         variant = await strapi.documents('api::product-listing-variant.product-listing-variant').findOne({
           documentId: variantId,
-          filters: { isActive: true }
+          filters: { }
         });
       }
 

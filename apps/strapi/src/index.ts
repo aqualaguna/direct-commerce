@@ -71,7 +71,7 @@ async function setupPublicPermissions(strapi: Core.Strapi) {
             return;
         }
 
-        const { publicContentTypes, publicActions } = defaultPermissions;
+        const { publicContentTypes, publicActions, customPermissions: customPermissionsPublic } = defaultPermissions;
         const { authenticatedContentTypes, authenticatedActions, customPermissions } = defaultPermissionsAuthenticated;
 
         // Set up permissions for both public and authenticated roles
@@ -120,6 +120,11 @@ async function setupPublicPermissions(strapi: Core.Strapi) {
         if (customPermissions) {
             for (const permission of customPermissions) {
                 permissions.push({...permission, role: authenticatedRole.id});
+            }
+        }
+        if (customPermissionsPublic) {
+            for (const permission of customPermissionsPublic) {
+                permissions.push({...permission, role: publicRole.id});
             }
         }
 

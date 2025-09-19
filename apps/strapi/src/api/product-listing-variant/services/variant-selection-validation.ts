@@ -3,23 +3,6 @@
  */
 
 export default ({ strapi }) => ({
-  /**
-   * Get available variants for a product listing
-   */
-  async getAvailableVariants(productListingId) {
-    const variants = await strapi
-      .documents('api::product-listing-variant.product-listing-variant')
-      .findMany({
-        filters: {
-          productListing: productListingId,
-          isActive: true,
-          status: 'published',
-        },
-        populate: ['optionValues', 'images'],
-      });
-
-    return variants.filter(variant => variant.inventory > 0);
-  },
 
   /**
    * Validate variant selection
@@ -97,13 +80,6 @@ export default ({ strapi }) => ({
 
     if (!matchingVariant) {
       errors.push('No variant found with the selected options');
-    } else {
-      // Check availability
-      if (matchingVariant.inventory <= 0) {
-        errors.push('Selected variant is out of stock');
-      } else if (matchingVariant.inventory < 10) {
-        warnings.push('Selected variant has low stock');
-      }
     }
 
     return {
@@ -184,39 +160,6 @@ export default ({ strapi }) => ({
     return options;
   },
 
-  /**
-   * Get variant availability matrix
-   */
-  async getVariantAvailabilityMatrix(productListingId) {
-    const variants = await strapi
-      .documents('api::product-listing-variant.product-listing-variant')
-      .findMany({
-        filters: {
-          productListing: productListingId,
-          status: 'published',
-        },
-        populate: ['optionValues'],
-      });
-
-    const availabilityMatrix = {};
-
-    for (const variant of variants) {
-      const optionCombination = variant.optionValues
-        .map(ov => ov.value)
-        .sort()
-        .join('-');
-
-      availabilityMatrix[optionCombination] = {
-        variantId: variant.documentId,
-        available: variant.isActive && variant.inventory > 0,
-        inventory: variant.inventory,
-        price: variant.price,
-        sku: variant.sku,
-      };
-    }
-
-    return availabilityMatrix;
-  },
 
   /**
    * Get recommended variants
@@ -227,11 +170,8 @@ export default ({ strapi }) => ({
       .findMany({
         filters: {
           productListing: productListingId,
-          isActive: true,
-          status: 'published',
-          inventory: { $gt: 0 },
         },
-        sort: 'inventory:desc',
+        sort: 'createdAt:desc',
         limit: limit,
         start: 0,
         populate: ['optionValues', 'images'],
@@ -307,12 +247,11 @@ export default ({ strapi }) => ({
         variantOptionValues.includes(optionValueId)
       );
 
-      if (matchesPartial && variant.inventory > 0) {
+      if (matchesPartial) {
         suggestions.push({
           variantId: variant.documentId,
           sku: variant.sku,
           price: variant.price,
-          inventory: variant.inventory,
           optionValues: variant.optionValues.map(ov => ({
             id: ov.documentId,
             value: ov.value,

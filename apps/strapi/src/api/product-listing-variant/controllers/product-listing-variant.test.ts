@@ -55,10 +55,6 @@ const mockStrapi = {
         checkAvailability: jest
           .fn<any>()
           .mockResolvedValue({ available: true, quantity: 10 }),
-        checkVariantAvailability: jest
-          .fn<any>()
-          .mockResolvedValue({ available: true, inStock: true, quantity: 10 }),
-        updateInventory: jest.fn<any>().mockResolvedValue({ success: true }),
       };
     }
     if (
@@ -167,7 +163,7 @@ describe('Product Listing Variant Controller', () => {
 
       const result = await productListingVariantController.find(mockContext);
 
-      expect(result).toEqual(mockVariants);
+      expect(result.data).toEqual(mockVariants);
       expect(mockStrapi.documents).toHaveBeenCalledWith(
         'api::product-listing-variant.product-listing-variant'
       );
@@ -176,7 +172,7 @@ describe('Product Listing Variant Controller', () => {
           'api::product-listing-variant.product-listing-variant'
         ).findMany
       ).toHaveBeenCalledWith({
-        filters: { status: 'published' },
+        filters: {},
         sort: 'createdAt:desc',
         limit: 25,
         start: 0,
@@ -208,13 +204,13 @@ describe('Product Listing Variant Controller', () => {
 
       const result = await productListingVariantController.find(mockContext);
 
-      expect(result).toEqual(mockVariants);
+      expect(result.data).toEqual(mockVariants);
       expect(
         mockStrapi.documents(
           'api::product-listing-variant.product-listing-variant'
         ).findMany
       ).toHaveBeenCalledWith({
-        filters: { inventory: { $gt: 5 }, status: 'published' },
+        filters: { inventory: { $gt: 5 } },
         sort: 'price:asc',
         limit: 10,
         start: 10,
@@ -257,7 +253,7 @@ describe('Product Listing Variant Controller', () => {
 
       const result = await productListingVariantController.findOne(mockContext);
 
-      expect(result).toEqual(mockVariant);
+      expect(result.data).toEqual(mockVariant);
       expect(
         mockStrapi.documents(
           'api::product-listing-variant.product-listing-variant'
@@ -333,7 +329,7 @@ describe('Product Listing Variant Controller', () => {
 
       const result = await productListingVariantController.create(mockContext);
 
-      expect(result).toEqual(mockVariant);
+      expect(result.data).toEqual(mockVariant);
       expect(
         mockStrapi.documents(
           'api::product-listing-variant.product-listing-variant'
@@ -434,7 +430,7 @@ describe('Product Listing Variant Controller', () => {
 
       const result = await productListingVariantController.update(mockContext);
 
-      expect(result).toEqual(mockUpdatedVariant);
+      expect(result.data).toEqual(mockUpdatedVariant);
       expect(
         mockStrapi.documents(
           'api::product-listing-variant.product-listing-variant'
@@ -573,7 +569,6 @@ describe('Product Listing Variant Controller', () => {
       ).toHaveBeenCalledWith({
         filters: {
           productListing: 'product-listing-doc-id',
-          status: 'published',
         },
         sort: 'createdAt:asc',
         populate: ['optionValues', 'images'],
@@ -634,7 +629,6 @@ describe('Product Listing Variant Controller', () => {
       ).toHaveBeenCalledWith({
         filters: {
           productListing: 'product-listing-doc-id',
-          status: 'published',
         },
         populate: ['optionValues'],
       });
@@ -679,59 +673,6 @@ describe('Product Listing Variant Controller', () => {
     });
   });
 
-  describe('updateInventory', () => {
-    it('should update variant inventory', async () => {
-      const mockUpdatedVariant = {
-        documentId: 'variant1',
-        sku: 'PROD-001-L-RED',
-        inventory: 15,
-      };
-
-      mockContext.params = { documentId: 'variant1' };
-      mockContext.request.body = {
-        inventory: 15,
-      };
-
-      // Set up mocks
-      mockStrapi.documents.mockReturnValue({
-        findMany: jest.fn(),
-        findOne: jest.fn(),
-        findFirst: jest.fn(),
-        create: jest.fn(),
-        update: jest.fn().mockResolvedValue(mockUpdatedVariant as never),
-        delete: jest.fn(),
-        count: jest.fn(),
-        publish: jest.fn(),
-        unpublish: jest.fn(),
-        discardDraft: jest.fn(),
-      } as any);
-
-      const result =
-        await productListingVariantController.updateInventory(mockContext);
-
-      expect(result).toEqual(mockUpdatedVariant);
-      expect(
-        mockStrapi.documents(
-          'api::product-listing-variant.product-listing-variant'
-        ).update
-      ).toHaveBeenCalledWith({
-        documentId: 'variant1',
-        data: { inventory: 15 },
-        populate: ['productListing'],
-      });
-    });
-
-    it('should return bad request when inventory is missing', async () => {
-      mockContext.params = { documentId: 'variant1' };
-      mockContext.request.body = {};
-
-      await productListingVariantController.updateInventory(mockContext);
-
-      expect(mockContext.badRequest).toHaveBeenCalledWith(
-        'Valid inventory number is required'
-      );
-    });
-  });
 
   describe('calculatePrice', () => {
     it('should calculate variant price with discounts', async () => {
@@ -754,24 +695,4 @@ describe('Product Listing Variant Controller', () => {
     });
   });
 
-  describe('checkAvailability', () => {
-    it('should check variant availability', async () => {
-      const mockAvailability = {
-        available: true,
-        quantity: 10,
-        inStock: true,
-      };
-
-      mockContext.params = { documentId: 'variant1' };
-      mockContext.request.body = {
-        quantity: 2,
-      };
-
-      const result =
-        await productListingVariantController.checkAvailability(mockContext);
-
-      expect(result).toEqual(mockAvailability);
-      // The service method is called internally by the controller
-    });
-  });
 });

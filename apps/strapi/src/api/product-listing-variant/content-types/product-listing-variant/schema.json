@@ -8,7 +8,7 @@
     "description": "Product variants with specific options, pricing, and inventory"
   },
   "options": {
-    "draftAndPublish": true
+    "draftAndPublish": false
   },
   "pluginOptions": {},
   "attributes": {
@@ -39,12 +39,6 @@
       "relation": "manyToMany",
       "target": "api::option-value.option-value",
       "mappedBy": "variants"
-    },
-    "inventory": {
-      "type": "integer",
-      "required": true,
-      "min": 0,
-      "default": 0
     },
     "images": {
       "type": "media",

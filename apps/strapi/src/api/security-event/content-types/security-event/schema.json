@@ -90,8 +90,8 @@
     },
     "resolvedBy": {
       "type": "relation",
-      "relation": "manyToOne",
-      "target": "plugin::users-permissions.user"
+      "relation": "manyToOne", 
+      "target": "admin::user"
     },
     "resolvedAt": {
       "type": "datetime"

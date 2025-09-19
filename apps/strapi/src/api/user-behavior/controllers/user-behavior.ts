@@ -9,7 +9,6 @@ const extractDeviceInfo = (userAgent: string) => {
   // Basic device detection
   const isMobile = /Mobile|Android|iPhone|iPad/.test(userAgent)
   const isTablet = /iPad|Android(?=.*\bMobile\b)(?=.*\bSafari\b)/.test(userAgent)
-  const isDesktop = !isMobile && !isTablet
 
   return {
     type: isMobile ? 'mobile' : isTablet ? 'tablet' : 'desktop',
@@ -58,10 +57,14 @@ export default factories.createCoreController(
 
       // Use Document Service API for creation
       const behavior = await strapi.documents('api::user-behavior.user-behavior').create({
-        data: behaviorData
+        data: behaviorData,
+        populate: ['user']
       })
 
-      return behavior
+      // Return in Strapi format
+      ctx.body = {
+        data: behavior
+      }
     } catch (error) {
       strapi.log.error('Error tracking user behavior:', error)
       ctx.throw(500, 'Failed to track user behavior')
@@ -72,7 +75,6 @@ export default factories.createCoreController(
     try {
       const { query } = ctx
       const { user } = ctx.state
-
       // Build filters
       const filters: any = {}
       
@@ -97,11 +99,11 @@ export default factories.createCoreController(
           filters.timestamp.$lte = new Date(String(query.endDate))
         }
       }
-
+      const paginationQuery = query.pagination as any || { page: '1', pageSize: '25' };
       // Apply pagination
       const pagination = {
-        page: Math.max(1, parseInt(String(query.page)) || 1),
-        pageSize: Math.min(Math.max(1, parseInt(String(query.pageSize)) || 25), 100)
+        page: Math.max(1, parseInt(String(paginationQuery.page)) || 1),
+        pageSize: Math.min(Math.max(1, parseInt(String(paginationQuery.pageSize)) || 25), 100)
       }
 
       // Use Document Service API
@@ -113,7 +115,18 @@ export default factories.createCoreController(
         populate: ['user']
       })
 
-      return behaviors
+      // Return in Strapi format
+      ctx.body = {
+        data: behaviors,
+        meta: {
+          pagination: {
+            page: pagination.page,
+            pageSize: pagination.pageSize,
+            pageCount: Math.ceil(behaviors.length / pagination.pageSize),
+            total: behaviors.length
+          }
+        }
+      }
     } catch (error) {
       strapi.log.error('Error finding user behaviors:', error)
       ctx.throw(500, 'Failed to retrieve user behaviors')
@@ -122,7 +135,7 @@ export default factories.createCoreController(
 
   async findOne(ctx) {
     try {
-      const { documentId } = ctx.params
+      const documentId = ctx.params.documentId || ctx.params.id;
 
       if (!documentId) {
         return ctx.badRequest('Behavior documentId is required')
@@ -138,7 +151,10 @@ export default factories.createCoreController(
         return ctx.notFound('User behavior not found')
       }
 
-      return behavior
+      // Return in Strapi format
+      ctx.body = {
+        data: behavior
+      }
     } catch (error) {
       strapi.log.error('Error finding user behavior:', error)
       ctx.throw(500, 'Failed to retrieve user behavior')
@@ -147,18 +163,28 @@ export default factories.createCoreController(
 
   async delete(ctx) {
     try {
-      const { documentId } = ctx.params
+      const documentId = ctx.params.documentId || ctx.params.id;
 
       if (!documentId) {
         return ctx.badRequest('Behavior documentId is required')
       }
-
+      // check if behavior exists
+      const behavior = await strapi.documents('api::user-behavior.user-behavior').findOne({
+        documentId
+      })
+      if (!behavior) {
+        return ctx.notFound('User behavior not found')
+      }
       // Use Document Service API
-      await strapi.documents('api::user-behavior.user-behavior').delete({
+      const result = await strapi.documents('api::user-behavior.user-behavior').delete({
         documentId
       })
 
-      return { message: 'User behavior deleted successfully' }
+      // Return in Strapi format
+      ctx.body = {
+        message: 'User behavior deleted successfully',
+        data: result
+      }
     } catch (error) {
       strapi.log.error('Error deleting user behavior:', error)
       ctx.throw(500, 'Failed to delete user behavior')
@@ -170,21 +196,237 @@ export default factories.createCoreController(
       const { query } = ctx
       const { user } = ctx.state
 
-      // Get analytics data using the analytics service
-      const analyticsService = strapi.service('api::user-behavior.analytics')
+      // Build filters for analytics
+      const filters: any = {}
       
-      const analytics = await analyticsService.getBehaviorAnalytics({
-        userId: query.userId,
-        behaviorType: query.behaviorType,
-        startDate: query.startDate,
-        endDate: query.endDate,
-        groupBy: query.groupBy || 'day'
+      if (query.userId) {
+        filters.user = { documentId: query.userId }
+      }
+      
+      if (query.behaviorType) {
+        filters.behaviorType = query.behaviorType
+      }
+      
+      if (query.startDate || query.endDate) {
+        filters.timestamp = {}
+        if (query.startDate) {
+          filters.timestamp.$gte = new Date(String(query.startDate))
+        }
+        if (query.endDate) {
+          filters.timestamp.$lte = new Date(String(query.endDate))
+        }
+      }
+
+      // Get raw behavior data
+      const behaviors = await strapi.documents('api::user-behavior.user-behavior').findMany({
+        filters,
+        sort: 'timestamp:asc',
+        populate: ['user']
       })
 
-      return analytics
+      // Ensure behaviors is an array
+      const safeBehaviors = Array.isArray(behaviors) ? behaviors : []
+
+      // Calculate basic analytics directly in the controller
+      const metrics = {
+        behaviorTypeDistribution: {},
+        deviceTypeDistribution: {},
+        timeSpentStats: { average: 0, median: 0, min: 0, max: 0 },
+        scrollDepthStats: { average: 0, median: 0, min: 0, max: 0 },
+        topPages: {},
+        topProducts: {},
+        topSearchQueries: {}
+      }
+
+      const timeSpentValues: number[] = []
+      const scrollDepthValues: number[] = []
+
+      // Process behaviors to calculate metrics
+      safeBehaviors.forEach(behavior => {
+        if (!behavior) return
+
+        try {
+          // Behavior type distribution
+          const behaviorType = behavior.behaviorType || 'unknown'
+          if (!metrics.behaviorTypeDistribution[behaviorType]) {
+            metrics.behaviorTypeDistribution[behaviorType] = 0
+          }
+          metrics.behaviorTypeDistribution[behaviorType]++
+          // Device type distribution
+          const deviceType = typeof behavior.deviceInfo === 'object' && behavior.deviceInfo !== null && 'type' in behavior.deviceInfo 
+            ? String(behavior.deviceInfo.type)
+            : 'unknown'
+          if (!metrics.deviceTypeDistribution[deviceType]) {
+            metrics.deviceTypeDistribution[deviceType] = 0
+          }
+          metrics.deviceTypeDistribution[deviceType]++
+
+          // Time spent statistics
+          if (behavior.timeSpent && typeof behavior.timeSpent === 'number' && behavior.timeSpent > 0) {
+            timeSpentValues.push(behavior.timeSpent)
+          }
+
+          // Scroll depth statistics
+          if (behavior.scrollDepth && typeof behavior.scrollDepth === 'number' && behavior.scrollDepth >= 0) {
+            scrollDepthValues.push(behavior.scrollDepth)
+          }
+
+          // Top pages
+          if (behavior.pageUrl && typeof behavior.pageUrl === 'string') {
+            if (!metrics.topPages[behavior.pageUrl]) {
+              metrics.topPages[behavior.pageUrl] = 0
+            }
+            metrics.topPages[behavior.pageUrl]++
+          }
+
+          // Top products
+          if (behavior.productId && typeof behavior.productId === 'string') {
+            if (!metrics.topProducts[behavior.productId]) {
+              metrics.topProducts[behavior.productId] = 0
+            }
+            metrics.topProducts[behavior.productId]++
+          }
+
+          // Top search queries
+          if (behavior.searchQuery && typeof behavior.searchQuery === 'string') {
+            if (!metrics.topSearchQueries[behavior.searchQuery]) {
+              metrics.topSearchQueries[behavior.searchQuery] = 0
+            }
+            metrics.topSearchQueries[behavior.searchQuery]++
+          }
+        } catch (error) {
+          console.warn('Error processing behavior for metrics:', error)
+        }
+      })
+
+      // Calculate statistics
+      if (timeSpentValues.length > 0) {
+        const sorted = timeSpentValues.sort((a, b) => a - b)
+        const sum = timeSpentValues.reduce((acc, val) => acc + val, 0)
+        metrics.timeSpentStats = {
+          average: sum / timeSpentValues.length,
+          median: sorted[Math.floor(timeSpentValues.length / 2)],
+          min: sorted[0],
+          max: sorted[sorted.length - 1]
+        }
+      }
+
+      if (scrollDepthValues.length > 0) {
+        const sorted = scrollDepthValues.sort((a, b) => a - b)
+        const sum = scrollDepthValues.reduce((acc, val) => acc + val, 0)
+        metrics.scrollDepthStats = {
+          average: sum / scrollDepthValues.length,
+          median: sorted[Math.floor(scrollDepthValues.length / 2)],
+          min: sorted[0],
+          max: sorted[sorted.length - 1]
+        }
+      }
+
+      // Sort top items
+      metrics.topPages = Object.entries(metrics.topPages)
+        .sort(([, a], [, b]) => (b as number) - (a as number))
+        .slice(0, 10)
+        .reduce((acc, [key, value]) => {
+          acc[key] = value
+          return acc
+        }, {} as any)
+
+      metrics.topProducts = Object.entries(metrics.topProducts)
+        .sort(([, a], [, b]) => (b as number) - (a as number))
+        .slice(0, 10)
+        .reduce((acc, [key, value]) => {
+          acc[key] = value
+          return acc
+        }, {} as any)
+
+      metrics.topSearchQueries = Object.entries(metrics.topSearchQueries)
+        .sort(([, a], [, b]) => (b as number) - (a as number))
+        .slice(0, 10)
+        .reduce((acc, [key, value]) => {
+          acc[key] = value
+          return acc
+        }, {} as any)
+
+      // Create aggregated data based on groupBy
+      const groupBy = query.groupBy || 'day'
+      const aggregated: any = {}
+
+      safeBehaviors.forEach(behavior => {
+        if (!behavior) return
+
+        let key: string
+        try {
+          switch (groupBy) {
+            case 'hour':
+              key = new Date(behavior.timestamp).toISOString().slice(0, 13) + ':00:00.000Z'
+              break
+            case 'day':
+              key = new Date(behavior.timestamp).toISOString().slice(0, 10)
+              break
+            case 'week':
+              const date = new Date(behavior.timestamp)
+              const weekStart = new Date(date.setDate(date.getDate() - date.getDay()))
+              key = weekStart.toISOString().slice(0, 10)
+              break
+            case 'month':
+              key = new Date(behavior.timestamp).toISOString().slice(0, 7)
+              break
+            case 'behaviorType':
+              key = behavior.behaviorType || 'unknown'
+              break
+            default:
+              key = new Date(behavior.timestamp).toISOString().slice(0, 10)
+          }
+        } catch (error) {
+          console.warn('Error processing behavior timestamp:', error)
+          key = 'unknown'
+        }
+
+        if (!aggregated[key]) {
+          aggregated[key] = {
+            period: key,
+            count: 0,
+            behaviors: {},
+            uniqueUsers: new Set()
+          }
+        }
+
+        aggregated[key].count++
+        if (behavior.user?.id) {
+          aggregated[key].uniqueUsers.add(behavior.user.id)
+        }
+
+        const behaviorType = behavior.behaviorType || 'unknown'
+        if (!aggregated[key].behaviors[behaviorType]) {
+          aggregated[key].behaviors[behaviorType] = 0
+        }
+        aggregated[key].behaviors[behaviorType]++
+      })
+
+      const aggregatedData = Object.values(aggregated)
+        .map((item: any) => ({
+          ...item,
+          uniqueUsers: item.uniqueUsers.size
+        }))
+        .sort((a: any, b: any) => a.period.localeCompare(b.period))
+
+      // Return analytics data
+      ctx.body = {
+        data: aggregatedData,
+        metrics,
+        summary: {
+          totalBehaviors: safeBehaviors.length,
+          uniqueUsers: new Set(safeBehaviors.map(b => b?.user?.id).filter(Boolean)).size,
+          dateRange: {
+            start: query.startDate || (safeBehaviors[0]?.timestamp || null),
+            end: query.endDate || (safeBehaviors[safeBehaviors.length - 1]?.timestamp || null)
+          }
+        }
+      }
     } catch (error) {
       strapi.log.error('Error getting behavior analytics:', error)
+      strapi.log.error('Error details:', error.message, error.stack)
       ctx.throw(500, 'Failed to retrieve behavior analytics')
     }
-      }
+  }
   }))

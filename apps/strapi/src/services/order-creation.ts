@@ -233,10 +233,21 @@ export default {
         if (item.variant) {
           // Check variant inventory
           const variant = await strapi.documents('api::product-listing-variant.product-listing-variant').findOne({
-            documentId: item.variant.documentId
+            documentId: item.variant.documentId,
+            populate: ['product']
           });
 
-          if (!variant || variant.inventory < item.quantity) {
+          if (!variant || !variant.product) {
+            return false;
+          }
+          
+          // Check inventory through the product's inventory record
+          const product = await strapi.documents('api::product.product').findOne({
+            documentId: variant.product.documentId,
+            populate: ['inventoryRecord']
+          });
+          
+          if (!product?.inventoryRecord || product.inventoryRecord.available < item.quantity) {
             return false;
           }
         } else {

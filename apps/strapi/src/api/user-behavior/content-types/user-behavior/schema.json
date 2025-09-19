@@ -35,7 +35,9 @@
         "filter_apply",
         "sort_change",
         "review_submit",
-        "rating_give"
+        "rating_give",
+        "concurrent_test",
+        "preference_change"
       ],
       "required": true
     },

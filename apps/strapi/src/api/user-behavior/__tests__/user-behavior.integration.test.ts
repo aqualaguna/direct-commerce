@@ -46,11 +46,6 @@ describe('User Behavior Integration Tests', () => {
     testUserToken = userResponse.body.jwt;
   });
 
-  // Add delay between tests to avoid rate limiting
-  afterEach(async () => {
-    await new Promise(resolve => setTimeout(resolve, 1500));
-  });
-
   // Test data factories
   const createTestBehaviorData = (overrides = {}) => ({
     behaviorType: 'page_view',
@@ -125,14 +120,36 @@ describe('User Behavior Integration Tests', () => {
     ...overrides,
   });
 
+  // Helper function to make authenticated requests
+  const makeAuthenticatedRequest = (method: string, endpoint: string, token: string, data?: any) => {
+    const req = request(SERVER_URL)[method.toLowerCase()](endpoint)
+      .set('Authorization', `Bearer ${token}`)
+      .timeout(10000);
+    
+    if (data) {
+      req.send(data);
+    }
+    
+    return req;
+  };
+
+  // Helper function to validate behavior response
+  const validateBehaviorResponse = (response: any, expectedData: any) => {
+    expect(response.body.data).toBeDefined();
+    expect(response.body.data.documentId).toBeDefined();
+    expect(response.body.data.behaviorType).toBe(expectedData.behaviorType);
+    expect(response.body.data.user.id).toBe(testUser.id);
+    expect(response.body.data.pageUrl).toBe(expectedData.pageUrl);
+    expect(response.body.data.timeSpent).toBe(expectedData.timeSpent);
+    expect(response.body.data.scrollDepth).toBe(expectedData.scrollDepth);
+    expect(response.body.data.sessionId).toBe(expectedData.sessionId);
+    expect(response.body.data.timestamp).toBeDefined();
+  };
+
   describe('API Health Check', () => {
     it('should be able to connect to the user-behavior API', async () => {
-      const response = await request(SERVER_URL)
-        .get('/api/user-behaviors')
-        .set('Authorization', `Bearer ${adminToken}`)
-        .timeout(10000);
+      const response = await makeAuthenticatedRequest('GET', '/api/user-behaviors', adminToken);
       
-      // Should return 200 with pagination data
       expect(response.status).toBe(200);
       expect(response.body.data).toBeDefined();
       expect(response.body.meta).toBeDefined();
@@ -140,13 +157,17 @@ describe('User Behavior Integration Tests', () => {
     });
 
     it('should handle invalid behavior ID gracefully', async () => {
+      const response = await makeAuthenticatedRequest('GET', '/api/user-behaviors/invalid-id', adminToken);
+
+      expect(response.status).toBe(404);
+    });
+
+    it('should require authentication for protected endpoints', async () => {
       const response = await request(SERVER_URL)
-        .get('/api/user-behaviors/invalid-id')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .get('/api/user-behaviors')
         .timeout(10000);
 
-      // Should return 404 (not found) for invalid ID
-      expect(response.status).toBe(404);
+      expect(response.status).toBe(403);
     });
   });
 
@@ -154,33 +175,16 @@ describe('User Behavior Integration Tests', () => {
     it('should track user behavior and verify response data', async () => {
       const behaviorData = createTestBehaviorData();
 
-      // Track behavior via API
-      const response = await request(SERVER_URL)
-        .post('/api/user-behaviors/track')
-        .set('Authorization', `Bearer ${testUserToken}`)
-        .send({ data: behaviorData })
-        .timeout(10000)
+      const response = await makeAuthenticatedRequest('POST', '/api/user-behaviors/track', testUserToken, { data: behaviorData })
         .expect(200);
 
-      expect(response.body.data).toBeDefined();
-      expect(response.body.data.documentId).toBeDefined();
-      expect(response.body.data.behaviorType).toBe(behaviorData.behaviorType);
-      expect(response.body.data.user.id).toBe(testUser.id);
-      expect(response.body.data.pageUrl).toBe(behaviorData.pageUrl);
-      expect(response.body.data.timeSpent).toBe(behaviorData.timeSpent);
-      expect(response.body.data.scrollDepth).toBe(behaviorData.scrollDepth);
-      expect(response.body.data.sessionId).toBe(behaviorData.sessionId);
-      expect(response.body.data.timestamp).toBeDefined();
+      validateBehaviorResponse(response, behaviorData);
     });
 
     it('should track product view behavior with detailed data', async () => {
       const productBehavior = createProductViewBehavior();
 
-      const response = await request(SERVER_URL)
-        .post('/api/user-behaviors/track')
-        .set('Authorization', `Bearer ${testUserToken}`)
-        .send({ data: productBehavior })
-        .timeout(10000)
+      const response = await makeAuthenticatedRequest('POST', '/api/user-behaviors/track', testUserToken, { data: productBehavior })
         .expect(200);
 
       expect(response.body.data).toBeDefined();
@@ -194,11 +198,7 @@ describe('User Behavior Integration Tests', () => {
     it('should track search behavior with query data', async () => {
       const searchBehavior = createSearchBehavior();
 
-      const response = await request(SERVER_URL)
-        .post('/api/user-behaviors/track')
-        .set('Authorization', `Bearer ${testUserToken}`)
-        .send({ data: searchBehavior })
-        .timeout(10000)
+      const response = await makeAuthenticatedRequest('POST', '/api/user-behaviors/track', testUserToken, { data: searchBehavior })
         .expect(200);
 
       expect(response.body.data).toBeDefined();
@@ -229,15 +229,10 @@ describe('User Behavior Integration Tests', () => {
           }
         });
 
-        const response = await request(SERVER_URL)
-          .post('/api/user-behaviors/track')
-          .set('Authorization', `Bearer ${testUserToken}`)
-          .send({ data: behaviorData })
-          .timeout(10000)
+        const response = await makeAuthenticatedRequest('POST', '/api/user-behaviors/track', testUserToken, { data: behaviorData })
           .expect(200);
 
         expect(response.body.data.behaviorType).toBe(behaviorType);
-        await new Promise(resolve => setTimeout(resolve, 500));
       }
     });
 
@@ -249,14 +244,43 @@ describe('User Behavior Integration Tests', () => {
         scrollDepth: 150, // Invalid > 100
       };
 
-      const response = await request(SERVER_URL)
-        .post('/api/user-behaviors/track')
-        .set('Authorization', `Bearer ${testUserToken}`)
-        .send({ data: invalidBehaviorData })
-        .timeout(10000)
-        .expect(400);
+      const response = await makeAuthenticatedRequest('POST', '/api/user-behaviors/track', testUserToken, { data: invalidBehaviorData });
 
+      expect(response.status).toBe(400);
       expect(response.body.error).toBeDefined();
+    });
+
+    it('should handle concurrent behavior tracking', async () => {
+      const concurrentPromises: any[] = [];
+      const behaviorCount = 5;
+
+      // Create multiple behaviors concurrently
+      for (let i = 0; i < behaviorCount; i++) {
+        const behaviorData = createTestBehaviorData({
+          behaviorType: 'concurrent_test',
+          behaviorData: {
+            concurrentIndex: i,
+            timestamp: new Date().toISOString()
+          }
+        });
+
+        const promise = makeAuthenticatedRequest('POST', '/api/user-behaviors/track', testUserToken, { data: behaviorData });
+        concurrentPromises.push(promise);
+      }
+
+      const startTime = Date.now();
+      const responses = await Promise.all(concurrentPromises);
+      const endTime = Date.now();
+      const duration = endTime - startTime;
+
+      // Verify all behaviors were tracked successfully
+      responses.forEach(response => {
+        expect(response.status).toBe(200);
+        expect(response.body.data).toBeDefined();
+        expect(response.body.data.behaviorType).toBe('concurrent_test');
+      });
+
+      expect(duration).toBeLessThan(15000); // All concurrent operations should complete within 15 seconds
     });
   });
 
@@ -279,22 +303,13 @@ describe('User Behavior Integration Tests', () => {
           }
         });
 
-        const response = await request(SERVER_URL)
-          .post('/api/user-behaviors/track')
-          .set('Authorization', `Bearer ${testUserToken}`)
-          .send({ data: behaviorData })
-          .timeout(10000);
-
+        const response = await makeAuthenticatedRequest('POST', '/api/user-behaviors/track', testUserToken, { data: behaviorData });
         createdBehaviors.push(response.body.data);
-        await new Promise(resolve => setTimeout(resolve, 1000));
       }
     });
 
     it('should calculate engagement metrics from behavior data', async () => {
-      const response = await request(SERVER_URL)
-        .get('/api/user-behaviors/analytics')
-        .set('Authorization', `Bearer ${adminToken}`)
-        .timeout(10000)
+      const response = await makeAuthenticatedRequest('GET', '/api/user-behaviors/analytics', adminToken)
         .expect(200);
 
       expect(response.body.data).toBeDefined();
@@ -312,10 +327,7 @@ describe('User Behavior Integration Tests', () => {
     });
 
     it('should calculate time spent statistics', async () => {
-      const response = await request(SERVER_URL)
-        .get('/api/user-behaviors/analytics')
-        .set('Authorization', `Bearer ${adminToken}`)
-        .timeout(10000)
+      const response = await makeAuthenticatedRequest('GET', '/api/user-behaviors/analytics', adminToken)
         .expect(200);
 
       const timeSpentStats = response.body.metrics.timeSpentStats;
@@ -329,10 +341,7 @@ describe('User Behavior Integration Tests', () => {
     });
 
     it('should calculate scroll depth statistics', async () => {
-      const response = await request(SERVER_URL)
-        .get('/api/user-behaviors/analytics')
-        .set('Authorization', `Bearer ${adminToken}`)
-        .timeout(10000)
+      const response = await makeAuthenticatedRequest('GET', '/api/user-behaviors/analytics', adminToken)
         .expect(200);
 
       const scrollDepthStats = response.body.metrics.scrollDepthStats;
@@ -348,10 +357,7 @@ describe('User Behavior Integration Tests', () => {
     });
 
     it('should calculate behavior type distribution', async () => {
-      const response = await request(SERVER_URL)
-        .get('/api/user-behaviors/analytics')
-        .set('Authorization', `Bearer ${adminToken}`)
-        .timeout(10000)
+      const response = await makeAuthenticatedRequest('GET', '/api/user-behaviors/analytics', adminToken)
         .expect(200);
 
       const distribution = response.body.metrics.behaviorTypeDistribution;
@@ -369,10 +375,7 @@ describe('User Behavior Integration Tests', () => {
     });
 
     it('should calculate device type distribution', async () => {
-      const response = await request(SERVER_URL)
-        .get('/api/user-behaviors/analytics')
-        .set('Authorization', `Bearer ${adminToken}`)
-        .timeout(10000)
+      const response = await makeAuthenticatedRequest('GET', '/api/user-behaviors/analytics', adminToken)
         .expect(200);
 
       const deviceDistribution = response.body.metrics.deviceTypeDistribution;
@@ -388,10 +391,7 @@ describe('User Behavior Integration Tests', () => {
 
   describe('Behavior Pattern Recognition', () => {
     it('should identify user behavior patterns', async () => {
-      const response = await request(SERVER_URL)
-        .get(`/api/user-behaviors/analytics?userId=${testUser.id}`)
-        .set('Authorization', `Bearer ${adminToken}`)
-        .timeout(10000)
+      const response = await makeAuthenticatedRequest('GET', `/api/user-behaviors/analytics?userId=${testUser.id}`, adminToken)
         .expect(200);
 
       expect(response.body.data).toBeDefined();
@@ -411,17 +411,10 @@ describe('User Behavior Integration Tests', () => {
         sessionId: `test_session_${timestamp}_${Math.random().toString(36).substr(2, 9)}`
       });
 
-      const createResponse = await request(SERVER_URL)
-        .post('/api/user-behaviors/track')
-        .set('Authorization', `Bearer ${testUserToken}`)
-        .send({ data: testBehavior })
-        .timeout(10000)
+      const createResponse = await makeAuthenticatedRequest('POST', '/api/user-behaviors/track', testUserToken, { data: testBehavior })
         .expect(200);
 
-      const response = await request(SERVER_URL)
-        .get(`/api/user-behaviors?sessionId=${testBehavior.sessionId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
-        .timeout(10000)
+      const response = await makeAuthenticatedRequest('GET', `/api/user-behaviors?sessionId=${testBehavior.sessionId}`, adminToken)
         .expect(200);
 
       expect(response.body.data).toBeDefined();
@@ -434,10 +427,7 @@ describe('User Behavior Integration Tests', () => {
     });
 
     it('should identify popular pages and products', async () => {
-      const response = await request(SERVER_URL)
-        .get('/api/user-behaviors/analytics')
-        .set('Authorization', `Bearer ${adminToken}`)
-        .timeout(10000)
+      const response = await makeAuthenticatedRequest('GET', '/api/user-behaviors/analytics', adminToken)
         .expect(200);
 
       const metrics = response.body.metrics;
@@ -456,10 +446,7 @@ describe('User Behavior Integration Tests', () => {
 
   describe('Engagement Scoring and Ranking', () => {
     it('should rank users by engagement level', async () => {
-      const response = await request(SERVER_URL)
-        .get('/api/user-behaviors/analytics?groupBy=behaviorType')
-        .set('Authorization', `Bearer ${adminToken}`)
-        .timeout(10000)
+      const response = await makeAuthenticatedRequest('GET', '/api/user-behaviors/analytics?groupBy=behaviorType', adminToken)
         .expect(200);
 
       expect(response.body.data).toBeDefined();
@@ -475,10 +462,7 @@ describe('User Behavior Integration Tests', () => {
     });
 
     it('should calculate engagement scores by time period', async () => {
-      const response = await request(SERVER_URL)
-        .get('/api/user-behaviors/analytics?groupBy=day')
-        .set('Authorization', `Bearer ${adminToken}`)
-        .timeout(10000)
+      const response = await makeAuthenticatedRequest('GET', '/api/user-behaviors/analytics?groupBy=day', adminToken)
         .expect(200);
 
       expect(response.body.data).toBeDefined();
@@ -493,10 +477,7 @@ describe('User Behavior Integration Tests', () => {
     });
 
     it('should provide engagement summary statistics', async () => {
-      const response = await request(SERVER_URL)
-        .get('/api/user-behaviors/analytics')
-        .set('Authorization', `Bearer ${adminToken}`)
-        .timeout(10000)
+      const response = await makeAuthenticatedRequest('GET', '/api/user-behaviors/analytics', adminToken)
         .expect(200);
 
       const summary = response.body.summary;
@@ -511,10 +492,7 @@ describe('User Behavior Integration Tests', () => {
 
   describe('Behavior-Based Recommendations', () => {
     it('should provide behavior-based insights', async () => {
-      const response = await request(SERVER_URL)
-        .get(`/api/user-behaviors/analytics?userId=${testUser.id}`)
-        .set('Authorization', `Bearer ${adminToken}`)
-        .timeout(10000)
+      const response = await makeAuthenticatedRequest('GET', `/api/user-behaviors/analytics?userId=${testUser.id}`, adminToken)
         .expect(200);
 
       const metrics = response.body.metrics;
@@ -535,10 +513,7 @@ describe('User Behavior Integration Tests', () => {
     });
 
     it('should identify trending behaviors', async () => {
-      const response = await request(SERVER_URL)
-        .get('/api/user-behaviors/analytics?groupBy=hour')
-        .set('Authorization', `Bearer ${adminToken}`)
-        .timeout(10000)
+      const response = await makeAuthenticatedRequest('GET', '/api/user-behaviors/analytics?groupBy=hour', adminToken)
         .expect(200);
 
       expect(response.body.data).toBeDefined();
@@ -569,11 +544,7 @@ describe('User Behavior Integration Tests', () => {
         }
       });
 
-      const response = await request(SERVER_URL)
-        .post('/api/user-behaviors/track')
-        .set('Authorization', `Bearer ${testUserToken}`)
-        .send({ data: sensitiveBehavior })
-        .timeout(10000)
+      const response = await makeAuthenticatedRequest('POST', '/api/user-behaviors/track', testUserToken, { data: sensitiveBehavior })
         .expect(200);
 
       expect(response.body.data).toBeDefined();
@@ -597,11 +568,7 @@ describe('User Behavior Integration Tests', () => {
         }
       });
 
-      const response = await request(SERVER_URL)
-        .post('/api/user-behaviors/track')
-        .set('Authorization', `Bearer ${testUserToken}`)
-        .send({ data: behaviorWithPersonalData })
-        .timeout(10000)
+      const response = await makeAuthenticatedRequest('POST', '/api/user-behaviors/track', testUserToken, { data: behaviorWithPersonalData })
         .expect(200);
 
       expect(response.body.data).toBeDefined();
@@ -624,11 +591,7 @@ describe('User Behavior Integration Tests', () => {
         }
       });
 
-      const response = await request(SERVER_URL)
-        .post('/api/user-behaviors/track')
-        .set('Authorization', `Bearer ${testUserToken}`)
-        .send({ data: consentBehavior })
-        .timeout(10000)
+      const response = await makeAuthenticatedRequest('POST', '/api/user-behaviors/track', testUserToken, { data: consentBehavior })
         .expect(200);
 
       expect(response.body.data).toBeDefined();
@@ -642,10 +605,7 @@ describe('User Behavior Integration Tests', () => {
       const startTime = Date.now();
       
       // Get all behaviors to test performance
-      const response = await request(SERVER_URL)
-        .get('/api/user-behaviors?pagination[pageSize]=100')
-        .set('Authorization', `Bearer ${adminToken}`)
-        .timeout(30000) // Longer timeout for performance test
+      const response = await makeAuthenticatedRequest('GET', '/api/user-behaviors?pagination[pageSize]=100', adminToken)
         .expect(200);
 
       const endTime = Date.now();
@@ -667,10 +627,7 @@ describe('User Behavior Integration Tests', () => {
       for (const query of queries) {
         const startTime = Date.now();
         
-        const response = await request(SERVER_URL)
-          .get(query)
-          .set('Authorization', `Bearer ${adminToken}`)
-          .timeout(10000)
+        const response = await makeAuthenticatedRequest('GET', query, adminToken)
           .expect(200);
 
         const endTime = Date.now();
@@ -681,54 +638,13 @@ describe('User Behavior Integration Tests', () => {
       }
     });
 
-    it('should handle concurrent behavior tracking', async () => {
-      const concurrentPromises: any[] = [];
-      const behaviorCount = 5;
-
-      // Create multiple behaviors concurrently
-      for (let i = 0; i < behaviorCount; i++) {
-        const behaviorData = createTestBehaviorData({
-          behaviorType: 'concurrent_test',
-          behaviorData: {
-            concurrentIndex: i,
-            timestamp: new Date().toISOString()
-          }
-        });
-
-        const promise = request(SERVER_URL)
-          .post('/api/user-behaviors/track')
-          .set('Authorization', `Bearer ${testUserToken}`)
-          .send({ data: behaviorData })
-          .timeout(10000);
-
-        concurrentPromises.push(promise);
-      }
-
-      const startTime = Date.now();
-      const responses = await Promise.all(concurrentPromises);
-      const endTime = Date.now();
-      const duration = endTime - startTime;
-
-      // Verify all behaviors were tracked successfully
-      responses.forEach(response => {
-        expect(response.status).toBe(200);
-        expect(response.body.data).toBeDefined();
-        expect(response.body.data.behaviorType).toBe('concurrent_test');
-      });
-
-      expect(duration).toBeLessThan(15000); // All concurrent operations should complete within 15 seconds
-    });
-
     it('should handle pagination efficiently', async () => {
       const pageSizes = [10, 25, 50, 100];
       
       for (const pageSize of pageSizes) {
         const startTime = Date.now();
         
-        const response = await request(SERVER_URL)
-          .get(`/api/user-behaviors?pagination[pageSize]=${pageSize}`)
-          .set('Authorization', `Bearer ${adminToken}`)
-          .timeout(10000)
+        const response = await makeAuthenticatedRequest('GET', `/api/user-behaviors?pagination[pageSize]=${pageSize}`, adminToken)
           .expect(200);
 
         const endTime = Date.now();
@@ -752,11 +668,7 @@ describe('User Behavior Integration Tests', () => {
         // Missing required fields
       };
 
-      const response = await request(SERVER_URL)
-        .post('/api/user-behaviors/track')
-        .set('Authorization', `Bearer ${testUserToken}`)
-        .send({ data: malformedData })
-        .timeout(10000);
+      const response = await makeAuthenticatedRequest('POST', '/api/user-behaviors/track', testUserToken, { data: malformedData });
 
       // Should either succeed with sanitized data or return validation error
       expect([200, 400]).toContain(response.status);
@@ -774,11 +686,7 @@ describe('User Behavior Integration Tests', () => {
         }
       });
 
-      const response = await request(SERVER_URL)
-        .post('/api/user-behaviors/track')
-        .set('Authorization', `Bearer ${testUserToken}`)
-        .send({ data: largeBehaviorData })
-        .timeout(15000)
+      const response = await makeAuthenticatedRequest('POST', '/api/user-behaviors/track', testUserToken, { data: largeBehaviorData })
         .expect(200);
 
       expect(response.body.data).toBeDefined();
@@ -809,14 +717,89 @@ describe('User Behavior Integration Tests', () => {
       // This test simulates what would happen with database issues
       const behaviorData = createTestBehaviorData();
 
-      const response = await request(SERVER_URL)
-        .post('/api/user-behaviors/track')
-        .set('Authorization', `Bearer ${testUserToken}`)
-        .send({ data: behaviorData })
-        .timeout(10000);
+      const response = await makeAuthenticatedRequest('POST', '/api/user-behaviors/track', testUserToken, { data: behaviorData });
 
       // Should handle gracefully - either succeed or return proper error
       expect([200, 201, 500, 503]).toContain(response.status);
+    });
+  });
+
+  describe('Data Retrieval and Filtering', () => {
+    it('should retrieve behaviors with proper pagination', async () => {
+      const response = await makeAuthenticatedRequest('GET', '/api/user-behaviors?pagination[page]=1&pagination[pageSize]=10', adminToken)
+        .expect(200);
+
+      expect(response.body.data).toBeDefined();
+      expect(response.body.meta).toBeDefined();
+      expect(response.body.meta.pagination).toBeDefined();
+      expect(response.body.meta.pagination.page).toBe(1);
+      expect(response.body.meta.pagination.pageSize).toBe(10);
+    });
+
+    it('should filter behaviors by user ID', async () => {
+      const response = await makeAuthenticatedRequest('GET', `/api/user-behaviors?userId=${testUser.id}`, adminToken)
+        .expect(200);
+
+      expect(response.body.data).toBeDefined();
+      response.body.data.forEach((behavior: any) => {
+        expect(behavior.user.id).toBe(testUser.id);
+      });
+    });
+
+    it('should filter behaviors by behavior type', async () => {
+      const response = await makeAuthenticatedRequest('GET', '/api/user-behaviors?behaviorType=page_view', adminToken)
+        .expect(200);
+
+      expect(response.body.data).toBeDefined();
+      response.body.data.forEach((behavior: any) => {
+        expect(behavior.behaviorType).toBe('page_view');
+      });
+    });
+
+    it('should filter behaviors by date range', async () => {
+      const startDate = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(); // 24 hours ago
+      const endDate = new Date().toISOString();
+
+      const response = await makeAuthenticatedRequest('GET', `/api/user-behaviors?startDate=${startDate}&endDate=${endDate}`, adminToken)
+        .expect(200);
+
+      expect(response.body.data).toBeDefined();
+      response.body.data.forEach((behavior: any) => {
+        const behaviorDate = new Date(behavior.timestamp);
+        expect(behaviorDate.getTime()).toBeGreaterThanOrEqual(new Date(startDate).getTime());
+        expect(behaviorDate.getTime()).toBeLessThanOrEqual(new Date(endDate).getTime());
+      });
+    });
+  });
+
+  describe('Data Management', () => {
+    let testBehaviorId: string;
+
+    it('should delete a behavior record', async () => {
+      // First create a behavior to delete
+      const behaviorData = createTestBehaviorData({
+        behaviorType: 'preference_change'
+      });
+
+      const createResponse = await makeAuthenticatedRequest('POST', '/api/user-behaviors/track', testUserToken, { data: behaviorData })
+        .expect(200);
+
+      testBehaviorId = createResponse.body.data.documentId;
+
+      // Now delete it
+      const deleteResponse = await makeAuthenticatedRequest('DELETE', `/api/user-behaviors/${testBehaviorId}`, adminToken)
+        .expect(200);
+
+      expect(deleteResponse.body.message).toBe('User behavior deleted successfully');
+
+      // Verify it's deleted by trying to fetch it
+      const fetchResponse = await makeAuthenticatedRequest('GET', `/api/user-behaviors/${testBehaviorId}`, adminToken);
+      expect(fetchResponse.status).toBe(404);
+    });
+
+    it('should handle deletion of non-existent behavior', async () => {
+      const response = await makeAuthenticatedRequest('DELETE', '/api/user-behaviors/non-existent-id', adminToken);
+      expect(response.status).toBe(404);
     });
   });
 });

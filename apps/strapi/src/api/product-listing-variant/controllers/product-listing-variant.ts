@@ -14,7 +14,6 @@ export default factories.createCoreController(
         // Apply filters with improved error handling
         const filters = {
           ...((query.filters as Record<string, any>) || {}),
-          status: 'published',
         } as any;
 
         // Apply sorting with validation
@@ -40,7 +39,22 @@ export default factories.createCoreController(
             populate: ['productListing', 'optionValues', 'images'],
           });
 
-        return variants;
+        // Get total count for pagination metadata
+        const total = await strapi
+          .documents('api::product-listing-variant.product-listing-variant')
+          .count({ filters });
+
+        return {
+          data: variants,
+          meta: {
+            pagination: {
+              page: pagination.page,
+              pageSize: pagination.pageSize,
+              pageCount: Math.ceil(total / pagination.pageSize),
+              total: total,
+            },
+          },
+        };
       } catch (error) {
         strapi.log.error('Error in product-listing-variant find:', error);
         return ctx.internalServerError('Internal server error');
@@ -49,7 +63,8 @@ export default factories.createCoreController(
 
     async findOne(ctx) {
       try {
-        const { documentId } = ctx.params;
+        // Support both legacy id and new documentId parameters
+        const documentId = ctx.params.documentId || ctx.params.id;
 
         if (!documentId) {
           return ctx.badRequest('Variant documentId is required');
@@ -67,7 +82,7 @@ export default factories.createCoreController(
           return ctx.notFound('Variant not found');
         }
 
-        return variant;
+        return { data: variant };
       } catch (error) {
         strapi.log.error('Error in product-listing-variant findOne:', error);
         return ctx.internalServerError('Internal server error');
@@ -91,7 +106,7 @@ export default factories.createCoreController(
             populate: ['productListing', 'optionValues', 'images'],
           });
 
-        return variant;
+        return { data: variant };
       } catch (error) {
         strapi.log.error('Error in product-listing-variant create:', error);
         return ctx.internalServerError('Internal server error');
@@ -100,7 +115,8 @@ export default factories.createCoreController(
 
     async update(ctx) {
       try {
-        const { documentId } = ctx.params;
+        // Support both legacy id and new documentId parameters
+        const documentId = ctx.params.documentId || ctx.params.id;
         const { data } = ctx.request.body;
 
         if (!documentId) {
@@ -116,7 +132,7 @@ export default factories.createCoreController(
             populate: ['productListing', 'optionValues', 'images'],
           });
 
-        return variant;
+        return { data: variant };
       } catch (error) {
         strapi.log.error('Error in product-listing-variant update:', error);
         return ctx.internalServerError('Internal server error');
@@ -125,7 +141,8 @@ export default factories.createCoreController(
 
     async delete(ctx) {
       try {
-        const { documentId } = ctx.params;
+        // Support both legacy id and new documentId parameters
+        const documentId = ctx.params.documentId || ctx.params.id;
 
         if (!documentId) {
           return ctx.badRequest('Variant documentId is required');
@@ -158,7 +175,6 @@ export default factories.createCoreController(
         const filters = {
           ...((query.filters as Record<string, any>) || {}),
           productListing: productListingId,
-          status: 'published',
         };
 
         const variants = await strapi
@@ -201,7 +217,6 @@ export default factories.createCoreController(
           .findMany({
             filters: {
               productListing: productListingId,
-              status: 'published',
             },
             populate: ['optionValues'],
           });
@@ -230,37 +245,6 @@ export default factories.createCoreController(
       }
     },
 
-    // Custom method to update variant inventory
-    async updateInventory(ctx) {
-      try {
-        const { documentId } = ctx.params;
-        const { inventory } = ctx.request.body;
-
-        if (!documentId) {
-          return ctx.badRequest('Variant documentId is required');
-        }
-
-        if (typeof inventory !== 'number' || inventory < 0) {
-          return ctx.badRequest('Valid inventory number is required');
-        }
-
-        const variant = await strapi
-          .documents('api::product-listing-variant.product-listing-variant')
-          .update({
-            documentId,
-            data: { inventory },
-            populate: ['productListing'],
-          });
-
-        return variant;
-      } catch (error) {
-        strapi.log.error(
-          'Error in product-listing-variant updateInventory:',
-          error
-        );
-        return ctx.internalServerError('Internal server error');
-      }
-    },
 
     // Custom method to calculate variant price
     async calculatePrice(ctx) {
@@ -296,73 +280,7 @@ export default factories.createCoreController(
       }
     },
 
-    // Custom method to check variant availability
-    async checkAvailability(ctx) {
-      try {
-        const { documentId } = ctx.params;
-        const { quantity = 1 } = ctx.request.body;
 
-        if (!documentId) {
-          return ctx.badRequest('Variant documentId is required');
-        }
-
-        const pricingService = strapi.service(
-          'api::product-listing-variant.variant-pricing-inventory'
-        );
-        const availability = await pricingService.checkVariantAvailability(
-          documentId,
-          quantity
-        );
-
-        return availability;
-      } catch (error) {
-        strapi.log.error(
-          'Error in product-listing-variant checkAvailability:',
-          error
-        );
-        return ctx.internalServerError('Internal server error');
-      }
-    },
-
-    // Custom method to get low stock variants
-    async getLowStock(ctx) {
-      try {
-        const { threshold = 10 } = ctx.query;
-
-        const pricingService = strapi.service(
-          'api::product-listing-variant.variant-pricing-inventory'
-        );
-        const lowStockVariants = await pricingService.getLowStockVariants(
-          parseInt(String(threshold))
-        );
-
-        return lowStockVariants;
-      } catch (error) {
-        strapi.log.error(
-          'Error in product-listing-variant getLowStock:',
-          error
-        );
-        return ctx.internalServerError('Internal server error');
-      }
-    },
-
-    // Custom method to get out of stock variants
-    async getOutOfStock(ctx) {
-      try {
-        const pricingService = strapi.service(
-          'api::product-listing-variant.variant-pricing-inventory'
-        );
-        const outOfStockVariants = await pricingService.getOutOfStockVariants();
-
-        return outOfStockVariants;
-      } catch (error) {
-        strapi.log.error(
-          'Error in product-listing-variant getOutOfStock:',
-          error
-        );
-        return ctx.internalServerError('Internal server error');
-      }
-    },
 
     // Custom method to bulk update prices
     async bulkUpdatePrices(ctx) {

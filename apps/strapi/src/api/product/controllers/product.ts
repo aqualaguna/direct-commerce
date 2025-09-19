@@ -729,7 +729,6 @@ export default factories.createCoreController(
                 fields: ['id', 'name', 'slug'],
               },
             },
-            fields: ['id', 'name', 'brand', 'description', 'sku', 'inventory', 'status', 'weight', 'length', 'width', 'height', 'createdAt', 'updatedAt'],
           });
 
         return {
@@ -821,7 +820,6 @@ export default factories.createCoreController(
                 fields: ['id', 'name', 'slug'], // Use documentId instead of id
               },
             },
-            fields: ['id', 'name', 'brand', 'description', 'sku', 'inventory', 'status', 'weight', 'length', 'width', 'height', 'createdAt', 'updatedAt'],
           });
 
         return {
@@ -844,98 +842,7 @@ export default factories.createCoreController(
       }
     },
 
-    // Wishlist management methods (placeholder - requires wishlist content type)
-    async addToWishlist(ctx) {
-      try {
-        const { productId } = ctx.params;
-        const { user } = ctx.state;
-
-        if (!user) {
-          return ctx.badRequest('User authentication required');
-        }
-
-        if (!productId) {
-          return ctx.badRequest('Product ID is required');
-        }
-
-        // Check if product exists
-        const product = await strapi.entityService.findOne(
-          'api::product.product',
-          productId
-        );
-
-        if (!product) {
-          return ctx.notFound('Product not found');
-        }
-
-        // TODO: Implement wishlist functionality when wishlist content type is created
-        // For now, return a placeholder response
-        return {
-          data: {
-            message: 'Wishlist functionality not yet implemented',
-            productId,
-            userId: user.id,
-          },
-        };
-      } catch (error) {
-        strapi.log.error('Error adding product to wishlist:', error);
-        ctx.throw(500, 'Internal server error');
-      }
-    },
-
-    async removeFromWishlist(ctx) {
-      try {
-        const { productId } = ctx.params;
-        const { user } = ctx.state;
-
-        if (!user) {
-          return ctx.badRequest('User authentication required');
-        }
-
-        if (!productId) {
-          return ctx.badRequest('Product ID is required');
-        }
-
-        // TODO: Implement wishlist functionality when wishlist content type is created
-        // For now, return a placeholder response
-        return {
-          message: 'Wishlist functionality not yet implemented',
-          productId,
-          userId: user.id,
-        };
-      } catch (error) {
-        strapi.log.error('Error removing product from wishlist:', error);
-        ctx.throw(500, 'Internal server error');
-      }
-    },
-
-    async getWishlist(ctx) {
-      try {
-        const { user } = ctx.state;
-        const { query } = ctx;
-
-        if (!user) {
-          return ctx.badRequest('User authentication required');
-        }
-
-        // TODO: Implement wishlist functionality when wishlist content type is created
-        // For now, return a placeholder response
-        return {
-          data: [],
-          meta: {
-            pagination: {
-              page: parseInt(String(query.page || 1)),
-              pageSize: parseInt(String(query.pageSize || 25)),
-              pageCount: 0,
-              total: 0,
-            },
-            message: 'Wishlist functionality not yet implemented',
-          },
-        };
-      } catch (error) {
-        strapi.log.error('Error getting wishlist:', error);
-        ctx.throw(500, 'Internal server error');
-      }
-    },
+    // Note: Wishlist functionality has been moved to product-listing controller
+    // since users should wishlist product-listings (customer-facing) not products (internal)
   })
 );

@@ -413,5 +413,191 @@ export default factories.createCoreController(
         return ctx.internalServerError('Internal server error');
       }
     },
+
+    async findOneWithVariants(ctx) {
+      try {
+        const { documentId } = ctx.params;
+
+        if (!documentId) {
+          return ctx.badRequest('Product listing documentId is required');
+        }
+
+        // Get the product listing with variants populated
+        const productListing = await strapi.documents('api::product-listing.product-listing').findOne({
+          documentId,
+          populate: ['variants', 'variants.optionValues', 'variants.images', 'product', 'category', 'images']
+        });
+
+        if (!productListing) {
+          return ctx.notFound('Product listing not found');
+        }
+
+        return {
+          data: productListing
+        };
+      } catch (error) {
+        strapi.log.error('Error in product-listing findOneWithVariants:', error);
+        return ctx.internalServerError('Internal server error');
+      }
+    },
+
+    // Wishlist management methods
+    async addToWishlist(ctx) {
+      try {
+        const { documentId } = ctx.params;
+        const { user } = ctx.state;
+
+        if (!user) {
+          return ctx.badRequest('User authentication required');
+        }
+
+        if (!documentId) {
+          return ctx.badRequest('Product listing documentId is required');
+        }
+
+        // Check if product listing exists
+        const productListing = await strapi.documents('api::product-listing.product-listing').findOne({
+          documentId,
+          populate: ['wishlistedBy']
+        });
+
+        if (!productListing) {
+          return ctx.notFound('Product listing not found');
+        }
+
+        // Check if already in wishlist
+        const isAlreadyWishlisted = (productListing as any).wishlistedBy?.some(
+          (wishlistUser: any) => wishlistUser.documentId === user.documentId
+        );
+
+        if (isAlreadyWishlisted) {
+          return ctx.badRequest('Product listing is already in your wishlist');
+        }
+
+        // Add to wishlist
+        const updatedProductListing = await strapi.documents('api::product-listing.product-listing').update({
+          documentId,
+          data: {
+            wishlistedBy: {
+              connect: [user.documentId]
+            }
+          }
+        });
+
+        return {
+          data: {
+            message: 'Product listing added to wishlist successfully',
+            productListing: updatedProductListing
+          }
+        };
+      } catch (error) {
+        strapi.log.error('Error adding product listing to wishlist:', error);
+        return ctx.internalServerError('Internal server error');
+      }
+    },
+
+    async removeFromWishlist(ctx) {
+      try {
+        const { documentId } = ctx.params;
+        const { user } = ctx.state;
+
+        if (!user) {
+          return ctx.badRequest('User authentication required');
+        }
+
+        if (!documentId) {
+          return ctx.badRequest('Product listing documentId is required');
+        }
+
+        // Check if product listing exists
+        const productListing = await strapi.documents('api::product-listing.product-listing').findOne({
+          documentId,
+          populate: ['wishlistedBy']
+        });
+
+        if (!productListing) {
+          return ctx.notFound('Product listing not found');
+        }
+
+        // Check if in wishlist
+        const isInWishlist = (productListing as any).wishlistedBy?.some(
+          (wishlistUser: any) => wishlistUser.documentId === user.documentId
+        );
+
+        if (!isInWishlist) {
+          return ctx.badRequest('Product listing is not in your wishlist');
+        }
+
+        // Remove from wishlist
+        const updatedProductListing = await strapi.documents('api::product-listing.product-listing').update({
+          documentId,
+          data: {
+            wishlistedBy: {
+              disconnect: [user.documentId]
+            }
+          }
+        });
+
+        return {
+          data: {
+            message: 'Product listing removed from wishlist successfully',
+            productListing: updatedProductListing
+          }
+        };
+      } catch (error) {
+        strapi.log.error('Error removing product listing from wishlist:', error);
+        return ctx.internalServerError('Internal server error');
+      }
+    },
+
+    async getWishlist(ctx) {
+      try {
+        const { user } = ctx.state;
+        const { query } = ctx;
+
+        if (!user) {
+          return ctx.badRequest('User authentication required');
+        }
+
+        // Get user's wishlist
+        const userWithWishlist = await strapi.documents('plugin::users-permissions.user').findOne({
+          documentId: user.documentId,
+          populate: {
+            wishlist: {
+              populate: ['images', 'product', 'category']
+            }
+          }
+        });
+
+        if (!userWithWishlist) {
+          return ctx.notFound('User not found');
+        }
+
+        const wishlist = (userWithWishlist as any).wishlist || [];
+
+        // Apply pagination
+        const page = Math.max(1, parseInt(String(query.page || 1)));
+        const pageSize = Math.min(Math.max(1, parseInt(String(query.pageSize || 25))), 100);
+        const start = (page - 1) * pageSize;
+        const end = start + pageSize;
+
+        const paginatedWishlist = wishlist.slice(start, end);
+
+        return {
+          data: paginatedWishlist,
+          meta: {
+            pagination: {
+              page,
+              pageSize,
+              pageCount: Math.ceil(wishlist.length / pageSize),
+              total: wishlist.length,
+            },
+          },
+        };
+      } catch (error) {
+        strapi.log.error('Error getting wishlist:', error);
+        return ctx.internalServerError('Internal server error');
+      }
+    },
   })
 );

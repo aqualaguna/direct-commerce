@@ -14,14 +14,13 @@ export default {
       if (!user) {
         return ctx.unauthorized('Authentication required');
       }
-
       const privacySettings = await strapi.documents('api::privacy-setting.privacy-setting').findFirst({
-        filters: { user: user.documentId }
+        filters: { user: user.id }
       });
 
       if (!privacySettings) {
         // Create default privacy settings if none exist
-        const defaultSettings = await strapi.service('api::privacy-setting.privacy-setting').createDefaultPrivacySettings(user.documentId);
+        const defaultSettings = await strapi.service('api::privacy-setting.privacy-setting').createDefaultPrivacySettings(user.id);
         return ctx.send({
           data: defaultSettings,
           meta: {
@@ -81,7 +80,7 @@ export default {
 
       // Find existing privacy settings or create new ones
       let privacySettings = await strapi.documents('api::privacy-setting.privacy-setting').findFirst({
-        filters: { user: user.documentId }
+        filters: { user: user.id }
       });
 
       if (privacySettings) {
@@ -98,7 +97,7 @@ export default {
       }
 
       // Log privacy setting changes for audit trail
-      await this.logPrivacyChange(user.documentId, data, ctx.request.ip, ctx.request.header['user-agent']);
+      await this.logPrivacyChange(user.id, data, ctx.request.ip, ctx.request.header['user-agent']);
 
       return ctx.send({
         data: privacySettings,
@@ -130,7 +129,7 @@ export default {
 
       // Get existing privacy settings
       let privacySettings = await strapi.documents('api::privacy-setting.privacy-setting').findFirst({
-        filters: { user: user.documentId }
+        filters: { user: user.id }
       });
 
       if (!privacySettings) {
@@ -140,14 +139,14 @@ export default {
 
       // Update consent fields
       const consentUpdate = {
-        gdprConsent: consentData.gdprConsent || false,
-        analyticsConsent: consentData.analyticsConsent || false,
-        marketingConsent: consentData.marketingConsent || false,
-        dataProcessingConsent: consentData.dataProcessingConsent || true,
-        cookieConsent: consentData.cookieConsent || 'necessary',
+        gdprConsent: consentData.gdprConsent || privacySettings.gdprConsent || false,
+        analyticsConsent: consentData.analyticsConsent || privacySettings.analyticsConsent || false,
+        marketingConsent: consentData.marketingConsent || privacySettings.marketingConsent || false,
+        dataProcessingConsent: consentData.dataProcessingConsent || privacySettings.dataProcessingConsent || true,
+        cookieConsent: consentData.cookieConsent || privacySettings.cookieConsent || 'necessary',
         lastConsentUpdate: new Date(),
-        consentVersion: consentData.consentVersion || '1.0',
-        consentSource: 'consent-update' as const,
+        consentVersion: consentData.consentVersion || privacySettings.consentVersion ||   '1.0',
+        consentSource: consentData.consentSource || privacySettings.consentSource || 'consent-update' as const,
         ipAddressAtConsent: ctx.request.ip,
         userAgentAtConsent: ctx.request.header['user-agent']
       };
@@ -158,15 +157,7 @@ export default {
       });
 
       return ctx.send({
-        data: {
-          gdprConsent: privacySettings.gdprConsent,
-          analyticsConsent: privacySettings.analyticsConsent,
-          marketingConsent: privacySettings.marketingConsent,
-          dataProcessingConsent: privacySettings.dataProcessingConsent,
-          cookieConsent: privacySettings.cookieConsent,
-          lastConsentUpdate: privacySettings.lastConsentUpdate,
-          consentVersion: privacySettings.consentVersion
-        },
+        data: privacySettings,
         meta: {
           message: 'Consent preferences updated successfully'
         }
@@ -190,7 +181,7 @@ export default {
 
       // Find existing privacy settings
       const existingSettings = await strapi.documents('api::privacy-setting.privacy-setting').findFirst({
-        filters: { user: user.documentId }
+        filters: { user: user.id }
       });
 
       if (existingSettings) {
@@ -435,7 +426,7 @@ export default {
       }
 
       const privacySettings = await strapi.documents('api::privacy-setting.privacy-setting').findFirst({
-        filters: { user: user.documentId }
+        filters: { user: user.id }
       });
 
       if (!privacySettings) {
@@ -489,8 +480,8 @@ export default {
     }
 
     // Validate consent source
-    if (data.consentSource && !['registration', 'profile-update', 'admin-update', 'api'].includes(data.consentSource)) {
-      errors.push('Consent source must be registration, profile-update, admin-update, or api');
+    if (data.consentSource && !['registration', 'profile-update', 'admin-update', 'api', 'consent-update'].includes(data.consentSource)) {
+      errors.push('Consent source must be registration, profile-update, admin-update, api, or consent-update');
     }
 
     // Validate boolean fields

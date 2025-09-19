@@ -117,7 +117,7 @@
     "wishlist": {
       "type": "relation",
       "relation": "manyToMany",
-      "target": "api::product.product"
+      "target": "api::product-listing.product-listing"
     },
     "preferences": {
       "type": "relation",

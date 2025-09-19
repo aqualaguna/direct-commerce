@@ -84,6 +84,12 @@
     "seo": {
       "type": "component",
       "component": "shared.seo"
+    },
+    "wishlistedBy": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "plugin::users-permissions.user",
+      "inversedBy": "wishlist"
     }
   }
 }

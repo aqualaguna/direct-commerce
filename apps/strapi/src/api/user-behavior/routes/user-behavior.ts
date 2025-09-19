@@ -30,6 +30,20 @@ export default {
     },
     {
       method: 'GET',
+      path: '/user-behaviors/analytics',
+      handler: 'user-behavior.getAnalytics',
+      config: {
+        policies: ['global::is-admin'],
+        description: 'Get user behavior analytics and insights',
+        tag: {
+          plugin: 'user-behavior',
+          name: 'User Behavior Analytics',
+          actionType: 'find'
+        }
+      }
+    },
+    {
+      method: 'GET',
       path: '/user-behaviors/:documentId',
       handler: 'user-behavior.findOne',
       config: {
@@ -53,20 +67,6 @@ export default {
           plugin: 'user-behavior',
           name: 'User Behavior',
           actionType: 'delete'
-        }
-      }
-    },
-    {
-      method: 'GET',
-      path: '/user-behaviors/analytics',
-      handler: 'user-behavior.getAnalytics',
-      config: {
-        policies: ['global::is-admin'],
-        description: 'Get user behavior analytics and insights',
-        tag: {
-          plugin: 'user-behavior',
-          name: 'User Behavior Analytics',
-          actionType: 'find'
         }
       }
     }
