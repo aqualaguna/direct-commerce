@@ -140,8 +140,9 @@ describe('Category Controller', () => {
       expect(mockDocumentMethods.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           filters: {}, 
-          sort: { sortOrder: 'asc', name: 'asc' },
-          pagination: { page: 1, pageSize: 25 },
+          sort: [{sortOrder: 'asc'}, {name: 'asc'}],
+          limit: 25,
+          start: 0,
         })
       );
 
@@ -161,7 +162,7 @@ describe('Category Controller', () => {
     it('should handle query parameters correctly', async () => {
       mockCtx.query = {
         filters: { isActive: true },
-        sort: { name: 'desc' },
+        sort: 'name:desc',
         page: 2,
         pageSize: 10,
       };
@@ -173,8 +174,9 @@ describe('Category Controller', () => {
       expect(mockDocumentMethods.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           filters: { isActive: true }, // Use publishedAt for Draft & Publish
-          sort: { name: 'desc' },
-          pagination: { page: 2, pageSize: 10 },
+          sort: 'name:desc',
+          limit: 10,
+          start: 10,
         })
       );
     });

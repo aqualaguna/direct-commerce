@@ -86,7 +86,7 @@ describe('Category Service', () => {
           name: { $eqi: 'Electronics' },
           parent: { $null: true },
         },
-        pagination: { limit: 1 },
+        limit: 1,
       });
       expect(result).toEqual(mockCategory);
     });
@@ -108,7 +108,7 @@ describe('Category Service', () => {
             documentId: 'cat1',
           },
         },
-        pagination: { limit: 1 },
+        limit: 1,
       });
       expect(result).toEqual(mockCategory);
     });
@@ -203,8 +203,8 @@ describe('Category Service', () => {
 
       expect(mockDocumentMethods.findMany).toHaveBeenCalledWith({
         filters: { parent: { documentId: 1 } },
-        sort: { sortOrder: 'desc' },
-        pagination: { limit: 1 },
+        sort: 'sortOrder:desc',
+        limit: 1,
       });
       expect(result).toBe(6);
     });

@@ -255,6 +255,89 @@ describe('Product Controller', () => {
       );
     });
 
+    it('should create a product with dimension attributes', async () => {
+      const productData = {
+        name: 'Product with Dimensions',
+        brand: 'Brand A',
+        description: 'Product with physical dimensions',
+        sku: 'DIM-001',
+        inventory: 5,
+        status: 'active',
+        weight: 2.5,
+        length: 10.0,
+        width: 8.0,
+        height: 3.0,
+      };
+
+      const mockCreatedProduct = { documentId: 'doc123', ...productData };
+
+      mockDocumentService.create.mockResolvedValue(mockCreatedProduct);
+      mockDocumentService.findMany.mockResolvedValue([]); // No existing SKU
+
+      const ctx = {
+        request: { body: { data: productData } },
+        badRequest: jest.fn(),
+        throw: jest.fn(),
+      };
+
+      const result = await controller.create(ctx);
+      expect(result.data).toEqual(mockCreatedProduct);
+      expect(mockDocumentService.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: productData,
+          populate: expect.any(Object),
+        })
+      );
+    });
+
+    it('should reject product with negative dimension values', async () => {
+      const productData = {
+        name: 'Invalid Product',
+        brand: 'Brand A',
+        description: 'Product with negative dimensions',
+        sku: 'INVALID-001',
+        inventory: 5,
+        status: 'active',
+        weight: -1.0, // Invalid negative weight
+        length: 10.0,
+        width: 8.0,
+        height: 3.0,
+      };
+
+      const ctx = {
+        request: { body: { data: productData } },
+        badRequest: jest.fn(),
+        throw: jest.fn(),
+      };
+
+      await controller.create(ctx);
+      expect(ctx.badRequest).toHaveBeenCalledWith('weight must be a non-negative number');
+    });
+
+    it('should reject product with non-numeric dimension values', async () => {
+      const productData = {
+        name: 'Invalid Product',
+        brand: 'Brand A',
+        description: 'Product with non-numeric dimensions',
+        sku: 'INVALID-002',
+        inventory: 5,
+        status: 'active',
+        weight: 'invalid', // Invalid non-numeric weight
+        length: 10.0,
+        width: 8.0,
+        height: 3.0,
+      };
+
+      const ctx = {
+        request: { body: { data: productData } },
+        badRequest: jest.fn(),
+        throw: jest.fn(),
+      };
+
+      await controller.create(ctx);
+      expect(ctx.badRequest).toHaveBeenCalledWith('weight must be a non-negative number');
+    });
+
 
     it('should check SKU uniqueness', async () => {
       const productData = {
@@ -319,6 +402,77 @@ describe('Product Controller', () => {
           populate: expect.any(Object),
         })
       );
+    });
+
+    it('should update product dimensions', async () => {
+      const existingProduct = {
+        documentId: 'doc123',
+        name: 'Original Product',
+        brand: 'Brand A',
+        sku: 'ORIG-001',
+        weight: 1.0,
+        length: 5.0,
+        width: 4.0,
+        height: 2.0,
+      };
+
+      const updateData = {
+        weight: 2.5,
+        length: 10.0,
+        width: 8.0,
+        height: 3.0,
+      };
+
+      const mockUpdatedProduct = { ...existingProduct, ...updateData };
+
+      mockDocumentService.findOne.mockResolvedValue(existingProduct);
+      mockDocumentService.update.mockResolvedValue(mockUpdatedProduct);
+
+      const ctx = {
+        params: { documentId: 'doc123' },
+        request: { body: { data: updateData } },
+        badRequest: jest.fn(),
+        notFound: jest.fn(),
+        throw: jest.fn(),
+      };
+
+      const result = await controller.update(ctx);
+
+      expect(result.data).toEqual(mockUpdatedProduct);
+      expect(mockDocumentService.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          documentId: 'doc123',
+          data: updateData,
+          populate: expect.any(Object),
+        })
+      );
+    });
+
+    it('should reject update with negative dimension values', async () => {
+      const existingProduct = {
+        documentId: 'doc123',
+        name: 'Original Product',
+        brand: 'Brand A',
+        sku: 'ORIG-001',
+      };
+
+      const updateData = {
+        weight: -1.0, // Invalid negative weight
+        length: 10.0,
+      };
+
+      mockDocumentService.findOne.mockResolvedValue(existingProduct);
+
+      const ctx = {
+        params: { documentId: 'doc123' },
+        request: { body: { data: updateData } },
+        badRequest: jest.fn(),
+        notFound: jest.fn(),
+        throw: jest.fn(),
+      };
+
+      await controller.update(ctx);
+      expect(ctx.badRequest).toHaveBeenCalledWith('weight must be a non-negative number');
     });
   });
 
@@ -399,6 +553,185 @@ describe('Product Controller', () => {
       );
     });
 
+    it('should search products with dimension filters', async () => {
+      const mockProducts = [
+        {
+          documentId: 'doc1',
+          name: 'Light Product',
+          brand: 'Brand A',
+          status: 'active',
+          weight: 1.5,
+          length: 10.0,
+          width: 8.0,
+          height: 3.0,
+        },
+      ];
+
+      mockDocumentService.findMany.mockResolvedValue(mockProducts);
+
+      const ctx = {
+        query: { 
+          q: 'Product',
+          weight_max: 2.0,
+          length_min: 5.0,
+          length_max: 15.0
+        },
+        throw: jest.fn(),
+      };
+
+      const result = await controller.search(ctx);
+
+      expect(result.data).toEqual(mockProducts);
+      expect(mockDocumentService.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          filters: expect.objectContaining({
+            status: 'active',
+            weight: { $lte: 2.0 },
+            length: { $gte: 5.0, $lte: 15.0 },
+          }),
+        })
+      );
+    });
+  });
+
+  describe('filterByDimensions', () => {
+    it('should filter products by exact dimension values', async () => {
+      const mockProducts = [
+        {
+          documentId: 'doc1',
+          name: 'Exact Match Product',
+          weight: 2.5,
+          length: 10.0,
+          width: 8.0,
+          height: 3.0,
+        },
+      ];
+
+      mockDocumentService.findMany.mockResolvedValue(mockProducts);
+
+      const ctx = {
+        query: { 
+          weight: 2.5,
+          length: 10.0
+        },
+        throw: jest.fn(),
+      };
+
+      const result = await controller.filterByDimensions(ctx);
+
+      expect(result.data).toEqual(mockProducts);
+      expect(mockDocumentService.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          filters: expect.objectContaining({
+            status: 'active',
+            weight: { $lte: 2.5 },
+            length: { $lte: 10.0 },
+          }),
+        })
+      );
+    });
+
+    it('should filter products by dimension ranges', async () => {
+      const mockProducts = [
+        {
+          documentId: 'doc1',
+          name: 'Range Match Product',
+          weight: 1.5,
+          length: 8.0,
+          width: 6.0,
+          height: 2.5,
+        },
+      ];
+
+      mockDocumentService.findMany.mockResolvedValue(mockProducts);
+
+      const ctx = {
+        query: { 
+          weight_min: 1.0,
+          weight_max: 2.0,
+          length_min: 5.0,
+          length_max: 10.0
+        },
+        throw: jest.fn(),
+      };
+
+      const result = await controller.filterByDimensions(ctx);
+
+      expect(result.data).toEqual(mockProducts);
+      expect(mockDocumentService.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          filters: expect.objectContaining({
+            status: 'active',
+            weight: { $gte: 1.0, $lte: 2.0 },
+            length: { $gte: 5.0, $lte: 10.0 },
+          }),
+        })
+      );
+    });
+  });
+
+  describe('getDimensionStatistics', () => {
+    it('should return dimension statistics for weight', async () => {
+      const mockProducts = [
+        { weight: 1.0 },
+        { weight: 2.0 },
+        { weight: 3.0 },
+        { weight: 4.0 },
+        { weight: 5.0 },
+      ];
+
+      mockDocumentService.findMany.mockResolvedValue(mockProducts);
+
+      const ctx = {
+        query: { dimension: 'weight' },
+        badRequest: jest.fn(),
+        throw: jest.fn(),
+      };
+
+      const result = await controller.getDimensionStatistics(ctx);
+
+      expect(result.data).toEqual({
+        dimension: 'weight',
+        count: 5,
+        min: 1.0,
+        max: 5.0,
+        average: 3.0,
+        median: 3.0,
+      });
+    });
+
+    it('should return empty statistics for dimension with no data', async () => {
+      mockDocumentService.findMany.mockResolvedValue([]);
+
+      const ctx = {
+        query: { dimension: 'weight' },
+        badRequest: jest.fn(),
+        throw: jest.fn(),
+      };
+
+      const result = await controller.getDimensionStatistics(ctx);
+
+      expect(result.data).toEqual({
+        dimension: 'weight',
+        count: 0,
+        min: null,
+        max: null,
+        average: null,
+        median: null,
+      });
+    });
+
+    it('should reject invalid dimension parameter', async () => {
+      const ctx = {
+        query: { dimension: 'invalid' },
+        badRequest: jest.fn(),
+        throw: jest.fn(),
+      };
+
+      await controller.getDimensionStatistics(ctx);
+
+      expect(ctx.badRequest).toHaveBeenCalledWith('Valid dimension is required (weight, length, width, height)');
+    });
   });
 
 

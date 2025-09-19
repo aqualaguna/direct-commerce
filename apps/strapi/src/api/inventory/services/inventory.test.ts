@@ -113,7 +113,8 @@ describe('Inventory Service', () => {
       );
       expect(mockDocumentMethods.findMany).toHaveBeenCalledWith({
         filters: { product: productId },
-        pagination: { page: 1, pageSize: 1 },
+        limit: 1,
+        start: 0,
       });
     });
 

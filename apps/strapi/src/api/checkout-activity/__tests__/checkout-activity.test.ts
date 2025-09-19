@@ -191,8 +191,9 @@ describe('Checkout Activity Controller', () => {
             checkoutSessionId: 'session-123',
             activityType: 'step_enter'
           },
-          sort: { timestamp: 'desc' },
-          pagination: { page: 1, pageSize: 25 },
+          sort: 'timestamp:desc',
+          limit: 25,
+          start: 0,
           populate: ['userId']
         })
       );

@@ -27,6 +27,10 @@ interface ProductData {
   inventory: number;
   status?: string;
   category?: any;
+  weight?: number;
+  length?: number;
+  width?: number;
+  height?: number;
 }
 
 type ProductStatus = 'draft' | 'active' | 'inactive';
@@ -74,7 +78,9 @@ export default factories.createCoreController(
         // Use Document Service API instead of Entity Service
         const products = await strapi
           .documents('api::product.product')
-          .findMany(queryParams);
+          .findMany({
+            ...queryParams,
+          });
 
         return {
           data: products,
@@ -164,6 +170,16 @@ export default factories.createCoreController(
           return ctx.badRequest('Inventory cannot be negative');
         }
 
+        // Set default values for physical dimensions if not provided
+        const dimensionFields = ['weight', 'length', 'width', 'height'];
+        for (const field of dimensionFields) {
+          if (data[field] === undefined || data[field] === null) {
+            data[field] = 0;
+          } else if (typeof data[field] !== 'number' || data[field] < 0) {
+            return ctx.badRequest(`${field} must be a non-negative number`);
+          }
+        }
+
         // Check SKU uniqueness using Document Service API
         const existingProducts = await strapi
           .documents('api::product.product')
@@ -233,6 +249,16 @@ export default factories.createCoreController(
           (typeof data.inventory !== 'number' || data.inventory < 0)
         ) {
           return ctx.badRequest('Inventory cannot be negative');
+        }
+
+        // Set default values for physical dimensions if not provided
+        const dimensionFields = ['weight', 'length', 'width', 'height'];
+        for (const field of dimensionFields) {
+          if (data[field] !== undefined) {
+            if (typeof data[field] !== 'number' || data[field] < 0) {
+              return ctx.badRequest(`${field} must be a non-negative number`);
+            }
+          }
         }
 
         // Check SKU uniqueness if provided
@@ -385,6 +411,67 @@ export default factories.createCoreController(
         return { data: statistics };
       } catch (error) {
         strapi.log.error('Error getting status statistics:', error);
+        ctx.throw(500, 'Internal server error');
+      }
+    },
+
+    async getDimensionStatistics(ctx) {
+      try {
+        const { query } = ctx;
+        const { dimension } = query;
+
+        if (!dimension || !['weight', 'length', 'width', 'height'].includes(dimension as string)) {
+          return ctx.badRequest('Valid dimension is required (weight, length, width, height)');
+        }
+
+        // Get all products with the specified dimension
+        const products = await strapi
+          .documents('api::product.product')
+          .findMany({
+            filters: {
+              status: 'active',
+              [dimension as string]: { $notNull: true },
+            },
+            fields: [dimension as string] as any,
+          });
+
+        const values = (products as any[])
+          .map(product => product[dimension as string])
+          .filter(value => value !== null && value !== undefined)
+          .sort((a, b) => a - b);
+
+        if (values.length === 0) {
+          return {
+            data: {
+              dimension,
+              count: 0,
+              min: null,
+              max: null,
+              average: null,
+              median: null,
+            },
+          };
+        }
+
+        const min = values[0];
+        const max = values[values.length - 1];
+        const average = values.reduce((sum, val) => sum + val, 0) / values.length;
+        const median = values.length % 2 === 0
+          ? (values[values.length / 2 - 1] + values[values.length / 2]) / 2
+          : values[Math.floor(values.length / 2)];
+
+        return {
+          data: {
+            dimension,
+            count: values.length,
+            min,
+            max,
+            average: Math.round(average * 100) / 100,
+            median: Math.round(median * 100) / 100,
+          },
+        };
+      } catch (error) {
+        strapi.log.error('Error getting dimension statistics:', error);
         ctx.throw(500, 'Internal server error');
       }
     },
@@ -585,6 +672,92 @@ export default factories.createCoreController(
       }
     },
 
+    // Custom method for dimension-based product filtering
+    async filterByDimensions(ctx) {
+      try {
+        const { query } = ctx;
+        const { weight, length, width, height, weight_min, weight_max, length_min, length_max, width_min, width_max, height_min, height_max } = query;
+
+        const filters: Record<string, unknown> = {
+          status: 'active',
+        };
+
+        // Build dimension filters
+        const dimensionFilters = [
+          { field: 'weight', min: weight_min, max: weight_max, exact: weight },
+          { field: 'length', min: length_min, max: length_max, exact: length },
+          { field: 'width', min: width_min, max: width_max, exact: width },
+          { field: 'height', min: height_min, max: height_max, exact: height },
+        ];
+
+        for (const { field, min, max, exact } of dimensionFilters) {
+          if (exact !== undefined) {
+            const value = parseFloat(String(exact));
+            if (!isNaN(value)) {
+              filters[field] = { $lte: value };
+            }
+          } else {
+            const rangeFilter: any = {};
+            if (min !== undefined) {
+              const minValue = parseFloat(String(min));
+              if (!isNaN(minValue)) {
+                rangeFilter.$gte = minValue;
+              }
+            }
+            if (max !== undefined) {
+              const maxValue = parseFloat(String(max));
+              if (!isNaN(maxValue)) {
+                rangeFilter.$lte = maxValue;
+              }
+            }
+            if (Object.keys(rangeFilter).length > 0) {
+              filters[field] = rangeFilter;
+            }
+          }
+        }
+
+        // Use Document Service API for dimension filtering
+        const products = await strapi
+          .documents('api::product.product')
+          .findMany({
+            filters,
+            sort: 'createdAt:desc',
+            limit: Math.min(parseInt(String(query.pageSize || 25)), 100),
+            start: (parseInt(String(query.page || 1)) - 1) * Math.min(parseInt(String(query.pageSize || 25)), 100),
+            populate: {
+              category: {
+                fields: ['id', 'name', 'slug'],
+              },
+            },
+            fields: ['id', 'name', 'brand', 'description', 'sku', 'inventory', 'status', 'weight', 'length', 'width', 'height', 'createdAt', 'updatedAt'],
+          });
+
+        return {
+          data: products,
+          meta: {
+            pagination: {
+              page: parseInt(String(query.page || 1)),
+              pageSize: parseInt(String(query.pageSize || 25)),
+              pageCount: Math.ceil(
+                (products as unknown[]).length /
+                  parseInt(String(query.pageSize || 25))
+              ),
+              total: (products as unknown[]).length,
+            },
+            filters: {
+              weight: { min: weight_min, max: weight_max, exact: weight },
+              length: { min: length_min, max: length_max, exact: length },
+              width: { min: width_min, max: width_max, exact: width },
+              height: { min: height_min, max: height_max, exact: height },
+            },
+          },
+        };
+      } catch (error) {
+        strapi.log.error('Error in dimension filtering:', error);
+        ctx.throw(500, 'Internal server error');
+      }
+    },
+
     // Custom method for product search - Updated to Document Service API
     async search(ctx) {
       try {
@@ -603,6 +776,29 @@ export default factories.createCoreController(
             { description: { $containsi: q } },
             { sku: { $containsi: q } },
           ];
+        }
+
+        // Add dimension-based filtering if provided
+        const dimensionFilters = ['weight', 'length', 'width', 'height'];
+        for (const dimension of dimensionFilters) {
+          if (query[dimension]) {
+            const value = parseFloat(String(query[dimension]));
+            if (!isNaN(value)) {
+              filters[dimension] = { $lte: value };
+            }
+          }
+          if (query[`${dimension}_min`]) {
+            const minValue = parseFloat(String(query[`${dimension}_min`]));
+            if (!isNaN(minValue)) {
+              filters[dimension] = { ...(filters[dimension] as any || {}), $gte: minValue };
+            }
+          }
+          if (query[`${dimension}_max`]) {
+            const maxValue = parseFloat(String(query[`${dimension}_max`]));
+            if (!isNaN(maxValue)) {
+              filters[dimension] = { ...(filters[dimension] as any || {}), $lte: maxValue };
+            }
+          }
         }
 
         // Category filter
@@ -625,6 +821,7 @@ export default factories.createCoreController(
                 fields: ['id', 'name', 'slug'], // Use documentId instead of id
               },
             },
+            fields: ['id', 'name', 'brand', 'description', 'sku', 'inventory', 'status', 'weight', 'length', 'width', 'height', 'createdAt', 'updatedAt'],
           });
 
         return {

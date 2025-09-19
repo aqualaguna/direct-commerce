@@ -106,7 +106,7 @@ describe('Option Value Controller', () => {
 
       const result = await optionValueController.find(mockContext);
 
-      expect(result).toEqual(mockOptionValues);
+      expect(result.data).toEqual(mockOptionValues);
       expect(mockStrapi.documents).toHaveBeenCalledWith(
         'api::option-value.option-value'
       );
@@ -114,8 +114,9 @@ describe('Option Value Controller', () => {
         mockStrapi.documents('api::option-value.option-value').findMany
       ).toHaveBeenCalledWith({
         filters: {},
-        sort: { sortOrder: 'asc', createdAt: 'desc' },
-        pagination: { page: 1, pageSize: 25 },
+        sort: [{ sortOrder: 'asc'}, { createdAt: 'desc' }],
+        limit: 25,
+        start: 0,
         populate: ['optionGroup', 'variants'],
       });
     });
@@ -132,9 +133,8 @@ describe('Option Value Controller', () => {
 
       mockContext.query = {
         filters: { optionGroup: 'size-group' },
-        sort: { value: 'asc' },
-        page: '2',
-        pageSize: '10',
+        sort: 'value:asc',
+        pagination: { page: '2', pageSize: '10' },
       };
 
       // Set up a simple mock that returns the data immediately
@@ -150,13 +150,14 @@ describe('Option Value Controller', () => {
 
       const result = await optionValueController.find(mockContext);
 
-      expect(result).toEqual(mockOptionValues);
+      expect(result.data).toEqual(mockOptionValues);
       expect(
         mockStrapi.documents('api::option-value.option-value').findMany
       ).toHaveBeenCalledWith({
         filters: { optionGroup: 'size-group'},
-        sort: { value: 'asc' },
-        pagination: { page: 2, pageSize: 10 },
+        sort: 'value:asc',
+        limit: 10,
+        start: 10,
         populate: ['optionGroup', 'variants'],
       });
     });
@@ -211,7 +212,7 @@ describe('Option Value Controller', () => {
 
       const result = await optionValueController.findOne(mockContext);
 
-      expect(result).toEqual(mockOptionValue);
+      expect(result.data).toEqual(mockOptionValue);
       expect(
         mockStrapi.documents('api::option-value.option-value').findOne
       ).toHaveBeenCalledWith({
@@ -271,6 +272,12 @@ describe('Option Value Controller', () => {
         sortOrder: 1,
       };
 
+      const mockOptionGroup = {
+        documentId: 'size-group',
+        id: 1,
+        optionValues: [], // Empty array means no duplicate values
+      };
+
       mockContext.request.body = {
         data: {
           value: 'S',
@@ -279,13 +286,25 @@ describe('Option Value Controller', () => {
         },
       };
 
+      // Mock the option group validation
+      mockStrapi
+        .documents('api::option-group.option-group')
+        .findOne.mockResolvedValue(mockOptionGroup);
+
+      // Mock the option value creation
       mockStrapi
         .documents('api::option-value.option-value')
         .create.mockResolvedValue(mockOptionValue);
 
       const result = await optionValueController.create(mockContext);
 
-      expect(result).toEqual(mockOptionValue);
+      expect(result).toEqual({ data: mockOptionValue });
+      expect(
+        mockStrapi.documents('api::option-group.option-group').findOne
+      ).toHaveBeenCalledWith({
+        documentId: 'size-group',
+        populate: ['optionValues'],
+      });
       expect(
         mockStrapi.documents('api::option-value.option-value').create
       ).toHaveBeenCalledWith({
@@ -314,7 +333,7 @@ describe('Option Value Controller', () => {
     });
 
     it('should handle errors gracefully', async () => {
-      const error = new Error('Creation error');
+      const error = new Error('Database error');
       mockContext.request.body = {
         data: {
           value: 'S',
@@ -322,11 +341,23 @@ describe('Option Value Controller', () => {
           optionGroup: 'size-group',
         },
       };
+
+      // Mock the option group validation to succeed
+      const mockOptionGroup = {
+        documentId: 'size-group',
+        id: 1,
+        optionValues: [], // Empty array means no duplicate values
+      };
+      mockStrapi
+        .documents('api::option-group.option-group')
+        .findOne.mockResolvedValue(mockOptionGroup);
+
+      // Mock the option value creation to fail
       mockStrapi
         .documents('api::option-value.option-value')
         .create.mockRejectedValue(error);
 
-      await optionValueController.create(mockContext);
+      const result = await optionValueController.create(mockContext);
 
       expect(mockStrapi.log.error).toHaveBeenCalledWith(
         'Error in option-value create:',
@@ -335,6 +366,7 @@ describe('Option Value Controller', () => {
       expect(mockContext.internalServerError).toHaveBeenCalledWith(
         'Internal server error'
       );
+      expect(result).toBeUndefined(); // internalServerError returns undefined
     });
   });
 
@@ -360,7 +392,7 @@ describe('Option Value Controller', () => {
 
       const result = await optionValueController.update(mockContext);
 
-      expect(result).toEqual(mockUpdatedOptionValue);
+      expect(result.data).toEqual(mockUpdatedOptionValue);
       expect(
         mockStrapi.documents('api::option-value.option-value').update
       ).toHaveBeenCalledWith({
@@ -475,19 +507,53 @@ describe('Option Value Controller', () => {
         },
       ];
 
+      const mockOptionGroup = {
+        documentId: 'size-group',
+        id: 1, // The controller uses the numeric id, not documentId
+      };
+
       mockContext.params = { optionGroupId: 'size-group' };
+
+      // Mock the option group lookup
+      mockStrapi
+        .documents('api::option-group.option-group')
+        .findOne.mockResolvedValue(mockOptionGroup);
+
+      // Mock the option values lookup
       mockStrapi
         .documents('api::option-value.option-value')
         .findMany.mockResolvedValue(mockOptionValues);
 
+      // Mock the count for pagination
+      mockStrapi
+        .documents('api::option-value.option-value')
+        .count.mockResolvedValue(2);
+
       const result = await optionValueController.findByOptionGroup(mockContext);
 
-      expect(result).toEqual(mockOptionValues);
+      expect(result).toEqual({
+        data: mockOptionValues,
+        meta: {
+          pagination: {
+            page: 1,
+            pageSize: 25,
+            pageCount: 1,
+            total: 2
+          }
+        }
+      });
+      expect(
+        mockStrapi.documents('api::option-group.option-group').findOne
+      ).toHaveBeenCalledWith({
+        documentId: 'size-group',
+      });
       expect(
         mockStrapi.documents('api::option-value.option-value').findMany
       ).toHaveBeenCalledWith({
-        filters: { optionGroup: 'size-group' },
-        sort: { sortOrder: 'asc' },
+        filters: { optionGroup: 1 }, // Uses the numeric id
+        sort: [{ sortOrder: 'asc'}, { createdAt: 'desc'}],
+        limit: 25,
+        start: 0,
         populate: ['optionGroup'],
       });
     });
@@ -524,8 +590,8 @@ describe('Option Value Controller', () => {
       const mockProductListing = {
         documentId: 'product-listing-doc-id',
         optionGroups: [
-          { documentId: 'size-group' },
-          { documentId: 'color-group' },
+          { id: 'size-group' },
+          { id: 'color-group' },
         ],
       };
 
@@ -545,7 +611,7 @@ describe('Option Value Controller', () => {
       const result =
         await optionValueController.findByProductListing(mockContext);
 
-      expect(result).toEqual(mockOptionValues);
+      expect(result.data).toEqual(mockOptionValues);
       expect(
         mockStrapi.documents('api::product-listing.product-listing').findOne
       ).toHaveBeenCalledWith({
@@ -558,7 +624,7 @@ describe('Option Value Controller', () => {
         filters: {
           optionGroup: { $in: ['size-group', 'color-group'] },
         },
-        sort: { sortOrder: 'asc' },
+        sort: 'sortOrder:asc',
         populate: ['optionGroup'],
       });
     });

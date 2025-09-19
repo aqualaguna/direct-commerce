@@ -305,8 +305,18 @@ export const retryApiRequest = async <T>(
       const delay = Math.min(baseDelayMs * Math.pow(2, attempt - 1), maxDelayMs);
       await waitFor(delay);
     } catch (error) {
+      // If this is the last attempt, return a response object with status 0
+      // to indicate network/server error instead of throwing
       if (attempt === maxRetries) {
-        throw error;
+        return {
+          status: 0,
+          body: {
+            error: {
+              message: error instanceof Error ? error.message : 'Network or server error',
+              details: error
+            }
+          }
+        };
       }
       
       // Calculate delay with exponential backoff

@@ -31,6 +31,22 @@
       "type": "string",
       "maxLength": 500
     },
+    "weight": {
+      "type": "decimal",
+      "min": 0
+    },
+    "length": {
+      "type": "decimal",
+      "min": 0
+    },
+    "width": {
+      "type": "decimal",
+      "min": 0
+    },
+    "height": {
+      "type": "decimal",
+      "min": 0
+    },
     "inventory": {
       "type": "integer",
       "required": true,

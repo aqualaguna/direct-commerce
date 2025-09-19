@@ -263,8 +263,8 @@ export default ({ strapi }) => ({
     const errors = [];
 
     // Check price if provided
-    if (data.price !== undefined && (!data.price || data.price <= 0)) {
-      errors.push('Valid price is required');
+    if (data.basePrice !== undefined && (!data.basePrice || data.basePrice <= 0)) {
+      errors.push('Valid base price is required');
     }
 
     // Check inventory if provided

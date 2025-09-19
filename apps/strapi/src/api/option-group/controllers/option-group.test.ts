@@ -123,7 +123,7 @@ describe('Option Group Controller', () => {
 
       const result = await optionGroupController.find(mockContext);
 
-      expect(result).toEqual(mockOptionGroups);
+      expect(result.data).toEqual(mockOptionGroups);
       expect(mockStrapi.documents).toHaveBeenCalledWith(
         'api::option-group.option-group'
       );
@@ -131,8 +131,9 @@ describe('Option Group Controller', () => {
         mockStrapi.documents('api::option-group.option-group').findMany
       ).toHaveBeenCalledWith({
         filters: {  },
-        sort: { sortOrder: 'asc', createdAt: 'desc' },
-        pagination: { page: 1, pageSize: 25 },
+        sort: [{ sortOrder: 'asc'}, { createdAt: 'desc' }],
+        limit: 25,
+        start: 0,
         populate: ['optionValues', 'productListings'],
       });
     });
@@ -150,9 +151,8 @@ describe('Option Group Controller', () => {
 
       mockContext.query = {
         filters: { type: 'select' },
-        sort: { name: 'asc' },
-        page: '2',
-        pageSize: '10',
+        sort: 'name:asc',
+        pagination: { page: '2', pageSize: '10' },
       };
 
       mockStrapi
@@ -161,13 +161,14 @@ describe('Option Group Controller', () => {
 
       const result = await optionGroupController.find(mockContext);
 
-      expect(result).toEqual(mockOptionGroups);
+      expect(result.data).toEqual(mockOptionGroups);
       expect(
         mockStrapi.documents('api::option-group.option-group').findMany
       ).toHaveBeenCalledWith({
         filters: { type: 'select'},
-        sort: { name: 'asc' },
-        pagination: { page: 2, pageSize: 10 },
+        sort: 'name:asc',
+        limit: 10,
+        start: 10,
         populate: ['optionValues', 'productListings'],
       });
     });
@@ -207,7 +208,7 @@ describe('Option Group Controller', () => {
 
       const result = await optionGroupController.findOne(mockContext);
 
-      expect(result).toEqual(mockOptionGroup);
+      expect(result.data).toEqual(mockOptionGroup);
       expect(
         mockStrapi.documents('api::option-group.option-group').findOne
       ).toHaveBeenCalledWith({
@@ -276,13 +277,27 @@ describe('Option Group Controller', () => {
         },
       };
 
+      // Mock the duplicate check to return empty array (no duplicates)
+      mockStrapi
+        .documents('api::option-group.option-group')
+        .findMany.mockResolvedValue([]);
+
+      // Mock the creation
       mockStrapi
         .documents('api::option-group.option-group')
         .create.mockResolvedValue(mockOptionGroup);
 
       const result = await optionGroupController.create(mockContext);
 
-      expect(result).toEqual(mockOptionGroup);
+      expect(result).toEqual({ data: mockOptionGroup });
+      expect(mockContext.status).toBe(201);
+      expect(
+        mockStrapi.documents('api::option-group.option-group').findMany
+      ).toHaveBeenCalledWith({
+        filters: { name: 'Size' },
+        limit: 1,
+        start: 0
+      });
       expect(
         mockStrapi.documents('api::option-group.option-group').create
       ).toHaveBeenCalledWith({
@@ -306,40 +321,78 @@ describe('Option Group Controller', () => {
       await optionGroupController.create(mockContext);
 
       expect(mockContext.badRequest).toHaveBeenCalledWith(
-        'Name and display name are required'
+        'Name is required and must be a non-empty string'
       );
     });
 
-    it('should handle validation errors', async () => {
+    it('should handle validation errors that return badRequest', async () => {
       const validationError = new Error(
         'Validation failed: Name must be unique, Invalid type'
       );
 
       mockContext.request.body = {
         data: {
-          name: 'Duplicate Name',
-          displayName: 'Duplicate Name',
-          type: 'invalid',
+          name: 'Valid Name',
+          displayName: 'Valid Display Name',
+          type: 'select', // Valid type to pass validation
         },
       };
 
-      // Set up mock to throw validation error
-      mockStrapi.documents.mockReturnValue({
-        findMany: jest.fn(),
-        findOne: jest.fn(),
-        findFirst: jest.fn(),
-        create: jest.fn().mockRejectedValue(validationError as never),
-        update: jest.fn(),
-        delete: jest.fn(),
-        count: jest.fn(),
-      } as any);
+      // Mock the duplicate check to return empty array (no duplicates)
+      mockStrapi
+        .documents('api::option-group.option-group')
+        .findMany.mockResolvedValue([]);
 
-      await optionGroupController.create(mockContext);
+      // Mock the creation to throw validation error
+      mockStrapi
+        .documents('api::option-group.option-group')
+        .create.mockRejectedValue(validationError);
+
+      const result = await optionGroupController.create(mockContext);
 
       expect(mockStrapi.log.error).toHaveBeenCalledWith(
         'Error in option-group create:',
         validationError
       );
+      expect(mockContext.badRequest).toHaveBeenCalledWith(
+        'Option group with this name already exists'
+      );
+      expect(result).toBeUndefined(); // badRequest returns undefined
+    });
+
+    it('should handle database errors that return internalServerError', async () => {
+      const databaseError = new Error(
+        'Database connection failed'
+      );
+
+      mockContext.request.body = {
+        data: {
+          name: 'Valid Name',
+          displayName: 'Valid Display Name',
+          type: 'select', // Valid type to pass validation
+        },
+      };
+
+      // Mock the duplicate check to return empty array (no duplicates)
+      mockStrapi
+        .documents('api::option-group.option-group')
+        .findMany.mockResolvedValue([]);
+
+      // Mock the creation to throw database error
+      mockStrapi
+        .documents('api::option-group.option-group')
+        .create.mockRejectedValue(databaseError);
+
+      const result = await optionGroupController.create(mockContext);
+
+      expect(mockStrapi.log.error).toHaveBeenCalledWith(
+        'Error in option-group create:',
+        databaseError
+      );
+      expect(mockContext.internalServerError).toHaveBeenCalledWith(
+        'Internal server error'
+      );
+      expect(result).toBeUndefined(); // internalServerError returns undefined
     });
 
     it('should handle errors gracefully', async () => {
@@ -351,11 +404,18 @@ describe('Option Group Controller', () => {
           type: 'select',
         },
       };
+
+      // Mock the duplicate check to return empty array (no duplicates)
+      mockStrapi
+        .documents('api::option-group.option-group')
+        .findMany.mockResolvedValue([]);
+
+      // Mock the creation to fail
       mockStrapi
         .documents('api::option-group.option-group')
         .create.mockRejectedValue(error);
 
-      await optionGroupController.create(mockContext);
+      const result = await optionGroupController.create(mockContext);
 
       expect(mockStrapi.log.error).toHaveBeenCalledWith(
         'Error in option-group create:',
@@ -364,6 +424,7 @@ describe('Option Group Controller', () => {
       expect(mockContext.internalServerError).toHaveBeenCalledWith(
         'Internal server error'
       );
+      expect(result).toBeUndefined(); // internalServerError returns undefined
     });
   });
 
@@ -390,7 +451,7 @@ describe('Option Group Controller', () => {
 
       const result = await optionGroupController.update(mockContext);
 
-      expect(result).toEqual(mockUpdatedOptionGroup);
+      expect(result.data).toEqual(mockUpdatedOptionGroup);
       expect(
         mockStrapi.documents('api::option-group.option-group').update
       ).toHaveBeenCalledWith({
@@ -449,7 +510,10 @@ describe('Option Group Controller', () => {
 
       const result = await optionGroupController.delete(mockContext);
 
-      expect(result).toEqual({ message: 'Option group deleted successfully' });
+      expect(result).toEqual({ 
+        data: undefined, 
+        message: 'Option group deleted successfully' 
+      });
       expect(
         mockStrapi.documents('api::option-group.option-group').delete
       ).toHaveBeenCalledWith({

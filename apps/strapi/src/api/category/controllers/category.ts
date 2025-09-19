@@ -123,10 +123,7 @@ export default factories.createCoreController(
         
 
         // Apply sorting with validation (default by sortOrder)
-        const sort = query.sort || {
-          sortOrder: 'asc',
-          name: 'asc',
-        };
+        const sort = query.sort || [{sortOrder: 'asc'}, {name: 'asc'}];
 
         // Apply pagination with improved validation
         const pagination = {

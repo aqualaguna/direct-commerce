@@ -12,7 +12,11 @@ describe('Product Integration Tests', () => {
     description: 'This is a test product for integration testing',
     sku: `TEST-${timestamp}`,
     status: 'active', // Changed to 'active' so it can be retrieved by admin
-    inventory: 0
+    inventory: 0,
+    weight: 1.5,
+    length: 10.0,
+    width: 8.0,
+    height: 3.0
   };
 
   beforeAll(async () => {
@@ -110,6 +114,10 @@ describe('Product Integration Tests', () => {
       expect(response.body.data).toBeDefined();
       expect(response.body.data.documentId).toBe(createdProductId);
       expect(response.body.data.name).toBe(testProduct.name);
+      expect(response.body.data.weight).toBe(testProduct.weight);
+      expect(response.body.data.length).toBe(testProduct.length);
+      expect(response.body.data.width).toBe(testProduct.width);
+      expect(response.body.data.height).toBe(testProduct.height);
     });
 
     it('should update the product', async () => {
@@ -204,6 +212,48 @@ describe('Product Integration Tests', () => {
         .delete(`/api/products/${firstProductId}`)
         .set('Authorization', `Bearer ${adminToken}`)
         .timeout(10000);
+    });
+
+    it('should reject product with negative dimension values', async () => {
+      const invalidProduct = {
+        ...testProduct,
+        name: `Invalid Dimension Product ${timestamp}`,
+        sku: `INVALID-DIM-${timestamp}`,
+        weight: -1.0, // Invalid negative weight
+        length: 10.0,
+        width: 8.0,
+        height: 3.0
+      };
+
+      const response = await request(SERVER_URL)
+        .post('/api/products')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ data: invalidProduct })
+        .timeout(10000);
+      
+      expect(response.status).toBe(400);
+      expect(response.body.error).toBeDefined();
+    });
+
+    it('should reject product with non-numeric dimension values', async () => {
+      const invalidProduct = {
+        ...testProduct,
+        name: `Invalid Dimension Type Product ${timestamp}`,
+        sku: `INVALID-TYPE-${timestamp}`,
+        weight: 'invalid', // Invalid non-numeric weight
+        length: 10.0,
+        width: 8.0,
+        height: 3.0
+      };
+
+      const response = await request(SERVER_URL)
+        .post('/api/products')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({ data: invalidProduct })
+        .timeout(10000);
+      
+      expect(response.status).toBe(400);
+      expect(response.body.error).toBeDefined();
     });
   });
 
@@ -335,6 +385,135 @@ describe('Product Integration Tests', () => {
       expect(response.body.meta.pagination.page).toBe(1);
       // The controller should respect the pageSize parameter
       expect(response.body.meta.pagination.pageSize).toBe(2);
+    });
+  });
+
+  describe('Product Dimension Filtering and Search', () => {
+    let testProductsWithDimensions: string[] = [];
+
+    beforeAll(async () => {
+      // Create multiple test products with different dimensions
+      const products = [
+        { 
+          ...testProduct, 
+          name: `Light Product ${timestamp}`, 
+          sku: `LIGHT-${timestamp}`,
+          weight: 1.0,
+          length: 5.0,
+          width: 4.0,
+          height: 2.0
+        },
+        { 
+          ...testProduct, 
+          name: `Heavy Product ${timestamp}`, 
+          sku: `HEAVY-${timestamp}`,
+          weight: 5.0,
+          length: 15.0,
+          width: 12.0,
+          height: 8.0
+        },
+        { 
+          ...testProduct, 
+          name: `Medium Product ${timestamp}`, 
+          sku: `MEDIUM-${timestamp}`,
+          weight: 2.5,
+          length: 10.0,
+          width: 8.0,
+          height: 4.0
+        }
+      ];
+
+      for (const product of products) {
+        const response = await request(SERVER_URL)
+          .post('/api/products')
+          .set('Authorization', `Bearer ${adminToken}`)
+          .send({ data: product })
+          .timeout(10000);
+        
+        if ([200, 201].includes(response.status)) {
+          testProductsWithDimensions.push(response.body.data.documentId);
+        }
+      }
+    });
+
+    afterAll(async () => {
+      // Clean up test products
+      for (const productId of testProductsWithDimensions) {
+        try {
+          await request(SERVER_URL)
+            .delete(`/api/products/${productId}`)
+            .set('Authorization', `Bearer ${adminToken}`)
+            .timeout(10000);
+        } catch (error) {
+          console.warn(`Failed to delete product ${productId}:`, error);
+        }
+      }
+    });
+
+    it('should filter products by weight range', async () => {
+      const response = await request(SERVER_URL)
+        .get('/api/products?weight_min=1.0&weight_max=3.0')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .timeout(10000);
+      
+      expect(response.status).toBe(200);
+      expect(response.body.data).toBeDefined();
+      expect(Array.isArray(response.body.data)).toBe(true);
+      
+      // All returned products should have weight within the specified range
+      response.body.data.forEach((product: any) => {
+        if (product.weight !== undefined && product.weight !== null) {
+          expect(product.weight).toBeGreaterThanOrEqual(1.0);
+          expect(product.weight).toBeLessThanOrEqual(3.0);
+        }
+      });
+    });
+
+    it('should filter products by exact dimension values', async () => {
+      const response = await request(SERVER_URL)
+        .get('/api/products?weight=2.5&length=10.0')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .timeout(10000);
+      
+      expect(response.status).toBe(200);
+      expect(response.body.data).toBeDefined();
+      expect(Array.isArray(response.body.data)).toBe(true);
+    });
+
+    it('should search products with dimension filters', async () => {
+      const response = await request(SERVER_URL)
+        .get('/api/products?q=Product&weight_max=3.0&length_min=5.0')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .timeout(10000);
+      
+      expect(response.status).toBe(200);
+      expect(response.body.data).toBeDefined();
+      expect(Array.isArray(response.body.data)).toBe(true);
+    });
+
+    it('should return dimension statistics', async () => {
+      const response = await request(SERVER_URL)
+        .get('/api/products/dimension-statistics?dimension=weight')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .timeout(10000);
+      
+      expect(response.status).toBe(200);
+      expect(response.body.data).toBeDefined();
+      expect(response.body.data.dimension).toBe('weight');
+      expect(typeof response.body.data.count).toBe('number');
+      expect(response.body.data.min).toBeDefined();
+      expect(response.body.data.max).toBeDefined();
+      expect(response.body.data.average).toBeDefined();
+      expect(response.body.data.median).toBeDefined();
+    });
+
+    it('should reject invalid dimension statistics request', async () => {
+      const response = await request(SERVER_URL)
+        .get('/api/products/dimension-statistics?dimension=invalid')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .timeout(10000);
+      
+      expect(response.status).toBe(400);
     });
   });
 });

@@ -97,7 +97,7 @@ export default factories.createCoreService(
           .documents('api::category.category')
           .findMany({
             filters,
-            sort: { sortOrder: 'desc' },
+            sort: 'sortOrder:desc',
             limit: 1,
           });
 

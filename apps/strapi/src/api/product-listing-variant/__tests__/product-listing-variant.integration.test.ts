@@ -185,6 +185,21 @@ describe('Product Listing Variant Integration Tests', () => {
 
     testOptionValue = optionValueResponse.body.data;
     trackEntity('optionValues', testOptionValue.documentId);
+
+    // Associate the option group with the product listing
+    const associateResponse = await request(SERVER_URL)
+      .put(`/api/option-groups/${testOptionGroup.documentId}`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ 
+        data: { 
+          productListings: [testProductListing.documentId] 
+        } 
+      })
+      .timeout(10000);
+
+    if (![200, 201].includes(associateResponse.status)) {
+      throw new Error(`Failed to associate option group with product listing: ${associateResponse.status} - ${JSON.stringify(associateResponse.body)}`);
+    }
   });
 
   // Add delay between tests to avoid rate limiting
@@ -232,7 +247,7 @@ describe('Product Listing Variant Integration Tests', () => {
         optionValues: [testOptionValue.documentId],
         status: 'published'
       };
-
+      console.log('variantData', variantData);
       const response = await request(SERVER_URL)
         .post('/api/product-listing-variants')
         .set('Authorization', `Bearer ${adminToken}`)

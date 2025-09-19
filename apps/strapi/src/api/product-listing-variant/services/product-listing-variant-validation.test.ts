@@ -44,7 +44,7 @@ describe('Product Listing Variant Validation Service', () => {
     it('should validate variant data successfully', async () => {
       const variantData = {
         sku: 'PROD-001-L-RED',
-        price: 29.99,
+        basePrice: 29.99,
         inventory: 10,
         productListing: 'product-listing-doc-id',
       };
@@ -55,7 +55,6 @@ describe('Product Listing Variant Validation Service', () => {
         .findFirst.mockResolvedValue(null);
 
       const result = await validationService.validateVariantData(variantData);
-
       expect(result.isValid).toBe(true);
       expect(result.errors).toHaveLength(0);
     });
@@ -84,13 +83,13 @@ describe('Product Listing Variant Validation Service', () => {
       const result = await validationService.validateVariantData(variantData);
 
       expect(result.isValid).toBe(false);
-      expect(result.errors).toContain('Valid price is required');
+      expect(result.errors).toContain('Valid base price is required');
     });
 
     it('should return error for duplicate SKU', async () => {
       const variantData = {
         sku: 'DUPLICATE-SKU',
-        price: 29.99,
+        basePrice: 29.99,
         productListing: 'product-listing-doc-id',
       };
 
@@ -111,7 +110,7 @@ describe('Product Listing Variant Validation Service', () => {
     it('should validate option values when provided', async () => {
       const variantData = {
         sku: 'PROD-001-L-RED',
-        price: 29.99,
+        basePrice: 29.99,
         productListing: 'product-listing-doc-id',
         optionValues: ['size-l', 'color-red'],
       };
@@ -155,7 +154,7 @@ describe('Product Listing Variant Validation Service', () => {
     it('should return error for invalid option values', async () => {
       const variantData = {
         sku: 'PROD-001-L-RED',
-        price: 29.99,
+        basePrice: 29.99,
         productListing: 'product-listing-doc-id',
         optionValues: ['invalid-option'],
       };
@@ -410,7 +409,7 @@ describe('Product Listing Variant Validation Service', () => {
   describe('validateVariantUpdate', () => {
     it('should validate variant update data successfully', async () => {
       const variantData = {
-        price: 34.99,
+        basePrice: 34.99,
         inventory: 15,
       };
       const variantId = 'variant1';
@@ -426,7 +425,7 @@ describe('Product Listing Variant Validation Service', () => {
 
     it('should return error for invalid price in update', async () => {
       const variantData = {
-        price: -10,
+        basePrice: -10,
         inventory: 15,
       };
       const variantId = 'variant1';
@@ -437,7 +436,7 @@ describe('Product Listing Variant Validation Service', () => {
       );
 
       expect(result.isValid).toBe(false);
-      expect(result.errors).toContain('Valid price is required');
+      expect(result.errors).toContain('Valid base price is required');
     });
 
     it('should return error for invalid inventory in update', async () => {
@@ -507,12 +506,12 @@ describe('Product Listing Variant Validation Service', () => {
       const bulkData = [
         {
           sku: 'PROD-001-L-RED',
-          price: 29.99,
+          basePrice: 29.99,
           productListing: 'product-listing-doc-id',
         },
         {
           sku: 'PROD-001-M-BLUE',
-          price: 29.99,
+          basePrice: 29.99,
           productListing: 'product-listing-doc-id',
         },
       ];
@@ -535,16 +534,16 @@ describe('Product Listing Variant Validation Service', () => {
       const bulkData = [
         {
           sku: 'PROD-001-L-RED',
-          price: 29.99,
+          basePrice: 29.99,
           productListing: 'product-listing-doc-id',
         },
         {
-          price: 29.99,
+          basePrice: 29.99,
           // Missing SKU and productListing
         },
         {
           sku: 'PROD-001-M-BLUE',
-          price: -10,
+          basePrice: -10,
           productListing: 'product-listing-doc-id',
         },
       ];
@@ -563,19 +562,19 @@ describe('Product Listing Variant Validation Service', () => {
       expect(result.results[1].errors).toContain('SKU is required');
       expect(result.results[1].errors).toContain('Product listing is required');
       expect(result.results[2].isValid).toBe(false);
-      expect(result.results[2].errors).toContain('Valid price is required');
+      expect(result.results[2].errors).toContain('Valid base price is required');
     });
 
     it('should handle duplicate SKUs in bulk data', async () => {
       const bulkData = [
         {
           sku: 'DUPLICATE-SKU',
-          price: 29.99,
+          basePrice: 29.99,
           productListing: 'product-listing-doc-id',
         },
         {
           sku: 'DUPLICATE-SKU',
-          price: 34.99,
+          basePrice: 34.99,
           productListing: 'product-listing-doc-id',
         },
       ];

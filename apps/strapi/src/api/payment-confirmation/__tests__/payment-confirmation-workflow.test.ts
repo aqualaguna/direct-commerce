@@ -459,7 +459,7 @@ describe('Payment Confirmation Workflow Service', () => {
           manualPayment: 'payment-123'
         },
         populate: ['confirmedBy', 'orderStatusUpdate'],
-        sort: { confirmedAt: 'desc' }
+        sort: 'confirmedAt:desc'
       })
     })
   })

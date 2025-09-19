@@ -177,8 +177,9 @@ describe('Product Listing Variant Controller', () => {
         ).findMany
       ).toHaveBeenCalledWith({
         filters: { status: 'published' },
-        sort: { createdAt: 'desc' },
-        pagination: { page: 1, pageSize: 25 },
+        sort: 'createdAt:desc',
+        limit: 25,
+        start: 0,
         populate: ['productListing', 'optionValues', 'images'],
       });
     });
@@ -196,7 +197,7 @@ describe('Product Listing Variant Controller', () => {
 
       mockContext.query = {
         filters: { inventory: { $gt: 5 } },
-        sort: { price: 'asc' },
+        sort: 'price:asc',
         page: '2',
         pageSize: '10',
       };
@@ -214,8 +215,9 @@ describe('Product Listing Variant Controller', () => {
         ).findMany
       ).toHaveBeenCalledWith({
         filters: { inventory: { $gt: 5 }, status: 'published' },
-        sort: { price: 'asc' },
-        pagination: { page: 2, pageSize: 10 },
+        sort: 'price:asc',
+        limit: 10,
+        start: 10,
         populate: ['productListing', 'optionValues', 'images'],
       });
     });
@@ -347,20 +349,6 @@ describe('Product Listing Variant Controller', () => {
       });
     });
 
-    it('should return bad request when required fields are missing', async () => {
-      mockContext.request.body = {
-        data: {
-          price: 29.99,
-          // Missing sku and productListing
-        },
-      };
-
-      await productListingVariantController.create(mockContext);
-
-      expect(mockContext.badRequest).toHaveBeenCalledWith(
-        'SKU, price, and product listing are required'
-      );
-    });
 
     it('should handle validation errors', async () => {
       const validationError = new Error(
@@ -587,7 +575,7 @@ describe('Product Listing Variant Controller', () => {
           productListing: 'product-listing-doc-id',
           status: 'published',
         },
-        sort: { createdAt: 'asc' },
+        sort: 'createdAt:asc',
         populate: ['optionValues', 'images'],
       });
     });

@@ -17,14 +17,11 @@ export default factories.createCoreController(
         } as any;
 
         // Apply sorting with validation
-        const sort = (query.sort as Record<string, any>) || {
-          sortOrder: 'asc',
-          createdAt: 'desc',
-        };
+        const sort = (query.sort as any) || [{ sortOrder: 'asc'}, { createdAt: 'desc' }];
 
         // Apply pagination with improved validation
         // Strapi 5 uses pagination[page] and pagination[pageSize] format
-        const paginationQuery = query.pagination as any;
+        const paginationQuery = query.pagination as any || { page: '1', pageSize: '25' };
         const pagination = {
           page: Math.max(1, parseInt(String(paginationQuery?.page || '1')) || 1),
           pageSize: Math.min(
@@ -264,7 +261,6 @@ export default factories.createCoreController(
     async findByProductListing(ctx) {
       try {
         const { productListingId } = ctx.params;
-        console.log("ctx.params", ctx.params);
         const { query } = ctx;
 
         if (!productListingId || productListingId === 'missing-id') {

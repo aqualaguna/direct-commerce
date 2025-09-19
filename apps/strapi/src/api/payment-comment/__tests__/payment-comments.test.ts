@@ -32,7 +32,7 @@ describe('Payment Notes System', () => {
     }
 
     // Import and initialize the service
-    const serviceModule = require('../../../services/payment-notes')
+    const serviceModule = require('../services/payment-notes')
     paymentNotesService = serviceModule.default({ strapi: mockStrapi })
 
     // Clear all mocks before each test
@@ -186,8 +186,9 @@ describe('Payment Notes System', () => {
             manualPayment: 'payment-123',
             noteType: 'admin'
           },
-          sort: { createdAt: 'desc' },
-          pagination: { page: 1, pageSize: 25 },
+          sort: 'createdAt:desc',
+          limit: 25,
+          start: 0,
           populate: ['manualPayment', 'author']
         })
       })
@@ -367,7 +368,7 @@ describe('Payment Notes System', () => {
             manualPayment: 'payment-123',
             isInternal: false
           },
-          sort: { createdAt: 'desc' },
+          sort: 'createdAt:desc',
           populate: ['author']
         })
       })
@@ -395,7 +396,7 @@ describe('Payment Notes System', () => {
           filters: {
             manualPayment: 'payment-123'
           },
-          sort: { createdAt: 'desc' },
+          sort: 'createdAt:desc',
           populate: ['author']
         })
       })

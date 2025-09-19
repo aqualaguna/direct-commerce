@@ -368,7 +368,8 @@ describe('Inventory Controller', () => {
             fields: ['id', 'username', 'email'],
           },
         },
-        pagination: { page: 1, pageSize: 1 },
+        limit: 1,
+        start: 0,
       });
       expect(ctx.body).toEqual({
         data: createTestInventory(),
@@ -418,11 +419,9 @@ describe('Inventory Controller', () => {
             fields: ['documentId', 'title', 'sku', 'price'],
           },
         },
-        sort: { quantity: 'asc' },
-        pagination: {
-          page: 1,
-          pageSize: 25,
-        },
+        sort: 'quantity:asc',
+        limit: 25,
+        start: 0,
       });
       expect(ctx.body).toEqual(lowStockInventory);
     });

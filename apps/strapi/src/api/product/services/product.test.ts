@@ -151,14 +151,17 @@ describe('Product Service', () => {
 
       mockDocumentService.findMany.mockResolvedValue(mockProducts);
 
-      const result = await service.findByStatus('active');
+      const result = await service.findByStatus('active', {
+        pagination: { page: 1, pageSize: 25 },
+      });
 
       expect(result).toEqual(mockProducts);
       expect(mockDocumentService.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           filters: { status: 'active' },
-          sort: { createdAt: 'desc' },
-          pagination: { page: 1, pageSize: 25 },
+          sort: 'createdAt:desc',
+          limit: 25,
+          start: 0,
           populate: {
             category: {
               fields: ['id', 'name', 'slug'],
@@ -185,8 +188,9 @@ describe('Product Service', () => {
       expect(mockDocumentService.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           filters: { status: 'active', category: 'cat123' },
-          sort: { title: 'asc' },
-          pagination: { page: 1, pageSize: 25 },
+          sort: {"title": "asc"},
+          limit: 25,
+          start: 0,
         })
       );
     });
@@ -207,8 +211,9 @@ describe('Product Service', () => {
       expect(mockDocumentService.findMany).toHaveBeenCalledWith(
         expect.objectContaining({
           filters: { status: { $in: ['active', 'draft'] } },
-          sort: { createdAt: 'desc' },
-          pagination: { page: 1, pageSize: 25 },
+          sort: 'createdAt:desc',
+          limit: 25,
+          start: 0,
           populate: {
             category: {
               fields: ['id', 'name', 'slug'],
@@ -338,8 +343,9 @@ describe('Product Service', () => {
             sku: { $notNull: true },
             inventory: { $gte: 0 },
           }),
-          sort: { createdAt: 'desc' },
-          pagination: { page: 1, pageSize: 25 },
+          sort: 'createdAt:desc',
+          limit: 25,
+          start: 0,
           populate: {
             category: {
               fields: ['id', 'name', 'slug'],

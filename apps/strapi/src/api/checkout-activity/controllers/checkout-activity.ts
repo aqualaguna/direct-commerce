@@ -148,7 +148,7 @@ export default ({ strapi }: { strapi: any }) => ({
       };
 
       // Build sort
-      const sort = query.sort || { timestamp: 'desc' };
+      const sort = query.sort || 'timestamp:desc';
 
       // Get activities using Document Service API
       const activities = await strapi.documents('api::checkout-activity.checkout-activity').findMany({

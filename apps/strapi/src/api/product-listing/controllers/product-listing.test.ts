@@ -112,16 +112,17 @@ describe('Product Listing Controller', () => {
 
       const result = await productListingController.find(mockContext);
 
-      expect(result).toEqual(mockProductListings);
+      expect(result.data).toEqual(mockProductListings);
       expect(mockStrapi.documents).toHaveBeenCalledWith(
         'api::product-listing.product-listing'
       );
       expect(
         mockStrapi.documents('api::product-listing.product-listing').findMany
       ).toHaveBeenCalledWith({
-        filters: { status: 'published' },
-        sort: { createdAt: 'desc' },
-        pagination: { page: 1, pageSize: 25 },
+        filters: {},
+        sort: 'createdAt:desc',
+        limit: 25,
+        start: 0,
         populate: ['images', 'category', 'product', 'variants', 'optionGroups'],
       });
     });
@@ -138,7 +139,7 @@ describe('Product Listing Controller', () => {
 
       mockContext.query = {
         filters: { type: 'variant' },
-        sort: { title: 'asc' },
+        sort: 'title:asc',
         page: '2',
         pageSize: '10',
       };
@@ -149,13 +150,14 @@ describe('Product Listing Controller', () => {
 
       const result = await productListingController.find(mockContext);
 
-      expect(result).toEqual(mockProductListings);
+      expect(result.data).toEqual(mockProductListings);
       expect(
         mockStrapi.documents('api::product-listing.product-listing').findMany
       ).toHaveBeenCalledWith({
-        filters: { type: 'variant', status: 'published' },
-        sort: { title: 'asc' },
-        pagination: { page: 2, pageSize: 10 },
+        filters: { type: 'variant' },
+        sort: 'title:asc',
+        limit: 10,
+        start: 10,
         populate: ['images', 'category', 'product', 'variants', 'optionGroups'],
       });
     });
@@ -175,9 +177,10 @@ describe('Product Listing Controller', () => {
       expect(
         mockStrapi.documents('api::product-listing.product-listing').findMany
       ).toHaveBeenCalledWith({
-        filters: { status: 'published' },
-        sort: { createdAt: 'desc' },
-        pagination: { page: 1, pageSize: 100 }, // Should be clamped to limits
+        filters: {},
+        sort: 'createdAt:desc',
+        limit: 100,
+        start: 0,
         populate: ['images', 'category', 'product', 'variants', 'optionGroups'],
       });
     });
@@ -278,6 +281,11 @@ describe('Product Listing Controller', () => {
         status: 'draft',
       };
 
+      const mockProduct = {
+        documentId: 'product-doc-id',
+        title: 'Base Product',
+      };
+
       mockContext.request.body = {
         data: {
           title: 'New Product',
@@ -286,13 +294,24 @@ describe('Product Listing Controller', () => {
         },
       };
 
+      // Mock the product validation
+      mockStrapi
+        .documents('api::product.product')
+        .findOne.mockResolvedValue(mockProduct);
+
+      // Mock the product listing creation
       mockStrapi
         .documents('api::product-listing.product-listing')
         .create.mockResolvedValue(mockProductListing);
 
       const result = await productListingController.create(mockContext);
-
+      
       expect(result).toEqual(mockProductListing);
+      expect(
+        mockStrapi.documents('api::product.product').findOne
+      ).toHaveBeenCalledWith({
+        documentId: 'product-doc-id',
+      });
       expect(
         mockStrapi.documents('api::product-listing.product-listing').create
       ).toHaveBeenCalledWith({
@@ -300,6 +319,7 @@ describe('Product Listing Controller', () => {
           title: 'New Product',
           type: 'single',
           product: 'product-doc-id',
+          slug: 'new-product', // Generated slug
         },
         populate: ['images', 'category', 'product', 'variants', 'optionGroups'],
       });
@@ -328,11 +348,18 @@ describe('Product Listing Controller', () => {
           product: 'product-doc-id',
         },
       };
+      
+      // Mock the product validation to succeed
+      mockStrapi
+        .documents('api::product.product')
+        .findOne.mockResolvedValue({ documentId: 'product-doc-id' });
+      
+      // Mock the product listing creation to fail
       mockStrapi
         .documents('api::product-listing.product-listing')
         .create.mockRejectedValue(error);
 
-      await productListingController.create(mockContext);
+      const result = await productListingController.create(mockContext);
 
       expect(mockStrapi.log.error).toHaveBeenCalledWith(
         'Error in product-listing create:',
@@ -342,6 +369,7 @@ describe('Product Listing Controller', () => {
       expect(mockContext.internalServerError).toHaveBeenCalledWith(
         'Internal server error'
       );
+      expect(result).toBeUndefined(); // internalServerError returns undefined
     });
   });
 

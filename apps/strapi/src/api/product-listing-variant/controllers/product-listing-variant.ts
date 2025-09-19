@@ -79,7 +79,6 @@ export default factories.createCoreController(
         const { data } = ctx.request.body;
         const validationService = strapi.service('api::product-listing-variant.product-listing-variant-validation');
         const validationResult = await validationService.validateVariantData(data);
-        
         if (!validationResult.isValid) {
           return ctx.badRequest("Validation failed", validationResult.errors);
         }

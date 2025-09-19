@@ -303,10 +303,8 @@ describe('Payment Review Service', () => {
           { dueDate: 'asc' },
           { createdAt: 'asc' }
         ],
-        pagination: {
-          page: 1,
-          pageSize: 25
-        }
+        limit: 25,
+        start: 0,
       })
     })
 
@@ -330,10 +328,8 @@ describe('Payment Review Service', () => {
           { dueDate: 'asc' },
           { createdAt: 'asc' }
         ],
-        pagination: {
-          page: 1,
-          pageSize: 25
-        }
+        limit: 25,
+        start: 0,
       })
     })
   })
