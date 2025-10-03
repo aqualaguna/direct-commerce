@@ -8,6 +8,9 @@
 // Third-party imports
 import { factories } from '@strapi/strapi';
 
+// Local imports
+import productValidationService from '../services/product-validation';
+
 // Type definitions following new standards - Updated for Strapi compatibility
 interface ProductQuery {
   filters?: any;
@@ -65,6 +68,43 @@ export default factories.createCoreController(
           },
         };
 
+        // Handle dimension filtering parameters
+        const { weight, length, width, height, weight_min, weight_max, length_min, length_max, width_min, width_max, height_min, height_max } = query;
+        
+        // Build dimension filters
+        const dimensionFilters = [
+          { field: 'weight', min: weight_min, max: weight_max, exact: weight },
+          { field: 'length', min: length_min, max: length_max, exact: length },
+          { field: 'width', min: width_min, max: width_max, exact: width },
+          { field: 'height', min: height_min, max: height_max, exact: height },
+        ];
+
+        for (const { field, min, max, exact } of dimensionFilters) {
+          if (exact !== undefined) {
+            const value = parseFloat(String(exact));
+            if (!isNaN(value)) {
+              queryParams.filters[field] = value;
+            }
+          } else {
+            const rangeFilter: any = {};
+            if (min !== undefined) {
+              const minValue = parseFloat(String(min));
+              if (!isNaN(minValue)) {
+                rangeFilter.$gte = minValue;
+              }
+            }
+            if (max !== undefined) {
+              const maxValue = parseFloat(String(max));
+              if (!isNaN(maxValue)) {
+                rangeFilter.$lte = maxValue;
+              }
+            }
+            if (Object.keys(rangeFilter).length > 0) {
+              queryParams.filters[field] = rangeFilter;
+            }
+          }
+        }
+
         // Handle admin requests (include draft products)
         // Allow API tokens (which don't have user.role) and admin users to see all products
         const isAdmin = ctx.state.user?.role?.type === 'admin' || 
@@ -107,6 +147,19 @@ export default factories.createCoreController(
       try {
         // Support both legacy id and new documentId parameters
         const documentId = ctx.params.documentId || ctx.params.id;
+        const { populate: queryPopulate } = ctx.query;
+
+        const populate: any = {
+          category: {
+            fields: ['id', 'name', 'slug'], // Use documentId instead of id
+          },
+        };
+
+        if (queryPopulate) {
+          for (const key of String(queryPopulate).split(',')) {
+            populate[key] = true;
+          }
+        }
 
         if (!documentId) {
           return ctx.badRequest('Product documentId is required');
@@ -115,11 +168,7 @@ export default factories.createCoreController(
         // Use Document Service API with documentId
         const product = await strapi.documents('api::product.product').findOne({
           documentId,
-          populate: {
-            category: {
-              fields: ['id', 'name', 'slug'], // Use documentId instead of id
-            },
-          },
+          populate,
         });
 
         if (!product) {
@@ -165,9 +214,10 @@ export default factories.createCoreController(
           }
         }
 
-        // Validate inventory
-        if (typeof data.inventory !== 'number' || data.inventory < 0) {
-          return ctx.badRequest('Inventory cannot be negative');
+        // Use validation service for business rules validation
+        const validationResult = await productValidationService.validateBusinessRules(data);
+        if (!validationResult.isValid) {
+          return ctx.badRequest(validationResult.errors.join(', '));
         }
 
         // Set default values for physical dimensions if not provided
@@ -175,8 +225,6 @@ export default factories.createCoreController(
         for (const field of dimensionFields) {
           if (data[field] === undefined || data[field] === null) {
             data[field] = 0;
-          } else if (typeof data[field] !== 'number' || data[field] < 0) {
-            return ctx.badRequest(`${field} must be a non-negative number`);
           }
         }
 
@@ -195,10 +243,10 @@ export default factories.createCoreController(
         if (data.description) {
           data.description = '';
         }
-        
-        if(!['draft', 'active', 'inactive'].includes(data.status)) {
-          return ctx.badRequest('Invalid status');
-        }
+
+        // Extract inventory value before creating product (inventory is stored separately)
+        const inventoryValue = data.inventory || 0;
+        delete data.inventory; // Remove inventory from product data
 
         // Create product using Document Service API
         const product = await strapi.documents('api::product.product').create({
@@ -207,6 +255,31 @@ export default factories.createCoreController(
             category: true,
           },
         });
+
+        // Initialize inventory record for the product
+        try {
+          strapi.log.info(`Attempting to initialize inventory for product ${product.documentId} with quantity ${inventoryValue}`);
+          
+          // Check if service exists
+          const inventoryService = strapi.service('api::inventory.inventory');
+          if (!inventoryService) {
+            strapi.log.error(`Inventory service not found for product ${product.documentId}`);
+            return { data: product };
+          }
+          
+          strapi.log.info(`Inventory service found, calling initializeInventory`);
+          const inventoryResult = await inventoryService.initializeInventory(
+            product.documentId,
+            inventoryValue,
+            ctx.state.user?.id
+          );
+          
+          strapi.log.info(`Inventory initialized successfully for product ${product.documentId}: ${inventoryValue} units`, inventoryResult);
+        } catch (inventoryError) {
+          strapi.log.error(`Failed to initialize inventory for product ${product.documentId}:`, inventoryError);
+          // Don't fail the product creation if inventory initialization fails
+          // The inventory can be initialized later manually
+        }
 
         return { data: product };
       } catch (error) {
@@ -243,21 +316,17 @@ export default factories.createCoreController(
         }
 
 
-        // Validate inventory if provided
-        if (
-          data.inventory !== undefined &&
-          (typeof data.inventory !== 'number' || data.inventory < 0)
-        ) {
-          return ctx.badRequest('Inventory cannot be negative');
+        // Use validation service for business rules validation
+        const validationResult = await productValidationService.validateBusinessRules(data);
+        if (!validationResult.isValid) {
+          return ctx.badRequest(validationResult.errors.join(', '));
         }
 
         // Set default values for physical dimensions if not provided
         const dimensionFields = ['weight', 'length', 'width', 'height'];
         for (const field of dimensionFields) {
-          if (data[field] !== undefined) {
-            if (typeof data[field] !== 'number' || data[field] < 0) {
-              return ctx.badRequest(`${field} must be a non-negative number`);
-            }
+          if (data[field] !== undefined && data[field] !== null) {
+            // Validation is handled by validation service
           }
         }
 
@@ -283,6 +352,39 @@ export default factories.createCoreController(
             category: true,
           },
         });
+
+        // Handle inventory updates separately (inventory is stored in separate table)
+        let inventoryValue = undefined;
+        if (data.inventory !== undefined) {
+          inventoryValue = data.inventory;
+          delete data.inventory; // Remove inventory from product data
+          
+          try {
+            // Get current inventory to calculate change
+            const currentInventory = await strapi.service('api::inventory.inventory').getInventoryByProduct(documentId);
+            const currentQuantity = currentInventory?.quantity || 0;
+            const inventoryChange = inventoryValue - currentQuantity;
+            
+            if (inventoryChange !== 0) {
+              await strapi.service('api::inventory.inventory').updateInventory(
+                documentId,
+                inventoryChange,
+                {
+                  reason: 'Product inventory updated',
+                  source: 'manual',
+                  userId: ctx.state.user?.id,
+                  allowNegative: false,
+                }
+              );
+              
+              strapi.log.info(`Inventory updated for product ${documentId}: ${inventoryChange > 0 ? '+' : ''}${inventoryChange} units`);
+            }
+          } catch (inventoryError) {
+            strapi.log.error(`Failed to update inventory for product ${documentId}:`, inventoryError);
+            // Don't fail the product update if inventory update fails
+            // Log the error and continue
+          }
+        }
 
         return { data: product };
       } catch (error) {
@@ -538,6 +640,12 @@ export default factories.createCoreController(
           return ctx.badRequest('CSV data is required');
         }
 
+        // Validate bulk data using validation service
+        const validationResult = await productValidationService.validateBulkData(csvData);
+        if (!validationResult.isValid) {
+          return ctx.badRequest(validationResult.errors.join(', '));
+        }
+
         const bulkService = strapi.service('api::product.bulk-operations');
         const result = await bulkService.importFromCSV(csvData, {
           validateOnly,
@@ -556,6 +664,12 @@ export default factories.createCoreController(
 
         if (!jsonData || !Array.isArray(jsonData)) {
           return ctx.badRequest('JSON data array is required');
+        }
+
+        // Validate bulk data using validation service
+        const validationResult = await productValidationService.validateBulkData(jsonData);
+        if (!validationResult.isValid) {
+          return ctx.badRequest(validationResult.errors.join(', '));
         }
 
         const bulkService = strapi.service('api::product.bulk-operations');

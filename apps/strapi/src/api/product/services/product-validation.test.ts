@@ -82,16 +82,6 @@ describe('Product Validation Service', () => {
       expect(result.isValid).toBe(false);
       expect(result.errors).toContain('Inventory cannot exceed 999,999');
     });
-
-    it('should warn for active product with zero inventory', async () => {
-      const data = { inventory: 0 };
-      const result = await productValidationService.inventoryRule(data);
-
-      expect(result.isValid).toBe(false);
-      expect(result.errors).toContain(
-        'Active products should have inventory available'
-      );
-    });
   });
 
   describe('skuRule', () => {

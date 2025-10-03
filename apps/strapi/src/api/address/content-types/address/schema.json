@@ -12,6 +12,10 @@
     "comment": "Address content type for customer address management"
   },
   "attributes": {
+    "sessionId": {
+      "type": "string",
+      "required": false
+    },
     "user": {
       "type": "relation",
       "relation": "manyToOne",

@@ -1,7 +1,7 @@
 export default async (policyContext, config, { strapi }) => {
   const { user, auth } = policyContext.state;
   
-  // Allow valid API token requests
+  // Allow valid API token requests (these are admin by default)
   if (auth?.strategy?.name === 'api-token' && auth.credentials?.id) {
     return true;
   }

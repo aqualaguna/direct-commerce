@@ -48,6 +48,24 @@ export default factories.createCoreService(
   'api::inventory.inventory' as any,
   ({ strapi }) => ({
     /**
+     * Get inventory record for a product
+     */
+    async getInventoryByProduct(productId: string): Promise<any> {
+      try {
+        const inventory = await strapi.documents(
+          'api::inventory.inventory'
+        ).findFirst({
+          filters: { product: { documentId: productId } },
+        });
+
+        return inventory;
+      } catch (error) {
+        strapi.log.error('Error getting inventory by product:', error);
+        throw error;
+      }
+    },
+
+    /**
      * Initialize inventory record for a product
      */
     async initializeInventory(
@@ -56,34 +74,41 @@ export default factories.createCoreService(
       userId?: string
     ): Promise<any> {
       try {
+        strapi.log.info(`Initializing inventory for product ${productId} with quantity ${initialQuantity}`);
+        
         // Check if inventory record already exists using Document Service API
-        const existingInventory = await (strapi.documents as any)(
-          'api::inventory.inventory'
-        ).findMany({
-          filters: { product: productId },
+        const existingInventory = await strapi.documents('api::inventory.inventory').findMany({
+          filters: { product: { documentId: productId } },
           limit: 1,
           start: 0,
         });
 
-        if (existingInventory.data?.length > 0) {
+        strapi.log.info(`Existing inventory check result:`, existingInventory);
+
+        if (existingInventory?.length > 0) {
+          strapi.log.warn(`Inventory record already exists for product ${productId}`);
           throw new Error('Inventory record already exists for this product');
         }
 
         // Create inventory record using Document Service API
-        const inventory = await (strapi.documents as any)(
-          'api::inventory.inventory'
-        ).create({
-          data: {
-            product: productId,
-            quantity: initialQuantity,
-            reserved: 0,
-            available: initialQuantity,
-            lowStockThreshold: 10,
-            isLowStock: initialQuantity <= 10,
-            lastUpdated: new Date(),
-            updatedBy: userId,
-          },
+        const inventoryData = {
+          product: { documentId: productId },
+          quantity: initialQuantity,
+          reserved: 0,
+          available: initialQuantity,
+          lowStockThreshold: 10,
+          isLowStock: initialQuantity > 0 && initialQuantity <= 10,
+          lastUpdated: new Date(),
+          updatedBy: userId,
+        };
+        
+        strapi.log.info(`Creating inventory record with data:`, inventoryData);
+        
+        const inventory = await strapi.documents('api::inventory.inventory').create({
+          data: inventoryData,
         });
+        
+        strapi.log.info(`Inventory record created successfully:`, inventory);
 
         // Create history record
         if (initialQuantity > 0) {
@@ -117,19 +142,21 @@ export default factories.createCoreService(
       options: InventoryUpdateOptions
     ): Promise<any> {
       try {
-        // Get current inventory using DB query for atomic operations
-        const inventory = (await strapi.db
-          .query('api::inventory.inventory')
-          .findOne({
-            where: { product: productId },
-            populate: { product: true },
-          })) as any;
+        strapi.log.info(`updateInventory called with productId: ${productId}, quantityChange: ${quantityChange}, options:`, options);
+        
+        // Get current inventory using Document Service API
+        const inventory = await strapi.documents('api::inventory.inventory').findFirst({
+          filters: { product: { documentId: productId } },
+          populate: { product: true },
+        });
 
         if (!inventory) {
           throw new Error('Inventory record not found for product');
         }
 
+        strapi.log.info(`Current inventory:`, inventory);
         const newQuantity = inventory.quantity + quantityChange;
+        strapi.log.info(`Calculated newQuantity: ${newQuantity} (${inventory.quantity} + ${quantityChange})`);
 
         // Validate business rules
         if (!options.allowNegative && newQuantity < 0) {
@@ -141,12 +168,10 @@ export default factories.createCoreService(
         }
 
         const newAvailable = Math.max(0, newQuantity - inventory.reserved);
-        const isLowStock = newQuantity <= inventory.lowStockThreshold;
+        const isLowStock = newQuantity > 0 && newQuantity <= inventory.lowStockThreshold;
 
         // Update inventory atomically using Document Service API
-        const updatedInventory = await (strapi.documents as any)(
-          'api::inventory.inventory'
-        ).update({
+        const updatedInventory = await strapi.documents('api::inventory.inventory').update({
           documentId: inventory.documentId,
           data: {
             quantity: newQuantity,
@@ -157,11 +182,8 @@ export default factories.createCoreService(
           },
         });
 
-        // Update product inventory field for backward compatibility
-        await (strapi.documents as any)('api::product.product').update({
-          documentId: productId,
-          data: { inventory: newQuantity },
-        });
+        // Note: Product schema doesn't have inventory field, so we skip this update
+        // The inventory is managed through the inventory content type
 
         // Create history record
         await this.createHistoryRecord({
@@ -204,11 +226,11 @@ export default factories.createCoreService(
     ): Promise<any> {
       try {
         // Get current inventory
-        const inventory = (await strapi.db
-          .query('api::inventory.inventory')
-          .findOne({
-            where: { product: productId },
-          })) as any;
+        const inventory = await strapi.documents(
+          'api::inventory.inventory'
+        ).findFirst({
+          filters: { product: { documentId: productId } },
+        });
 
         if (!inventory) {
           throw new Error('Inventory record not found for product');
@@ -223,11 +245,11 @@ export default factories.createCoreService(
         const expiresAt = new Date(Date.now() + expirationMinutes * 60 * 1000);
 
         // Create reservation using Document Service API
-        const reservation = await (strapi.documents as any)(
+        const reservation = await strapi.documents(
           'api::stock-reservation.stock-reservation'
         ).create({
           data: {
-            product: productId,
+            product: { documentId: productId },
             quantity,
             orderId: options.orderId,
             customerId: options.customerId,
@@ -241,7 +263,7 @@ export default factories.createCoreService(
         const newReserved = inventory.reserved + quantity;
         const newAvailable = inventory.quantity - newReserved;
 
-        await (strapi.documents as any)('api::inventory.inventory').update({
+        await strapi.documents('api::inventory.inventory').update({
           documentId: inventory.documentId,
           data: {
             reserved: newReserved,
@@ -277,11 +299,11 @@ export default factories.createCoreService(
      */
     async createHistoryRecord(data: HistoryRecordData): Promise<any> {
       try {
-        return await (strapi.documents as any)(
+        return await strapi.documents(
           'api::inventory-history.inventory-history'
         ).create({
           data: {
-            product: data.productId,
+            product: { documentId: data.productId },
             action: data.action,
             quantityBefore: data.quantityBefore,
             quantityAfter: data.quantityAfter,
@@ -311,7 +333,7 @@ export default factories.createCoreService(
     ): Promise<any> {
       try {
         // Get the reservation using Document Service API
-        const reservation = await (strapi.documents as any)(
+        const reservation = await strapi.documents(
           'api::stock-reservation.stock-reservation'
         ).findOne({
           documentId: reservationId,
@@ -327,18 +349,18 @@ export default factories.createCoreService(
         }
 
         // Get current inventory
-        const inventory = (await strapi.db
-          .query('api::inventory.inventory')
-          .findOne({
-            where: { product: reservation.product.documentId },
-          })) as any;
+        const inventory = await strapi.documents(
+          'api::inventory.inventory'
+        ).findFirst({
+          filters: { product: { documentId: reservation.product.documentId } },
+        });
 
         if (!inventory) {
           throw new Error('Inventory record not found');
         }
 
         // Update reservation status using Document Service API
-        const updatedReservation = await (strapi.documents as any)(
+        const updatedReservation = await strapi.documents(
           'api::stock-reservation.stock-reservation'
         ).update({
           documentId: reservationId,
@@ -356,7 +378,7 @@ export default factories.createCoreService(
         );
         const newAvailable = inventory.quantity - newReserved;
 
-        await (strapi.documents as any)('api::inventory.inventory').update({
+        await strapi.documents('api::inventory.inventory').update({
           documentId: inventory.documentId,
           data: {
             reserved: newReserved,
@@ -396,7 +418,7 @@ export default factories.createCoreService(
     ): Promise<any> {
       try {
         // Get the reservation using Document Service API
-        const reservation = await (strapi.documents as any)(
+        const reservation = await strapi.documents(
           'api::stock-reservation.stock-reservation'
         ).findOne({
           documentId: reservationId,
@@ -423,7 +445,7 @@ export default factories.createCoreService(
         );
 
         // Update reservation status using Document Service API
-        const updatedReservation = await (strapi.documents as any)(
+        const updatedReservation = await strapi.documents(
           'api::stock-reservation.stock-reservation'
         ).update({
           documentId: reservationId,
@@ -449,7 +471,7 @@ export default factories.createCoreService(
         const now = new Date();
 
         // Find expired reservations using Document Service API
-        const expiredReservations = await (strapi.documents as any)(
+        const expiredReservations = await strapi.documents(
           'api::stock-reservation.stock-reservation'
         ).findMany({
           filters: {
@@ -466,7 +488,7 @@ export default factories.createCoreService(
           status: string;
         }> = [];
 
-        const reservationData = expiredReservations.data || expiredReservations;
+        const reservationData = expiredReservations;
 
         for (const reservation of reservationData) {
           try {
@@ -476,7 +498,7 @@ export default factories.createCoreService(
             );
 
             // Mark as expired using Document Service API
-            await (strapi.documents as any)(
+            await strapi.documents(
               'api::stock-reservation.stock-reservation'
             ).update({
               documentId: reservation.documentId,
@@ -515,18 +537,16 @@ export default factories.createCoreService(
     ): Promise<any> {
       try {
         // Get all inventory records with filters using Document Service API
-        const inventoryResponse = await (strapi.documents as any)(
+        const inventoryResponse = await strapi.documents(
           'api::inventory.inventory'
         ).findMany({
           filters,
           populate: {
-            product: {
-              fields: ['documentId', 'title', 'sku', 'price'],
-            },
+            product: true,
           },
         });
 
-        const inventoryRecords = inventoryResponse.data || inventoryResponse;
+        const inventoryRecords = inventoryResponse;
 
         const totalProducts = inventoryRecords.length;
         const lowStockCount = inventoryRecords.filter(

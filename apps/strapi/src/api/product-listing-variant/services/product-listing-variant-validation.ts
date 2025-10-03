@@ -2,19 +2,34 @@
  * product-listing-variant-validation service
  */
 
-export default ({ strapi }) => ({
+import { Core } from "@strapi/strapi";
+
+export default ({ strapi }: { strapi: Core.Strapi }) => ({
   /**
    * Validate variant creation data
    */
   async validateVariantData(data) {
     const errors = [];
-
+    let extraData: any = {};
     // Check required fields
     if (!data.basePrice || data.basePrice <= 0) {
       errors.push('Valid base price is required');
     }
     if (!data.productListing) {
       errors.push('Product listing is required');
+    }
+
+    if (!data.product) {
+      errors.push('Product is required');
+    } else {
+      extraData.product = await strapi
+        .documents('api::product.product')
+        .findOne({
+          documentId: data.product,
+        });
+      if (!extraData.product) {
+        errors.push('Product not found');
+      }
     }
 
 
@@ -24,238 +39,85 @@ export default ({ strapi }) => ({
         .documents('api::product-listing.product-listing')
         .findOne({
           documentId: data.productListing,
+          populate: ['optionGroups'],
         });
-      
+
       if (!productListing) {
         errors.push('Product listing not found');
+      } else {
+        extraData.productListing = productListing;
       }
     }
 
     // Validate option values if provided
-    if (data.optionValues && data.optionValues.length > 0) {
+    if (data.optionValue) {
       const optionValueValidation = await this.validateOptionValues(
-        data.optionValues,
-        data.productListing
+        data.optionValue,
+        extraData
       );
       errors.push(...optionValueValidation.errors);
+    } else {
+      errors.push('Option value are required');
     }
 
     return {
       isValid: errors.length === 0,
       errors,
+      extraData,
     };
   },
 
   /**
    * Validate option values for a product listing
    */
-  async validateOptionValues(optionValueIds, productListingId) {
+  async validateOptionValues(optionValueId, extraData) {
     const errors = [];
-
-    // Get the product listing to check its option groups
-    const productListing = await strapi
-      .documents('api::product-listing.product-listing')
-      .findOne({
-        documentId: productListingId,
-        populate: ['optionGroups'],
-      });
-
-    if (!productListing) {
-      errors.push('Product listing not found');
-      return { isValid: false, errors };
+    if (!extraData.productListing || !extraData.product) {
+      errors.push('Product listing or product not found');
+      return {
+        isValid: false,
+        errors,
+      };
     }
-
-    // Get all option values
-    const optionValues = await strapi
+    // get option value 
+    const optionValue = await strapi
       .documents('api::option-value.option-value')
-      .findMany({
-        filters: { documentId: { $in: optionValueIds } },
+      .findOne({
+        documentId: optionValueId,
         populate: ['optionGroup'],
       });
-
-    // Check if all requested option values were found
-    const foundOptionValueIds = optionValues.map(ov => ov.documentId);
-    const missingOptionValueIds = optionValueIds.filter(id => !foundOptionValueIds.includes(id));
-    
-    if (missingOptionValueIds.length > 0) {
-      errors.push('One or more option values not found');
-      return { isValid: false, errors };
+    if (!optionValue) {
+      errors.push('Option value not found');
     }
+    const optionValueGroupId = optionValue.optionGroup.documentId;
 
-    // Check if all option values belong to the product listing's option groups
-    const productListingOptionGroupIds = productListing.optionGroups?.map(
-      og => og.documentId
-    ) || [];
-    const optionValueGroupIds = optionValues.map(
-      ov => ov.optionGroup?.documentId
-    ).filter(Boolean);
-
-    for (const groupId of optionValueGroupIds) {
-      if (!productListingOptionGroupIds.includes(groupId)) {
-        errors.push(
-          'Option value does not belong to product listing option groups'
-        );
-        break;
-      }
+    if (!extraData.productListing.optionGroups.find(og => og.documentId === optionValueGroupId)) {
+      errors.push('Option value does not belong to the product listing');
     }
-
-    // Check for duplicate option groups (can't have multiple values from same group)
-    const uniqueGroupIds = [...new Set(optionValueGroupIds)];
-    if (uniqueGroupIds.length !== optionValueGroupIds.length) {
-      errors.push('Cannot have multiple values from the same option group');
-    }
-
-    return {
-      isValid: errors.length === 0,
-      errors,
-    };
-  },
-
-  /**
-   * Check if option combination already exists
-   */
-  async checkOptionCombinationExists(
-    optionValueIds,
-    productListingId,
-    excludeVariantId = null
-  ) {
-    const variants = await strapi
+    // check for duplicate option value
+    const duplicateOptionValue = await strapi
       .documents('api::product-listing-variant.product-listing-variant')
-      .findMany({
+      .findFirst({
         filters: {
-          productListing: productListingId,
-          ...(excludeVariantId && { documentId: { $ne: excludeVariantId } }),
+          optionValue: {documentId: optionValueId},
+          productListing: extraData.productListing.id,
         },
-        populate: ['optionValues'],
       });
-
-    if (!variants || !Array.isArray(variants)) {
-      return {
-        exists: false,
-        existingVariant: null,
-      };
+    if (duplicateOptionValue) {
+      errors.push('Option value already exists');
     }
 
-    for (const variant of variants) {
-      if (!variant.optionValues || !Array.isArray(variant.optionValues)) {
-        continue;
-      }
-
-      const variantOptionValueIds = variant.optionValues.map(
-        ov => ov.documentId
-      );
-
-      // Check if this variant has the same option combination
-      if (
-        optionValueIds.length === variantOptionValueIds.length &&
-        optionValueIds.every(id => variantOptionValueIds.includes(id))
-      ) {
-        return {
-          exists: true,
-          existingVariant: variant,
-        };
-      }
-    }
-
-    return {
-      exists: false,
-      existingVariant: null,
-    };
-  },
-
-
-  /**
-   * Generate unique SKU for variant
-   */
-  async generateUniqueSku(productListingId, optionValues = []) {
-    const productListing = await strapi
-      .documents('api::product-listing.product-listing')
-      .findOne({
-        documentId: productListingId,
-        populate: ['product'],
+    // check for duplicate product
+    const duplicateProductId = await strapi
+      .documents('api::product-listing-variant.product-listing-variant')
+      .findFirst({
+        filters: {
+          product: extraData.product.id,
+          productListing: extraData.productListing.id,
+        },
       });
-
-    if (!productListing) {
-      throw new Error('Product listing not found');
-    }
-
-    let baseSku = productListing.product.sku || 'PROD';
-
-    if (optionValues.length > 0) {
-      const optionValueData = await strapi
-        .documents('api::option-value.option-value')
-        .findMany({
-          filters: { documentId: { $in: optionValues } },
-        });
-
-      const optionSuffix = optionValueData.map(ov => ov.value).join('-');
-      baseSku = `${baseSku}-${optionSuffix}`;
-    }
-
-    // Check if SKU already exists and generate unique one
-    let uniqueSku = baseSku;
-    let counter = 1;
-
-    while (true) {
-      const existingVariant = await strapi
-        .documents('api::product-listing-variant.product-listing-variant')
-        .findFirst({
-          filters: { sku: uniqueSku },
-        });
-
-      if (!existingVariant) {
-        break;
-      }
-
-      uniqueSku = `${baseSku}-${counter}`;
-      counter++;
-    }
-
-    return uniqueSku;
-  },
-
-  /**
-   * Get variant availability status
-   */
-  async getVariantAvailability(variant) {
-    if (!variant.isActive) {
-      return {
-        available: false,
-        reason: 'Variant is inactive',
-      };
-    }
-
-
-    return {
-      available: true,
-      reason: 'Available',
-    };
-  },
-
-  /**
-   * Validate variant update data
-   */
-  async validateVariantUpdate(data, variantId) {
-    const errors = [];
-
-    // Check price if provided
-    if (data.basePrice !== undefined && (!data.basePrice || data.basePrice <= 0)) {
-      errors.push('Valid base price is required');
-    }
-
-    // Check SKU uniqueness if provided
-    if (data.sku) {
-      const existingVariant = await strapi
-        .documents('api::product-listing-variant.product-listing-variant')
-        .findFirst({
-          filters: {
-            sku: data.sku,
-            documentId: { $ne: variantId },
-          },
-        });
-      if (existingVariant) {
-        errors.push('SKU must be unique');
-      }
+    if (duplicateProductId) {
+      errors.push('Product Variant with this product already exists');
     }
 
     return {
@@ -263,6 +125,9 @@ export default ({ strapi }) => ({
       errors,
     };
   },
+
+
+
 
   /**
    * Validate bulk variant data

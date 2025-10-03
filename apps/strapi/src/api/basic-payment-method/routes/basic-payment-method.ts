@@ -21,6 +21,21 @@ export default {
         }
       }
     },
+    // Get payment method statistics (admin only)
+    {
+      method: 'GET',
+      path: '/payment-methods/basic/stats',
+      handler: 'basic-payment-method.getStats',
+      config: {
+        policies: ['global::is-admin'],
+        description: 'Get payment method statistics',
+        tag: {
+          plugin: 'basic-payment-method',
+          name: 'Basic Payment Method',
+          actionType: 'find'
+        }
+      }
+    },
 
     // Get payment method by code
     {
@@ -54,21 +69,7 @@ export default {
       }
     },
 
-    // Get payment method statistics (admin only)
-    {
-      method: 'GET',
-      path: '/payment-methods/basic/stats',
-      handler: 'basic-payment-method.getStats',
-      config: {
-        policies: ['global::is-admin'],
-        description: 'Get payment method statistics',
-        tag: {
-          plugin: 'basic-payment-method',
-          name: 'Basic Payment Method',
-          actionType: 'find'
-        }
-      }
-    },
+
 
     // Activate payment method (admin only)
     {

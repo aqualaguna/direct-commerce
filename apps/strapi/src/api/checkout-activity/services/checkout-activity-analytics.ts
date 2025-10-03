@@ -41,7 +41,7 @@ export default ({ strapi }: { strapi: any }) => ({
       // Get all activities for this session
       const activities = await strapi.documents('api::checkout-activity.checkout-activity').findMany({
         filters: { checkoutSessionId },
-        sort: 'timestamp:asc',
+        sort: 'createdAt:asc',
         limit: 1000,
         start: 0,
       });
@@ -137,7 +137,7 @@ export default ({ strapi }: { strapi: any }) => ({
             $lte: end
           }
         },
-        sort: 'timestamp:asc',
+        sort: 'createdAt:asc',
         limit: 10000,
         start: 0,
       });
@@ -151,7 +151,7 @@ export default ({ strapi }: { strapi: any }) => ({
             $lte: end
           }
         },
-        sort: 'timestamp:asc',
+        sort: 'createdAt:asc',
         limit: 10000,
         start: 0,
       });
@@ -165,7 +165,7 @@ export default ({ strapi }: { strapi: any }) => ({
             $lte: end
           }
         },
-        sort: 'timestamp:asc',
+        sort: 'createdAt:asc',
         limit: 10000,
         start: 0,
       });
@@ -235,7 +235,7 @@ export default ({ strapi }: { strapi: any }) => ({
             $lte: end
           }
         },
-        sort: 'timestamp:asc',
+        sort: 'createdAt:asc',
         limit: 10000,
         start: 0,
       });
@@ -341,7 +341,7 @@ export default ({ strapi }: { strapi: any }) => ({
             $gte: oneHourAgo
           }
         },
-        sort: 'timestamp:desc',
+        sort: 'createdAt:desc',
         limit: 1000,
         start: 0,
       });
@@ -353,7 +353,7 @@ export default ({ strapi }: { strapi: any }) => ({
             $gte: oneDayAgo
           }
         },
-        sort: 'timestamp:desc',
+        sort: 'createdAt:desc',
         limit: 10000,
         start: 0,
       });

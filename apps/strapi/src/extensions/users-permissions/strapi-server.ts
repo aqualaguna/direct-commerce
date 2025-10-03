@@ -1,6 +1,28 @@
 import { trackLoginAttempt, trackGeneralActivity } from '../../utils/activity-tracking';
 
 export default (plugin) => {
+  console.log('🚀 Registering user lifecycle hooks...');
+  
+  // Register lifecycle hooks for user content type
+  plugin.contentTypes.user.lifecycles = require('./content-types/user/lifecycles').default;
+  console.log('✅ User lifecycle hooks registered via plugin.contentTypes');
+  
+  // Alternative registration method for Strapi v4+
+  if (strapi) {
+    console.log('🔄 Registering user lifecycle hooks via strapi.db.lifecycles.subscribe...');
+    strapi.db.lifecycles.subscribe({
+      models: ['plugin::users-permissions.user'],
+      async beforeDelete(event: any) {
+        const lifecycles = require('./content-types/user/lifecycles').default;
+        if (lifecycles.beforeDelete) {
+          // Pass strapi instance to the lifecycle hook
+          event.strapi = strapi;
+          await lifecycles.beforeDelete(event);
+        }
+      },
+    });
+    console.log('✅ User lifecycle hooks registered via strapi.db.lifecycles.subscribe');
+  }
   // Add custom rate limit middleware for testing environment
   if (process.env.NODE_ENV === 'test') {
     plugin.middlewares['testRateLimit'] = require('../../middlewares/test-rate-limit').default;

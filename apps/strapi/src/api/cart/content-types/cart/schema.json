@@ -15,9 +15,8 @@
   "attributes": {
     "sessionId": {
       "type": "string",
-      "required": true,
-      "unique": true,
-      "description": "Session ID for guest carts"
+      "required": false,
+      "description": "Session ID for guest carts (null for user carts)"
     },
     "user": {
       "type": "relation",
@@ -84,9 +83,9 @@
       "description": "Cart status"
     },
     "shippingAddress": {
-      "type": "component",
-      "component": "shared.address",
-      "description": "Shipping address for cart calculations"
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::address.address"
     },
     "shippingMethod": {
       "type": "string",

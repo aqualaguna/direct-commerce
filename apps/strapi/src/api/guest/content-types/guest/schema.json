@@ -1,0 +1,49 @@
+{
+  "kind": "collectionType",
+  "collectionName": "guests",
+  "info": {
+    "singularName": "guest",
+    "pluralName": "guests",
+    "displayName": "Guest",
+    "description": "Guest data for non-registered users"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "sessionId": {
+      "type": "string",
+      "required": true,
+      "unique": true
+    },
+    "email": {
+      "type": "email",
+      "required": false,
+      "maxLength": 255
+    },
+    "convertedToUser": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    },
+    "convertedAt": {
+      "type": "datetime",
+      "required": false
+    },
+
+    "status": {
+      "type": "enumeration",
+      "enum": [
+        "active",
+        "converted"
+      ],
+      "default": "active",
+      "required": true
+    },
+    "metadata": {
+      "type": "json",
+      "required": false
+    }
+  }
+}

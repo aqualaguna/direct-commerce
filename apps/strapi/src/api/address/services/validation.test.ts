@@ -21,6 +21,7 @@ describe('Address Validation Service', () => {
     it('should validate a complete address successfully', () => {
       // Arrange
       const addressData = {
+        type: 'shipping',
         firstName: 'John',
         lastName: 'Doe',
         address1: '123 Main St',
@@ -45,7 +46,7 @@ describe('Address Validation Service', () => {
       // Arrange
       const addressData = {
         firstName: 'John',
-        // Missing lastName, address1, city, state, postalCode, country, phone
+        // Missing type, lastName, address1, city, state, postalCode, country, phone
       };
 
       // Act
@@ -53,19 +54,21 @@ describe('Address Validation Service', () => {
 
       // Assert
       expect(result.isValid).toBe(false);
-      expect(result.errors).toContain('Last name is required');
-      expect(result.errors).toContain('Address line 1 is required');
-      expect(result.errors).toContain('City is required');
-      expect(result.errors).toContain('State/Province is required');
-      expect(result.errors).toContain('Postal code is required');
-      expect(result.errors).toContain('Country is required');
-      expect(result.errors).toContain('Phone number is required');
+      expect(result.errors).toContain('type is required');
+      expect(result.errors).toContain('lastName is required');
+      expect(result.errors).toContain('address1 is required');
+      expect(result.errors).toContain('city is required');
+      expect(result.errors).toContain('state is required');
+      expect(result.errors).toContain('postalCode is required');
+      expect(result.errors).toContain('country is required');
+      expect(result.errors).toContain('phone is required');
       expect(result.confidence).toBeLessThan(1.0);
     });
 
     it('should return errors for fields that are too long', () => {
       // Arrange
       const addressData = {
+        type: 'shipping',
         firstName: 'A'.repeat(300), // Too long
         lastName: 'Doe',
         address1: '123 Main St',
@@ -88,6 +91,7 @@ describe('Address Validation Service', () => {
     it('should validate postal code format', () => {
       // Arrange
       const validAddress = {
+        type: 'shipping',
         firstName: 'John',
         lastName: 'Doe',
         address1: '123 Main St',
@@ -116,6 +120,7 @@ describe('Address Validation Service', () => {
     it('should validate phone number format', () => {
       // Arrange
       const validAddress = {
+        type: 'shipping',
         firstName: 'John',
         lastName: 'Doe',
         address1: '123 Main St',
@@ -291,6 +296,7 @@ describe('Address Validation Service', () => {
     it('should validate US address with US postal code', () => {
       // Arrange
       const usAddress = {
+        type: 'shipping',
         firstName: 'John',
         lastName: 'Doe',
         address1: '123 Main St',
@@ -312,6 +318,7 @@ describe('Address Validation Service', () => {
     it('should validate Canadian address with Canadian postal code', () => {
       // Arrange
       const canadianAddress = {
+        type: 'shipping',
         firstName: 'John',
         lastName: 'Doe',
         address1: '123 Main St',
@@ -333,6 +340,7 @@ describe('Address Validation Service', () => {
     it('should return error for invalid US postal code', () => {
       // Arrange
       const usAddress = {
+        type: 'shipping',
         firstName: 'John',
         lastName: 'Doe',
         address1: '123 Main St',
@@ -354,6 +362,7 @@ describe('Address Validation Service', () => {
     it('should return error for invalid Canadian postal code', () => {
       // Arrange
       const canadianAddress = {
+        type: 'shipping',
         firstName: 'John',
         lastName: 'Doe',
         address1: '123 Main St',

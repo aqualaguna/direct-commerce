@@ -14,27 +14,12 @@
   "attributes": {
     "sessionId": {
       "type": "string",
-      "required": true,
-      "unique": true,
-      "minLength": 32,
-      "maxLength": 64
+      "required": false
     },
     "user": {
       "type": "relation",
       "relation": "manyToOne",
       "target": "plugin::users-permissions.user"
-    },
-
-    "currentStep": {
-      "type": "string",
-      "default": "cart",
-      "required": true,
-      "maxLength": 50
-    },
-    "stepProgress": {
-      "type": "json",
-      "required": false,
-      "description": "Step progress tracking with completion status and form data"
     },
     "status": {
       "type": "enumeration",
@@ -48,14 +33,14 @@
       "required": true
     },
     "shippingAddress": {
-      "type": "component",
-      "component": "shared.address",
-      "required": false
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::address.address"
     },
     "billingAddress": {
-      "type": "component",
-      "component": "shared.address",
-      "required": false
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::address.address"
     },
     "shippingMethod": {
       "type": "string",
@@ -63,11 +48,11 @@
       "maxLength": 100
     },
     "paymentMethod": {
-      "type": "string",
-      "required": false,
-      "maxLength": 100
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::basic-payment-method.basic-payment-method",
+      "required": true
     },
-
     "expiresAt": {
       "type": "datetime",
       "required": true
@@ -83,13 +68,6 @@
     "metadata": {
       "type": "json",
       "required": false
-    },
-    "guestCheckout": {
-      "type": "relation",
-      "relation": "oneToOne",
-      "target": "api::guest-checkout.guest-checkout",
-      "inversedBy": "checkoutSession",
-      "description": "Associated guest checkout"
     }
   }
 }

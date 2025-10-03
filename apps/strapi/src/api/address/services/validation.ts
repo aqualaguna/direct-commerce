@@ -22,6 +22,7 @@ interface AddressData {
   postalCode?: string;
   country?: string;
   phone?: string;
+  type?: string;
 }
 
 export default {
@@ -31,45 +32,17 @@ export default {
   validateAddress(addressData: AddressData): AddressValidationResult {
     const errors: string[] = [];
     let confidence = 1.0;
-
-    // Required field validation
-    if (!addressData.firstName?.trim()) {
-      errors.push('First name is required');
-      confidence -= 0.1;
+    const requiredFields = ['type', 'firstName', 'lastName', 'address1', 'city', 'state', 'postalCode', 'country', 'phone'];
+    for (const field of requiredFields) {
+      if (!addressData[field]?.trim()) {
+        errors.push(`${field} is required`);
+        confidence -= 0.1;
+      }
     }
 
-    if (!addressData.lastName?.trim()) {
-      errors.push('Last name is required');
-      confidence -= 0.1;
-    }
-
-    if (!addressData.address1?.trim()) {
-      errors.push('Address line 1 is required');
-      confidence -= 0.2;
-    }
-
-    if (!addressData.city?.trim()) {
-      errors.push('City is required');
-      confidence -= 0.2;
-    }
-
-    if (!addressData.state?.trim()) {
-      errors.push('State/Province is required');
-      confidence -= 0.1;
-    }
-
-    if (!addressData.postalCode?.trim()) {
-      errors.push('Postal code is required');
-      confidence -= 0.1;
-    }
-
-    if (!addressData.country?.trim()) {
-      errors.push('Country is required');
-      confidence -= 0.1;
-    }
-
-    if (!addressData.phone?.trim()) {
-      errors.push('Phone number is required');
+    // Validate address type
+    if (!['shipping', 'billing', 'both'].includes(addressData.type)) {
+      errors.push('Invalid address type. Must be shipping, billing, or both');
       confidence -= 0.1;
     }
 
@@ -157,7 +130,8 @@ export default {
       state: addressData.state?.trim(),
       postalCode: addressData.postalCode?.trim().toUpperCase(),
       country: addressData.country?.trim(),
-      phone: this.formatPhoneNumber(addressData.phone)
+      phone: this.formatPhoneNumber(addressData.phone),
+      type: addressData.type?.trim(),
     };
   },
 
@@ -166,14 +140,14 @@ export default {
    */
   isValidPostalCode(postalCode: string): boolean {
     if (!postalCode) return false;
-    
+
     // Remove spaces and convert to uppercase
     const cleanCode = postalCode.replace(/\s/g, '').toUpperCase();
-    
+
     // Basic validation - must contain at least one digit
     // This ensures it's not just letters like "invalid"
     const postalCodeRegex = /^[A-Z0-9\-]{3,10}$/;
-    
+
     // Check if it matches the pattern AND contains at least one digit
     return postalCodeRegex.test(cleanCode) && /\d/.test(cleanCode);
   },
@@ -183,13 +157,13 @@ export default {
    */
   isValidPhoneNumber(phone: string): boolean {
     if (!phone) return false;
-    
+
     // Remove all non-digit characters except + and -
     const cleanPhone = phone.replace(/[^\d+\-\(\)\s]/g, '');
-    
+
     // Basic validation - should have at least 7 digits
     const digitCount = (cleanPhone.match(/\d/g) || []).length;
-    
+
     return digitCount >= 7 && digitCount <= 15;
   },
 
@@ -198,10 +172,10 @@ export default {
    */
   formatPhoneNumber(phone?: string): string | undefined {
     if (!phone) return undefined;
-    
+
     // Remove all non-digit characters
     const digits = phone.replace(/\D/g, '');
-    
+
     // Basic formatting for common lengths
     if (digits.length === 10) {
       // US format: (123) 456-7890
@@ -213,7 +187,7 @@ export default {
       // International format: just return with + prefix if it doesn't have one
       return phone.startsWith('+') ? phone : `+${digits}`;
     }
-    
+
     // Return as-is if no specific format matches
     return phone;
   },
@@ -223,7 +197,7 @@ export default {
    */
   validateAddressForCountry(addressData: AddressData, country: string): AddressValidationResult {
     const baseValidation = this.validateAddress(addressData);
-    
+
     if (!baseValidation.isValid) {
       return baseValidation;
     }
@@ -242,7 +216,7 @@ export default {
           confidence -= 0.1;
         }
         break;
-        
+
       case 'CA':
       case 'CANADA':
         // Canada-specific validations
@@ -251,7 +225,7 @@ export default {
           confidence -= 0.1;
         }
         break;
-        
+
       default:
         // For other countries, just do basic validation
         break;
@@ -272,12 +246,12 @@ export default {
    */
   isValidUSPostalCode(postalCode: string): boolean {
     if (!postalCode) return false;
-    
+
     const cleanCode = postalCode.replace(/\s/g, '').toUpperCase();
-    
+
     // US ZIP code format: 12345 or 12345-6789
     const usZipRegex = /^\d{5}(-\d{4})?$/;
-    
+
     return usZipRegex.test(cleanCode);
   },
 
@@ -286,12 +260,12 @@ export default {
    */
   isValidCanadianPostalCode(postalCode: string): boolean {
     if (!postalCode) return false;
-    
+
     const cleanCode = postalCode.replace(/\s/g, '').toUpperCase();
-    
+
     // Canadian postal code format: A1A 1A1
     const canadianPostalRegex = /^[A-Z]\d[A-Z]\s?\d[A-Z]\d$/;
-    
+
     return canadianPostalRegex.test(cleanCode);
   },
 
@@ -300,7 +274,7 @@ export default {
    */
   getAddressSuggestions(addressData: AddressData): AddressData[] {
     const suggestions: AddressData[] = [];
-    
+
     // Only provide suggestions if we have some valid data
     if (!addressData.city && !addressData.state && !addressData.postalCode) {
       return suggestions;
@@ -308,7 +282,7 @@ export default {
 
     // This is a basic implementation - in a real system, you'd integrate with
     // an address validation service like Google Maps API or SmartyStreets
-    
+
     return suggestions;
   }
 };

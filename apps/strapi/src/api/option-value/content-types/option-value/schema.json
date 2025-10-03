@@ -37,9 +37,9 @@
     },
     "variants": {
       "type": "relation",
-      "relation": "manyToMany",
+      "relation": "oneToMany",
       "target": "api::product-listing-variant.product-listing-variant",
-      "inversedBy": "optionValues"
+      "mappedBy": "optionValue"
     }
   }
 }

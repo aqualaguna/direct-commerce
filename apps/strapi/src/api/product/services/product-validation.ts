@@ -25,6 +25,8 @@ export default {
       { name: 'brandRule', validate: this.brandRule },
       { validate: this.inventoryRule },
       { validate: this.skuRule },
+      { validate: this.statusRule },
+      { validate: this.dimensionsRule },
       { validate: this.categoryRule },
     ];
 
@@ -114,17 +116,17 @@ export default {
     const errors: string[] = [];
 
     if (data.inventory !== undefined) {
-      if (data.inventory < 0) {
-        errors.push('Inventory cannot be negative');
-      }
+      if (typeof data.inventory !== 'number') {
+        errors.push('Inventory must be a number');
+      } else {
+        if (data.inventory < 0) {
+          errors.push('Inventory cannot be negative');
+        }
 
-      if (data.inventory > 999999) {
-        errors.push('Inventory cannot exceed 999,999');
-      }
+        if (data.inventory > 999999) {
+          errors.push('Inventory cannot exceed 999,999');
+        }
 
-      // Check for suspicious inventory levels
-      if (data.inventory === 0) {
-        errors.push('Active products should have inventory available');
       }
     }
 
@@ -155,6 +157,48 @@ export default {
       // SKU should not be too short
       if (data.sku.length < 3) {
         errors.push('SKU must be at least 3 characters long');
+      }
+    }
+
+    return {
+      isValid: errors.length === 0,
+      errors,
+    };
+  },
+
+  /**
+   * Status business rule: Status must be valid
+   */
+  async statusRule(data: any): Promise<ValidationResult> {
+    const errors: string[] = [];
+
+    if (data.status !== undefined) {
+      const validStatuses = ['draft', 'active', 'inactive'];
+      if (!validStatuses.includes(data.status)) {
+        errors.push('Invalid status. Must be one of: draft, active, inactive');
+      }
+    }
+
+    return {
+      isValid: errors.length === 0,
+      errors,
+    };
+  },
+
+  /**
+   * Dimensions business rule: Physical dimensions must be non-negative numbers
+   */
+  async dimensionsRule(data: any): Promise<ValidationResult> {
+    const errors: string[] = [];
+
+    const dimensionFields = ['weight', 'length', 'width', 'height'];
+    for (const field of dimensionFields) {
+      if (data[field] !== undefined && data[field] !== null) {
+        if (typeof data[field] !== 'number') {
+          errors.push(`${field} must be a number`);
+        } else if (data[field] < 0) {
+          errors.push(`${field} must be a non-negative number`);
+        }
       }
     }
 

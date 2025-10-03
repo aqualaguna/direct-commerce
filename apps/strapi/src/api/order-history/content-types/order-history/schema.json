@@ -76,7 +76,7 @@
     },
     "sessionId": {
       "type": "string",
-      "maxLength": 100
+      "required": false
     },
     "affectedFields": {
       "type": "json"

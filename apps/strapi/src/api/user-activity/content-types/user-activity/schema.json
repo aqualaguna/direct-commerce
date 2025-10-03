@@ -73,9 +73,7 @@
     },
     "sessionId": {
       "type": "string",
-      "maxLength": 255,
-      "required": false,
-      "configurable": false
+      "required": false
     },
     "sessionDuration": {
       "type": "integer",

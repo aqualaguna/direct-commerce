@@ -57,7 +57,6 @@ describe('Category User Roles and Permissions Tests', () => {
           
           if (token) {
             userTokens[role] = token;
-            console.log(`✅ Authenticated ${role} user: ${user.email}`);
           } else {
             console.warn(`⚠️ No token found for ${role} user: ${user.email}`, response.body);
           }

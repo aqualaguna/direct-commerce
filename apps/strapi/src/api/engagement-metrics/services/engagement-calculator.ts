@@ -278,7 +278,7 @@ export default factories.createCoreService(
           $lte: endDate
         }
       },
-      sort: 'timestamp:asc'
+      sort: 'createdAt:asc'
     })
 
     // Group behaviors by session

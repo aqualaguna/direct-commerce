@@ -24,6 +24,20 @@
         "bank_transfer",
         "check",
         "money_order",
+        "digital_wallet",
+        "crypto_currency",
+        "gift_card",
+        "loyalty_card",
+        "store_credit",
+        "subscription",
+        "reward_points",
+        "promotional_code",
+        "credit_card",
+        "debit_card",
+        "payment_app",
+        "qris",
+        "payment_gateway",
+        "manual_payment",
         "other"
       ],
       "required": true,
@@ -41,7 +55,7 @@
     "requiresConfirmation": {
       "type": "boolean",
       "required": true,
-      "default": true
+      "default": false
     },
     "isAutomated": {
       "type": "boolean",

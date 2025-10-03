@@ -6,7 +6,7 @@
  */
 
 // Node.js and external library imports
-import { factories } from '@strapi/strapi';
+import { Core, factories } from '@strapi/strapi';
 
 // Note: Using 'any' types for Strapi compatibility
 // The Strapi framework uses complex internal types that are difficult to fully type
@@ -58,7 +58,7 @@ interface InventoryQueryParams {
 
 export default factories.createCoreController(
   'api::inventory.inventory' as any, // Strapi content type identifier
-  ({ strapi }: { strapi: any }) => ({
+  ({ strapi }: { strapi: Core.Strapi }) => ({
     // Strapi instance type
     /**
      * Initialize inventory for a product
@@ -133,9 +133,7 @@ export default factories.createCoreController(
           .findOne({
             documentId: id,
             populate: {
-              product: {
-                fields: ['documentId', 'title', 'sku'],
-              },
+              product: true,
             },
           });
 
@@ -255,28 +253,21 @@ export default factories.createCoreController(
       try {
         const { productId } = ctx.params;
 
-        const inventory = await (strapi.documents as any)(
-          'api::inventory.inventory'
-        ).findMany({
-          filters: { product: productId },
+        const inventory = await strapi.documents('api::inventory.inventory').findMany({
+          filters: { product: { documentId: productId } },
           populate: {
-            product: {
-              fields: ['documentId', 'title', 'sku'],
-            },
-            updatedBy: {
-              fields: ['id', 'username', 'email'],
-            },
+            product: true,
           },
           limit: 1,
           start: 0,
         });
 
-        if (!inventory.data?.length) {
+        if (!inventory?.length) {
           return ctx.notFound('Inventory record not found for this product');
         }
 
         ctx.body = {
-          data: inventory.data[0],
+          data: inventory[0],
           meta: {},
         };
       } catch (error: unknown) {
@@ -299,16 +290,24 @@ export default factories.createCoreController(
           .findMany({
             filters: { isLowStock: true },
             populate: {
-              product: {
-                fields: ['documentId', 'title', 'sku', 'price'],
-              },
+              product: true,
             },
             sort: 'quantity:asc',
             limit: pageSize,
             start: (page - 1) * pageSize,
           });
 
-        ctx.body = lowStockInventory;
+        ctx.body = {
+          data: Array.isArray(lowStockInventory) ? lowStockInventory : [],
+          meta: {
+            pagination: {
+              page: page,
+              pageSize: pageSize,
+              total: Array.isArray(lowStockInventory) ? lowStockInventory.length : 0,
+              pageCount: 1,
+            },
+          },
+        };
       } catch (error: unknown) {
         const errorMessage =
           error instanceof Error ? error.message : 'Unknown error occurred';
@@ -332,7 +331,7 @@ export default factories.createCoreController(
           endDate,
         }: InventoryQueryParams = ctx.query;
 
-        const filters: Record<string, any> = { product: productId }; // Strapi filter object
+        const filters: Record<string, any> = { product: { documentId: productId } }; // Strapi filter object
 
         if (action) {
           filters.action = action;
@@ -357,19 +356,24 @@ export default factories.createCoreController(
           .findMany({
             filters,
             populate: {
-              product: {
-                fields: ['documentId', 'title', 'sku'],
-              },
-              changedBy: {
-                fields: ['id', 'username', 'email'],
-              },
+              product: true,
             },
-            sort: 'timestamp:desc',
+            sort: 'createdAt:desc',
             limit: pageSize,
             start: (page - 1) * pageSize,
           });
 
-        ctx.body = history;
+        ctx.body = {
+          data: Array.isArray(history) ? history : [],
+          meta: {
+            pagination: {
+              page: page,
+              pageSize: pageSize,
+              total: Array.isArray(history) ? history.length : 0,
+              pageCount: 1,
+            },
+          },
+        };
       } catch (error: unknown) {
         const errorMessage =
           error instanceof Error ? error.message : 'Unknown error occurred';
@@ -393,12 +397,11 @@ export default factories.createCoreController(
           const productsInCategory = await strapi
             .documents('api::product.product')
             .findMany({
-              filters: { category: categoryId },
-              fields: ['documentId'],
+              filters: { category: { documentId: categoryId } },
             });
 
           const productIds =
-            productsInCategory.data?.map((p: any) => p.documentId) || []; // Product data from Strapi
+            productsInCategory.map((p: any) => p.documentId) || []; // Product data from Strapi
           if (productIds.length > 0) {
             filters.product = { $in: productIds };
           } else {
@@ -472,7 +475,7 @@ export default factories.createCoreController(
               .documents('api::inventory.inventory')
               .findOne({
                 documentId: inventoryId,
-                fields: ['documentId', 'quantity'],
+                fields: ['id', 'quantity'],
               });
 
             if (!inventory) {
@@ -530,25 +533,47 @@ export default factories.createCoreController(
     /**
      * Override default find to include product information
      */
-    async find(ctx: any): Promise<void> {
+    async find(ctx: any) {
       try {
         const { query } = ctx;
+        const filters: any = {
+          ...((query.filters as object) || {}),
+        };
 
-        const inventory = await (strapi.documents as any)(
-          'api::inventory.inventory'
-        ).findMany({
-          ...query,
-          populate: {
-            product: {
-              fields: ['documentId', 'title', 'sku', 'price', 'status'],
-            },
-            updatedBy: {
-              fields: ['id', 'username', 'email'],
-            },
-          },
+        const sort = query.sort || [{ quantity: 'asc' }, { createdAt: 'desc' }];
+
+        // Populate relations for hierarchy and products
+        const populate = {
+          product: true,
+          ...((query.populate as object) || {}),
+        };
+        const paginationQuery = query.pagination as any || { page: '1', pageSize: '25' };
+        const pagination = {
+          page: Math.max(1, parseInt(String(paginationQuery.page || '1')) || 1),
+          pageSize: Math.min(
+            Math.max(1, parseInt(String(paginationQuery.pageSize || '25')) || 25),
+            100
+          ),
+        };
+        const inventory = await strapi.documents('api::inventory.inventory').findMany({
+          filters,
+          limit: pagination.pageSize,
+          start: (pagination.page - 1) * pagination.pageSize,
+          sort,
+          populate,
         });
-
-        ctx.body = inventory;
+        const total = await strapi.documents('api::inventory.inventory').count({ filters });
+        return {
+          data: inventory,
+          meta: {
+            pagination: {
+              page: pagination.page,
+              pageSize: pagination.pageSize,
+              pageCount: Math.ceil(total / pagination.pageSize),
+              total: total,
+            }
+          }
+        };
       } catch (error: unknown) {
         const errorMessage =
           error instanceof Error ? error.message : 'Unknown error occurred';
@@ -572,13 +597,9 @@ export default factories.createCoreController(
               product: {
                 populate: {
                   category: {
-                    fields: ['documentId', 'name'],
+                    fields: ['id', 'name'],
                   },
-                  images: true,
                 },
-              },
-              updatedBy: {
-                fields: ['id', 'username', 'email'],
               },
             },
           });

@@ -129,12 +129,12 @@ export default factories.createCoreController(
         const { data } = ctx.request.body;
 
         // Validate required fields
-        if (!data.title || !data.product) {
-          return ctx.badRequest('Title and product are required');
+        if (!data.title) {
+          return ctx.badRequest('Title is required');
         }
 
         // Validate that the product exists
-        if (data.product) {
+        if (data.product && data.type === 'single') {
           try {
             const product = await strapi
               .documents('api::product.product')
@@ -188,7 +188,6 @@ export default factories.createCoreController(
         if (!data.slug && data.title) {
           data.slug = data.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
         }
-
         // Use Document Service API for creation
         const productListing = await strapi
           .documents('api::product-listing.product-listing')
@@ -337,7 +336,7 @@ export default factories.createCoreController(
               category: true,
               product: true,
               variants: {
-                populate: ['optionValues', 'images'],
+                populate: ['optionValue', 'images'],
               },
               optionGroups: {
                 populate: ['optionValues'],

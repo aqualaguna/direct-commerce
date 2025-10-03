@@ -440,6 +440,7 @@ export interface ApiAddressAddress extends Struct.CollectionTypeSchema {
         maxLength: 20;
       }>;
     publishedAt: Schema.Attribute.DateTime;
+    sessionId: Schema.Attribute.String;
     state: Schema.Attribute.String &
       Schema.Attribute.Required &
       Schema.Attribute.SetMinMaxLength<{
@@ -471,7 +472,27 @@ export interface ApiBasicPaymentMethodBasicPaymentMethod
   };
   attributes: {
     code: Schema.Attribute.Enumeration<
-      ['cash', 'bank_transfer', 'check', 'money_order', 'other']
+      [
+        'cash',
+        'bank_transfer',
+        'check',
+        'money_order',
+        'digital_wallet',
+        'crypto_currency',
+        'gift_card',
+        'loyalty_card',
+        'store_credit',
+        'subscription',
+        'reward_points',
+        'promotional_code',
+        'credit_card',
+        'debit_card',
+        'payment_app',
+        'qris',
+        'payment_gateway',
+        'manual_payment',
+        'other',
+      ]
     > &
       Schema.Attribute.Required &
       Schema.Attribute.Unique;
@@ -505,7 +526,7 @@ export interface ApiBasicPaymentMethodBasicPaymentMethod
     publishedAt: Schema.Attribute.DateTime;
     requiresConfirmation: Schema.Attribute.Boolean &
       Schema.Attribute.Required &
-      Schema.Attribute.DefaultTo<true>;
+      Schema.Attribute.DefaultTo<false>;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -556,7 +577,6 @@ export interface ApiCartItemCartItem extends Struct.CollectionTypeSchema {
       Schema.Attribute.Required &
       Schema.Attribute.SetMinMax<
         {
-          max: 999;
           min: 1;
         },
         number
@@ -617,9 +637,7 @@ export interface ApiCartCart extends Struct.CollectionTypeSchema {
     localizations: Schema.Attribute.Relation<'oneToMany', 'api::cart.cart'> &
       Schema.Attribute.Private;
     publishedAt: Schema.Attribute.DateTime;
-    sessionId: Schema.Attribute.String &
-      Schema.Attribute.Required &
-      Schema.Attribute.Unique;
+    sessionId: Schema.Attribute.String;
     shipping: Schema.Attribute.Decimal &
       Schema.Attribute.Required &
       Schema.Attribute.SetMinMax<
@@ -629,7 +647,10 @@ export interface ApiCartCart extends Struct.CollectionTypeSchema {
         number
       > &
       Schema.Attribute.DefaultTo<0>;
-    shippingAddress: Schema.Attribute.Component<'shared.address', false>;
+    shippingAddress: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::address.address'
+    >;
     shippingMethod: Schema.Attribute.String;
     status: Schema.Attribute.Enumeration<['active', 'expired', 'converted']> &
       Schema.Attribute.Required &
@@ -795,10 +816,7 @@ export interface ApiCheckoutActivityCheckoutActivity
       Schema.Attribute.SetMinMaxLength<{
         maxLength: 20;
       }>;
-    sessionId: Schema.Attribute.String &
-      Schema.Attribute.SetMinMaxLength<{
-        maxLength: 255;
-      }>;
+    sessionId: Schema.Attribute.String;
     stepDuration: Schema.Attribute.Integer &
       Schema.Attribute.SetMinMax<
         {
@@ -847,22 +865,15 @@ export interface ApiCheckoutCheckoutSession
   };
   attributes: {
     abandonedAt: Schema.Attribute.DateTime;
-    billingAddress: Schema.Attribute.Component<'shared.address', false>;
+    billingAddress: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::address.address'
+    >;
     completedAt: Schema.Attribute.DateTime;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
-    currentStep: Schema.Attribute.String &
-      Schema.Attribute.Required &
-      Schema.Attribute.SetMinMaxLength<{
-        maxLength: 50;
-      }> &
-      Schema.Attribute.DefaultTo<'cart'>;
     expiresAt: Schema.Attribute.DateTime & Schema.Attribute.Required;
-    guestCheckout: Schema.Attribute.Relation<
-      'oneToOne',
-      'api::guest-checkout.guest-checkout'
-    >;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
@@ -870,19 +881,17 @@ export interface ApiCheckoutCheckoutSession
     > &
       Schema.Attribute.Private;
     metadata: Schema.Attribute.JSON;
-    paymentMethod: Schema.Attribute.String &
-      Schema.Attribute.SetMinMaxLength<{
-        maxLength: 100;
-      }>;
+    paymentMethod: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::basic-payment-method.basic-payment-method'
+    > &
+      Schema.Attribute.Required;
     publishedAt: Schema.Attribute.DateTime;
-    sessionId: Schema.Attribute.String &
-      Schema.Attribute.Required &
-      Schema.Attribute.Unique &
-      Schema.Attribute.SetMinMaxLength<{
-        maxLength: 64;
-        minLength: 32;
-      }>;
-    shippingAddress: Schema.Attribute.Component<'shared.address', false>;
+    sessionId: Schema.Attribute.String;
+    shippingAddress: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::address.address'
+    >;
     shippingMethod: Schema.Attribute.String &
       Schema.Attribute.SetMinMaxLength<{
         maxLength: 100;
@@ -892,7 +901,6 @@ export interface ApiCheckoutCheckoutSession
     > &
       Schema.Attribute.Required &
       Schema.Attribute.DefaultTo<'active'>;
-    stepProgress: Schema.Attribute.JSON;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -974,27 +982,18 @@ export interface ApiEngagementMetricsEngagementMetric
   };
 }
 
-export interface ApiGuestCheckoutGuestCheckout
-  extends Struct.CollectionTypeSchema {
-  collectionName: 'guest_checkouts';
+export interface ApiGuestGuest extends Struct.CollectionTypeSchema {
+  collectionName: 'guests';
   info: {
-    description: 'Guest checkout data for non-registered users';
-    displayName: 'Guest Checkout';
-    pluralName: 'guest-checkouts';
-    singularName: 'guest-checkout';
+    description: 'Guest data for non-registered users';
+    displayName: 'Guest';
+    pluralName: 'guests';
+    singularName: 'guest';
   };
   options: {
     draftAndPublish: false;
   };
   attributes: {
-    abandonedAt: Schema.Attribute.DateTime;
-    billingAddress: Schema.Attribute.Component<'shared.address', false> &
-      Schema.Attribute.Required;
-    checkoutSession: Schema.Attribute.Relation<
-      'oneToOne',
-      'api::checkout.checkout-session'
-    >;
-    completedAt: Schema.Attribute.DateTime;
     convertedAt: Schema.Attribute.DateTime;
     convertedToUser: Schema.Attribute.Relation<
       'manyToOne',
@@ -1004,45 +1003,18 @@ export interface ApiGuestCheckoutGuestCheckout
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
     email: Schema.Attribute.Email &
-      Schema.Attribute.Required &
       Schema.Attribute.SetMinMaxLength<{
         maxLength: 255;
       }>;
-    expiresAt: Schema.Attribute.DateTime & Schema.Attribute.Required;
-    firstName: Schema.Attribute.String &
-      Schema.Attribute.Required &
-      Schema.Attribute.SetMinMaxLength<{
-        maxLength: 100;
-      }>;
-    lastName: Schema.Attribute.String &
-      Schema.Attribute.Required &
-      Schema.Attribute.SetMinMaxLength<{
-        maxLength: 100;
-      }>;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
-    localizations: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::guest-checkout.guest-checkout'
-    > &
+    localizations: Schema.Attribute.Relation<'oneToMany', 'api::guest.guest'> &
       Schema.Attribute.Private;
     metadata: Schema.Attribute.JSON;
-    phone: Schema.Attribute.String &
-      Schema.Attribute.SetMinMaxLength<{
-        maxLength: 20;
-      }>;
     publishedAt: Schema.Attribute.DateTime;
     sessionId: Schema.Attribute.String &
       Schema.Attribute.Required &
-      Schema.Attribute.Unique &
-      Schema.Attribute.SetMinMaxLength<{
-        maxLength: 64;
-        minLength: 32;
-      }>;
-    shippingAddress: Schema.Attribute.Component<'shared.address', false> &
-      Schema.Attribute.Required;
-    status: Schema.Attribute.Enumeration<
-      ['active', 'completed', 'converted', 'abandoned', 'expired']
-    > &
+      Schema.Attribute.Unique;
+    status: Schema.Attribute.Enumeration<['active', 'converted']> &
       Schema.Attribute.Required &
       Schema.Attribute.DefaultTo<'active'>;
     updatedAt: Schema.Attribute.DateTime;
@@ -1388,7 +1360,7 @@ export interface ApiOptionValueOptionValue extends Struct.CollectionTypeSchema {
         minLength: 1;
       }>;
     variants: Schema.Attribute.Relation<
-      'manyToMany',
+      'oneToMany',
       'api::product-listing-variant.product-listing-variant'
     >;
   };
@@ -1571,10 +1543,7 @@ export interface ApiOrderHistoryOrderHistory
     relatedEvents: Schema.Attribute.JSON;
     requiresFollowUp: Schema.Attribute.Boolean &
       Schema.Attribute.DefaultTo<false>;
-    sessionId: Schema.Attribute.String &
-      Schema.Attribute.SetMinMaxLength<{
-        maxLength: 100;
-      }>;
+    sessionId: Schema.Attribute.String;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -1995,7 +1964,10 @@ export interface ApiOrderOrder extends Struct.CollectionTypeSchema {
       Schema.Attribute.SetMinMaxLength<{
         maxLength: 2000;
       }>;
-    billingAddress: Schema.Attribute.Component<'shared.address', false> &
+    billingAddress: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::address.address'
+    > &
       Schema.Attribute.Required;
     cart: Schema.Attribute.Relation<'oneToOne', 'api::cart.cart'>;
     checkoutSession: Schema.Attribute.Relation<
@@ -2083,7 +2055,10 @@ export interface ApiOrderOrder extends Struct.CollectionTypeSchema {
         number
       > &
       Schema.Attribute.DefaultTo<0>;
-    shippingAddress: Schema.Attribute.Component<'shared.address', false> &
+    shippingAddress: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::address.address'
+    > &
       Schema.Attribute.Required;
     shippingMethod: Schema.Attribute.String &
       Schema.Attribute.Required &
@@ -2442,10 +2417,11 @@ export interface ApiProductListingVariantProductListingVariant
       'api::product-listing-variant.product-listing-variant'
     > &
       Schema.Attribute.Private;
-    optionValues: Schema.Attribute.Relation<
-      'manyToMany',
+    optionValue: Schema.Attribute.Relation<
+      'manyToOne',
       'api::option-value.option-value'
-    >;
+    > &
+      Schema.Attribute.Required;
     product: Schema.Attribute.Relation<'manyToOne', 'api::product.product'> &
       Schema.Attribute.Required;
     productListing: Schema.Attribute.Relation<
@@ -2512,8 +2488,7 @@ export interface ApiProductListingProductListing
       'manyToMany',
       'api::option-group.option-group'
     >;
-    product: Schema.Attribute.Relation<'manyToOne', 'api::product.product'> &
-      Schema.Attribute.Required;
+    product: Schema.Attribute.Relation<'manyToOne', 'api::product.product'>;
     publishedAt: Schema.Attribute.DateTime;
     seo: Schema.Attribute.Component<'shared.seo', false>;
     shortDescription: Schema.Attribute.Text &
@@ -2743,7 +2718,7 @@ export interface ApiStockReservationStockReservation
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
-    customerId: Schema.Attribute.Relation<
+    customer: Schema.Attribute.Relation<
       'manyToOne',
       'plugin::users-permissions.user'
     >;
@@ -2844,10 +2819,7 @@ export interface ApiUserActivityUserActivity
         },
         number
       >;
-    sessionId: Schema.Attribute.String &
-      Schema.Attribute.SetMinMaxLength<{
-        maxLength: 255;
-      }>;
+    sessionId: Schema.Attribute.String;
     success: Schema.Attribute.Boolean &
       Schema.Attribute.Required &
       Schema.Attribute.DefaultTo<true>;
@@ -2948,11 +2920,7 @@ export interface ApiUserBehaviorUserBehavior
       Schema.Attribute.SetMinMaxLength<{
         maxLength: 1000;
       }>;
-    sessionId: Schema.Attribute.String &
-      Schema.Attribute.Required &
-      Schema.Attribute.SetMinMaxLength<{
-        maxLength: 100;
-      }>;
+    sessionId: Schema.Attribute.String;
     timeSpent: Schema.Attribute.Integer &
       Schema.Attribute.SetMinMax<
         {
@@ -3657,7 +3625,7 @@ declare module '@strapi/strapi' {
       'api::checkout-activity.checkout-activity': ApiCheckoutActivityCheckoutActivity;
       'api::checkout.checkout-session': ApiCheckoutCheckoutSession;
       'api::engagement-metrics.engagement-metric': ApiEngagementMetricsEngagementMetric;
-      'api::guest-checkout.guest-checkout': ApiGuestCheckoutGuestCheckout;
+      'api::guest.guest': ApiGuestGuest;
       'api::inventory-history.inventory-history': ApiInventoryHistoryInventoryHistory;
       'api::inventory.inventory': ApiInventoryInventory;
       'api::manual-payment.manual-payment': ApiManualPaymentManualPayment;

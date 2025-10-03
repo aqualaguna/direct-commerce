@@ -28,6 +28,12 @@ const mockStrapi = {
   },
 };
 
+// Mock sanitization utility
+jest.mock('../../../utils', () => ({
+  sanitizeAddressData: jest.fn((data: any) => data), // Return data as-is for testing
+  sanitizeString: jest.fn((input: string) => input),
+}));
+
 // Mock Strapi factories
 jest.mock('@strapi/strapi', () => ({
   factories: {
@@ -59,13 +65,19 @@ describe('Address Controller', () => {
       getAddressAnalytics: jest.fn(),
     };
 
+    // Create a mock validation service
+    const mockValidationService = {
+      validateAddress: jest.fn<any>(),
+      validateAddressForCountry: jest.fn<any>(),
+      formatAddress: jest.fn<any>()
+    };
+
     mockStrapi.service.mockImplementation((serviceName) => {
       if (serviceName === 'api::address.validation') {
-        return {
-          validateAddress: jest.fn<any>(),
-          validateAddressForCountry: jest.fn<any>(),
-          formatAddress: jest.fn<any>()
-        };
+        return mockValidationService;
+      }
+      if (serviceName === 'api::address.address') {
+        return mockAddressService;
       }
       return mockAddressService;
     });
@@ -251,8 +263,12 @@ describe('Address Controller', () => {
         internalServerError: jest.fn(),
       };
 
+      // Mock validation service to return valid
+      const validationService = mockStrapi.service('api::address.validation') as any;
+      validationService.validateAddress.mockReturnValue({ isValid: true, errors: [] });
+      
       mockAddressService.createAddress.mockResolvedValue(mockCreatedAddress);
-
+      
       // Act
       const result = await controller.create(ctx);
 
@@ -283,11 +299,18 @@ describe('Address Controller', () => {
         internalServerError: jest.fn(),
       };
 
+      // Mock validation service to return invalid
+      const validationService = mockStrapi.service('api::address.validation') as any;
+      validationService.validateAddress.mockReturnValue({ 
+        isValid: false, 
+        errors: ['lastName is required'] 
+      });
+
       // Act
       await controller.create(ctx);
 
       // Assert
-      expect(ctx.badRequest).toHaveBeenCalledWith('lastName is required');
+      expect(ctx.badRequest).toHaveBeenCalledWith("Address validation failed", ['lastName is required']);
     });
   });
 
@@ -324,7 +347,7 @@ describe('Address Controller', () => {
           message: 'Address updated successfully'
         }
       });
-      expect(mockAddressService.updateAddress).toHaveBeenCalledWith('addr1', mockUpdateData, 'user123');
+      expect(mockAddressService.updateAddress).toHaveBeenCalledWith('addr1', mockUpdateData, 'user123', false);
     });
   });
 
@@ -446,6 +469,46 @@ describe('Address Controller', () => {
       // Assert
       expect(ctx.badRequest).toHaveBeenCalledWith('Address data is required');
     });
+
+    it('should validate address data successfully', async () => {
+      // Arrange
+      const mockUser = { id: 'user123' };
+      const mockAddressData = {
+        firstName: 'John',
+        lastName: 'Doe',
+        address1: '123 Main St',
+        city: 'New York',
+        state: 'NY',
+        postalCode: '10001',
+        country: 'USA'
+      };
+      const mockValidationResult = { isValid: true, errors: [] };
+
+      const ctx = {
+        state: { user: mockUser },
+        request: { body: { data: mockAddressData } },
+        status: 200,
+        unauthorized: jest.fn(),
+        badRequest: jest.fn(),
+        internalServerError: jest.fn(),
+      };
+
+      // Mock validation service
+      const validationService = mockStrapi.service('api::address.validation') as any;
+      validationService.validateAddress.mockReturnValue(mockValidationResult);
+
+      // Act
+      const result = await controller.validate(ctx);
+
+      // Assert
+      expect(result).toEqual({
+        data: mockValidationResult,
+        meta: {
+          message: 'Address is valid'
+        }
+      });
+      expect(validationService.validateAddress).toHaveBeenCalledWith(mockAddressData);
+    });
   });
 
   describe('validateForCountry', () => {
@@ -467,27 +530,49 @@ describe('Address Controller', () => {
       // Assert
       expect(ctx.badRequest).toHaveBeenCalledWith('Country is required');
     });
-  });
 
-  describe('format', () => {
-    it('should return bad request when no data provided', async () => {
+    it('should validate address for specific country successfully', async () => {
       // Arrange
       const mockUser = { id: 'user123' };
+      const mockAddressData = {
+        firstName: 'John',
+        lastName: 'Doe',
+        address1: '123 Main St',
+        city: 'New York',
+        state: 'NY',
+        postalCode: '10001',
+        country: 'USA'
+      };
+      const mockValidationResult = { isValid: true, errors: [] };
+
       const ctx = {
         state: { user: mockUser },
-        request: { body: {} },
+        params: { country: 'USA' },
+        request: { body: { data: mockAddressData } },
         unauthorized: jest.fn(),
         badRequest: jest.fn(),
         internalServerError: jest.fn(),
       };
 
+      // Mock validation service
+      const validationService = mockStrapi.service('api::address.validation') as any;
+      validationService.validateAddressForCountry.mockReturnValue(mockValidationResult);
+
       // Act
-      await controller.format(ctx);
+      const result = await controller.validateForCountry(ctx);
 
       // Assert
-      expect(ctx.badRequest).toHaveBeenCalledWith('Address data is required');
+      expect(result).toEqual({
+        data: mockValidationResult,
+        meta: {
+          message: 'Address is valid for country',
+          country: 'USA'
+        }
+      });
+      expect(validationService.validateAddressForCountry).toHaveBeenCalledWith(mockAddressData, 'USA');
     });
   });
+
 
   describe('getAddressBook', () => {
     it('should return address book with organization features', async () => {
@@ -522,7 +607,7 @@ describe('Address Controller', () => {
 
       const ctx = {
         state: { user: mockUser },
-        query: { page: '1', pageSize: '25', sortBy: 'createdAt', sortOrder: 'desc' },
+        query: { sort: 'createdAt:desc' },
         unauthorized: jest.fn(),
         internalServerError: jest.fn(),
       };
@@ -540,10 +625,9 @@ describe('Address Controller', () => {
         }
       });
       expect(mockAddressService.getAddressBook).toHaveBeenCalledWith('user123', {
-        page: 1,
-        pageSize: 25,
-        sortBy: 'createdAt',
-        sortOrder: 'desc'
+        limit: 10000,
+        start: 0,
+        sort: 'createdAt:desc'
       });
     });
   });

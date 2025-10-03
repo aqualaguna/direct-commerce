@@ -34,11 +34,11 @@
       "inversedBy": "variants",
       "required": true
     },
-    "optionValues": {
+    "optionValue": {
       "type": "relation", 
-      "relation": "manyToMany",
+      "relation": "manyToOne",
       "target": "api::option-value.option-value",
-      "mappedBy": "variants"
+      "required": true
     },
     "images": {
       "type": "media",

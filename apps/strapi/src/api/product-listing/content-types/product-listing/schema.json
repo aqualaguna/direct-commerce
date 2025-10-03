@@ -63,7 +63,7 @@
       "type": "relation",
       "relation": "manyToOne",
       "target": "api::product.product",
-      "required": true
+      "required": false
     },
     "category": {
       "type": "relation",

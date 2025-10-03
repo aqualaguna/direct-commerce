@@ -32,7 +32,7 @@ export default {
       },
     },
     {
-      method: 'GET',
+      method: 'POST',
       path: '/addresses/search',
       handler: 'address.search',
       config: {
@@ -41,7 +41,7 @@ export default {
       },
     },
     {
-      method: 'GET',
+      method: 'POST',
       path: '/addresses/stats',
       handler: 'address.getStats',
       config: {
@@ -69,15 +69,6 @@ export default {
     },
     {
       method: 'POST',
-      path: '/addresses/format',
-      handler: 'address.format',
-      config: {
-        policies: ['api::address.is-owner'],
-        description: 'Format address data',
-      },
-    },
-    {
-      method: 'GET',
       path: '/addresses/book',
       handler: 'address.getAddressBook',
       config: {
@@ -86,7 +77,7 @@ export default {
       },
     },
     {
-      method: 'GET',
+      method: 'POST',
       path: '/addresses/export',
       handler: 'address.exportAddresses',
       config: {
@@ -104,7 +95,7 @@ export default {
       },
     },
     {
-      method: 'GET',
+      method: 'POST',
       path: '/addresses/analytics',
       handler: 'address.getAnalytics',
       config: {

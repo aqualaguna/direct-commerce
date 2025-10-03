@@ -33,14 +33,14 @@ describe('Product Listing Variant Integration Tests', () => {
     categories: string[];
     productListings: string[];
     optionGroups: string[];
-    optionValues: string[];
+    optionValue: string[];
     variants: string[];
   } = {
     products: [],
     categories: [],
     productListings: [],
     optionGroups: [],
-    optionValues: [],
+    optionValue: [],
     variants: []
   };
 
@@ -121,7 +121,6 @@ describe('Product Listing Variant Integration Tests', () => {
       basePrice: 29.99,
       isActive: true,
       featured: false,
-      product: testProduct.documentId,
       category: testCategory.documentId,
       status: 'published'
     };
@@ -180,7 +179,7 @@ describe('Product Listing Variant Integration Tests', () => {
     }
 
     testOptionValue = optionValueResponse.body.data;
-    trackEntity('optionValues', testOptionValue.documentId);
+    trackEntity('optionValue', testOptionValue.documentId);
 
     // Associate the option group with the product listing
     const associateResponse = await request(SERVER_URL)
@@ -203,7 +202,7 @@ describe('Product Listing Variant Integration Tests', () => {
     // Clean up in reverse dependency order
     const cleanupOrder = [
       { type: 'product-listing-variants', ids: createdEntities.variants },
-      { type: 'option-values', ids: createdEntities.optionValues },
+      { type: 'option-values', ids: createdEntities.optionValue },
       { type: 'option-groups', ids: createdEntities.optionGroups },
       { type: 'product-listings', ids: createdEntities.productListings },
       { type: 'products', ids: createdEntities.products },
@@ -222,12 +221,11 @@ describe('Product Listing Variant Integration Tests', () => {
   describe('Product Listing Variant CRUD Operations', () => {
     it('should create product listing variant and verify database record', async () => {
       const variantData = {
-        sku: `TEST-VARIANT-${timestamp}`,
         basePrice: 134.99,
         discountPrice: 44.99,
         product: testProduct.documentId,
         productListing: testProductListing.documentId,
-        optionValues: [testOptionValue.documentId]
+        optionValue: testOptionValue.documentId
       };
       const response = await request(SERVER_URL)
         .post('/api/product-listing-variants')
@@ -241,8 +239,7 @@ describe('Product Listing Variant Integration Tests', () => {
       expect(response.body.data.basePrice).toBe(variantData.basePrice);
       expect(response.body.data.discountPrice).toBe(variantData.discountPrice);
       expect(response.body.data.productListing.documentId).toBe(testProductListing.documentId);
-      expect(response.body.data.optionValues).toBeDefined();
-      expect(Array.isArray(response.body.data.optionValues)).toBe(true);
+      expect(response.body.data.optionValue).toBeDefined();
 
       // Store for cleanup
       testProductListingVariant = response.body.data;
@@ -264,7 +261,7 @@ describe('Product Listing Variant Integration Tests', () => {
       expect(response.body.data).toBeDefined();
       expect(response.body.data.documentId).toBe(testProductListingVariant.documentId);
       expect(response.body.data.productListing).toBeDefined();
-      expect(response.body.data.optionValues).toBeDefined();
+      expect(response.body.data.optionValue).toBeDefined();
     });
 
     it('should update product listing variant and verify changes', async () => {
@@ -380,8 +377,7 @@ describe('Product Listing Variant Integration Tests', () => {
       const unrelatedOptionGroupData = {
         name: `Unrelated Option Group ${timestamp}`,
         displayName: 'Color',
-        type: 'select',
-        status: 'published'
+        type: 'select'
       };
 
       const unrelatedOptionGroupResponse = await request(SERVER_URL)
@@ -410,22 +406,22 @@ describe('Product Listing Variant Integration Tests', () => {
 
       expect([200, 201]).toContain(unrelatedOptionValueResponse.status);
       const unrelatedOptionValue = unrelatedOptionValueResponse.body.data;
-      trackEntity('optionValues', unrelatedOptionValue.documentId);
+      trackEntity('optionValue', unrelatedOptionValue.documentId);
 
       // Try to create a variant with the unrelated option value
       const invalidData = {
         basePrice: 29.99,
         productListing: testProductListing.documentId,
-        optionValues: [unrelatedOptionValue.documentId]
+        optionValue: unrelatedOptionValue.documentId
       };
 
       const response = await request(SERVER_URL)
         .post('/api/product-listing-variants')
         .set('Authorization', `Bearer ${adminToken}`)
         .send({ data: invalidData })
-        .expect(400)
+        // .expect(400)
         .timeout(10000);
-
+      expect(response.status).toBe(400);
       expect(response.body.error).toBeDefined();
     });
   });
@@ -680,11 +676,10 @@ describe('Product Listing Variant Integration Tests', () => {
     beforeAll(async () => {
       // Create test variant for relationship tests
       const variantData = {
-        sku: `RELATIONSHIP-VARIANT-${timestamp}`,
         basePrice: 29.99,
         productListing: testProductListing.documentId,
-        optionValues: [testOptionValue.documentId],
-        status: 'published'
+        optionValue: testOptionValue.documentId,
+        product: testProduct.documentId,
       };
 
       const response = await request(SERVER_URL)
@@ -692,11 +687,9 @@ describe('Product Listing Variant Integration Tests', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .send({ data: variantData })
         .timeout(10000);
-
-      if ([200, 201].includes(response.status)) {
-        testVariant = response.body.data;
-        trackEntity('variants', testVariant.documentId);
-      }
+      expect(response.status).toBe(200);
+      testVariant = response.body.data;
+      trackEntity('variants', testVariant.documentId);
     });
 
     afterAll(async () => {
@@ -738,12 +731,9 @@ describe('Product Listing Variant Integration Tests', () => {
         .set('Authorization', `Bearer ${adminToken}`)
         .expect(200)
         .timeout(10000);
-
       expect(response.body.data).toBeDefined();
-      expect(response.body.data.optionValues).toBeDefined();
-      expect(Array.isArray(response.body.data.optionValues)).toBe(true);
-      expect(response.body.data.optionValues.length).toBeGreaterThan(0);
-      expect(response.body.data.optionValues[0].documentId).toBe(testOptionValue.documentId);
+      expect(response.body.data.optionValue).toBeDefined();
+      expect(response.body.data.optionValue.documentId).toBe(testOptionValue.documentId);
     });
 
     it('should verify product listing to variants relationship', async () => {

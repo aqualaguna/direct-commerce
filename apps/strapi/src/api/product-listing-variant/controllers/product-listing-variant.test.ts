@@ -35,9 +35,6 @@ const mockStrapi = {
         validateOptionValues: jest
           .fn<any>()
           .mockResolvedValue({ isValid: true, errors: [] }),
-        checkOptionCombinationExists: jest
-          .fn<any>()
-          .mockResolvedValue({ exists: false, existingVariant: null }),
       };
     }
     if (
@@ -582,93 +579,6 @@ describe('Product Listing Variant Controller', () => {
 
       expect(mockContext.badRequest).toHaveBeenCalledWith(
         'Product listing ID is required'
-      );
-    });
-  });
-
-  describe('findByOptions', () => {
-    it('should find variant by option combination', async () => {
-      const mockVariant = {
-        documentId: 'variant1',
-        sku: 'PROD-001-L-RED',
-        price: 29.99,
-        inventory: 10,
-        optionValues: [
-          { documentId: 'size-l', value: 'L' },
-          { documentId: 'color-red', value: 'Red' },
-        ],
-      };
-
-      mockContext.params = { productListingId: 'product-listing-doc-id' };
-      mockContext.request.body = {
-        optionValues: ['size-l', 'color-red'],
-      };
-
-      // Set up mocks
-      mockStrapi.documents.mockReturnValue({
-        findMany: jest.fn().mockResolvedValue([mockVariant] as never),
-        findOne: jest.fn(),
-        findFirst: jest.fn(),
-        create: jest.fn(),
-        update: jest.fn(),
-        delete: jest.fn(),
-        count: jest.fn(),
-        publish: jest.fn(),
-        unpublish: jest.fn(),
-        discardDraft: jest.fn(),
-      } as any);
-
-      const result =
-        await productListingVariantController.findByOptions(mockContext);
-
-      expect(result).toEqual(mockVariant);
-      expect(
-        mockStrapi.documents(
-          'api::product-listing-variant.product-listing-variant'
-        ).findMany
-      ).toHaveBeenCalledWith({
-        filters: {
-          productListing: 'product-listing-doc-id',
-        },
-        populate: ['optionValues'],
-      });
-    });
-
-    it('should return not found when no variant matches options', async () => {
-      mockContext.params = { productListingId: 'product-listing-doc-id' };
-      mockContext.request.body = {
-        optionValues: ['size-l', 'color-red'],
-      };
-
-      // Set up mocks to return empty array
-      mockStrapi.documents.mockReturnValue({
-        findMany: jest.fn().mockResolvedValue([] as never),
-        findOne: jest.fn(),
-        findFirst: jest.fn(),
-        create: jest.fn(),
-        update: jest.fn(),
-        delete: jest.fn(),
-        count: jest.fn(),
-        publish: jest.fn(),
-        unpublish: jest.fn(),
-        discardDraft: jest.fn(),
-      } as any);
-
-      await productListingVariantController.findByOptions(mockContext);
-
-      expect(mockContext.notFound).toHaveBeenCalledWith(
-        'No variant found with the specified options'
-      );
-    });
-
-    it('should return bad request when optionValueIds are missing', async () => {
-      mockContext.params = { productListingId: 'product-listing-doc-id' };
-      mockContext.request.body = {};
-
-      await productListingVariantController.findByOptions(mockContext);
-
-      expect(mockContext.badRequest).toHaveBeenCalledWith(
-        'Product listing ID and option values array are required'
       );
     });
   });

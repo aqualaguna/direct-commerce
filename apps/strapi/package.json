@@ -61,6 +61,7 @@
     "@strapi/provider-email-sendgrid": "^5.23.1",
     "@strapi/provider-upload-aws-s3": "^5.23.1",
     "@strapi/strapi": "5.23.1",
+    "@types/sanitize-html": "^2.16.0",
     "better-sqlite3": "11.3.0",
     "cropperjs": "^2.0.1",
     "express-rate-limit": "^8.0.1",
@@ -71,9 +72,11 @@
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
     "react-router-dom": "^6.0.0",
+    "sanitize-html": "^2.17.0",
     "strapi-plugin-schema-visualizer": "^1.0.5",
     "styled-components": "^6.1.19",
-    "uuid": "^11.1.0"
+    "uuid": "^11.1.0",
+    "zod": "^4.1.11"
   },
   "devDependencies": {
     "@eslint/js": "^9.34.0",

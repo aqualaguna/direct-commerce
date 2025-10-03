@@ -7,7 +7,13 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 
 // Mock all dependencies following new patterns
-jest.mock('../services/product-validation');
+const mockValidationService = {
+  validateBusinessRules: jest.fn() as jest.MockedFunction<any>,
+  validateStatusTransition: jest.fn() as jest.MockedFunction<any>,
+  validateBulkData: jest.fn() as jest.MockedFunction<any>,
+};
+
+jest.mock('../services/product-validation', () => mockValidationService);
 jest.mock('../services/product');
 jest.mock('../services/bulk-operations');
 
@@ -74,6 +80,11 @@ describe('Product Controller', () => {
     mockDocumentService.update.mockClear();
     mockDocumentService.delete.mockClear();
     mockDocumentService.count.mockClear();
+
+    // Reset validation service mocks
+    mockValidationService.validateBusinessRules.mockClear();
+    mockValidationService.validateStatusTransition.mockClear();
+    mockValidationService.validateBulkData.mockClear();
 
     // Import the actual controller
     const productController = require('./product').default;
@@ -237,6 +248,12 @@ describe('Product Controller', () => {
 
       const mockCreatedProduct = { documentId: 'doc123', ...productData };
 
+      // Mock validation service to return valid
+      mockValidationService.validateBusinessRules.mockResolvedValue({
+        isValid: true,
+        errors: []
+      });
+
       mockDocumentService.create.mockResolvedValue(mockCreatedProduct);
       mockDocumentService.findMany.mockResolvedValue([]); // No existing SKU
 
@@ -247,6 +264,7 @@ describe('Product Controller', () => {
       };
       const result = await controller.create(ctx);
       expect(result.data).toEqual(mockCreatedProduct);
+      expect(mockValidationService.validateBusinessRules).toHaveBeenCalledWith(productData);
       expect(mockDocumentService.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: productData,
@@ -271,6 +289,12 @@ describe('Product Controller', () => {
 
       const mockCreatedProduct = { documentId: 'doc123', ...productData };
 
+      // Mock validation service to return valid
+      mockValidationService.validateBusinessRules.mockResolvedValue({
+        isValid: true,
+        errors: []
+      });
+
       mockDocumentService.create.mockResolvedValue(mockCreatedProduct);
       mockDocumentService.findMany.mockResolvedValue([]); // No existing SKU
 
@@ -282,6 +306,7 @@ describe('Product Controller', () => {
 
       const result = await controller.create(ctx);
       expect(result.data).toEqual(mockCreatedProduct);
+      expect(mockValidationService.validateBusinessRules).toHaveBeenCalledWith(productData);
       expect(mockDocumentService.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: productData,
@@ -304,6 +329,12 @@ describe('Product Controller', () => {
         height: 3.0,
       };
 
+      // Mock validation service to return invalid
+      mockValidationService.validateBusinessRules.mockResolvedValue({
+        isValid: false,
+        errors: ['weight must be a non-negative number']
+      });
+
       const ctx = {
         request: { body: { data: productData } },
         badRequest: jest.fn(),
@@ -311,6 +342,7 @@ describe('Product Controller', () => {
       };
 
       await controller.create(ctx);
+      expect(mockValidationService.validateBusinessRules).toHaveBeenCalledWith(productData);
       expect(ctx.badRequest).toHaveBeenCalledWith('weight must be a non-negative number');
     });
 
@@ -328,6 +360,12 @@ describe('Product Controller', () => {
         height: 3.0,
       };
 
+      // Mock validation service to return invalid
+      mockValidationService.validateBusinessRules.mockResolvedValue({
+        isValid: false,
+        errors: ['weight must be a number']
+      });
+
       const ctx = {
         request: { body: { data: productData } },
         badRequest: jest.fn(),
@@ -335,7 +373,8 @@ describe('Product Controller', () => {
       };
 
       await controller.create(ctx);
-      expect(ctx.badRequest).toHaveBeenCalledWith('weight must be a non-negative number');
+      expect(mockValidationService.validateBusinessRules).toHaveBeenCalledWith(productData);
+      expect(ctx.badRequest).toHaveBeenCalledWith('weight must be a number');
     });
 
 
@@ -348,6 +387,12 @@ describe('Product Controller', () => {
         inventory: 10,
         status: 'active',
       };
+
+      // Mock validation service to return valid
+      mockValidationService.validateBusinessRules.mockResolvedValue({
+        isValid: true,
+        errors: []
+      });
 
       // Mock existing product with same SKU
       mockDocumentService.findMany.mockResolvedValue([
@@ -362,6 +407,7 @@ describe('Product Controller', () => {
 
       await controller.create(ctx);
 
+      expect(mockValidationService.validateBusinessRules).toHaveBeenCalledWith(productData);
       expect(ctx.badRequest).toHaveBeenCalledWith('SKU must be unique');
     });
   });
@@ -381,6 +427,12 @@ describe('Product Controller', () => {
 
       const mockUpdatedProduct = { ...existingProduct, ...updateData };
 
+      // Mock validation service to return valid
+      mockValidationService.validateBusinessRules.mockResolvedValue({
+        isValid: true,
+        errors: []
+      });
+
       mockDocumentService.findOne.mockResolvedValue(existingProduct);
       mockDocumentService.update.mockResolvedValue(mockUpdatedProduct);
 
@@ -395,6 +447,7 @@ describe('Product Controller', () => {
       const result = await controller.update(ctx);
 
       expect(result.data).toEqual(mockUpdatedProduct);
+      expect(mockValidationService.validateBusinessRules).toHaveBeenCalledWith(updateData);
       expect(mockDocumentService.update).toHaveBeenCalledWith(
         expect.objectContaining({
           documentId: 'doc123',
@@ -425,6 +478,12 @@ describe('Product Controller', () => {
 
       const mockUpdatedProduct = { ...existingProduct, ...updateData };
 
+      // Mock validation service to return valid
+      mockValidationService.validateBusinessRules.mockResolvedValue({
+        isValid: true,
+        errors: []
+      });
+
       mockDocumentService.findOne.mockResolvedValue(existingProduct);
       mockDocumentService.update.mockResolvedValue(mockUpdatedProduct);
 
@@ -439,6 +498,7 @@ describe('Product Controller', () => {
       const result = await controller.update(ctx);
 
       expect(result.data).toEqual(mockUpdatedProduct);
+      expect(mockValidationService.validateBusinessRules).toHaveBeenCalledWith(updateData);
       expect(mockDocumentService.update).toHaveBeenCalledWith(
         expect.objectContaining({
           documentId: 'doc123',
@@ -461,6 +521,12 @@ describe('Product Controller', () => {
         length: 10.0,
       };
 
+      // Mock validation service to return invalid
+      mockValidationService.validateBusinessRules.mockResolvedValue({
+        isValid: false,
+        errors: ['weight must be a non-negative number']
+      });
+
       mockDocumentService.findOne.mockResolvedValue(existingProduct);
 
       const ctx = {
@@ -472,6 +538,7 @@ describe('Product Controller', () => {
       };
 
       await controller.update(ctx);
+      expect(mockValidationService.validateBusinessRules).toHaveBeenCalledWith(updateData);
       expect(ctx.badRequest).toHaveBeenCalledWith('weight must be a non-negative number');
     });
   });

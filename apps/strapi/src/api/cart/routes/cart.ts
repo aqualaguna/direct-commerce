@@ -15,10 +15,7 @@ export default {
       path: '/carts/current',
       handler: 'cart.getCurrentCart',
       config: {
-        policies: ['global::is-public'],
-        auth: {
-          scope: ['customer', 'admin']
-        }
+        policies: ['global::is-public']
       }
     },
 
@@ -28,10 +25,7 @@ export default {
       path: '/carts/items',
       handler: 'cart.addItem',
       config: {
-        policies: ['global::is-public'],
-        auth: {
-          scope: ['customer', 'admin']
-        }
+        policies: ['global::is-public']
       }
     },
 
@@ -41,10 +35,7 @@ export default {
       path: '/carts/items/:documentId',
       handler: 'cart.updateItem',
       config: {
-        policies: ['global::is-authenticated'],
-        auth: {
-          scope: ['customer', 'admin']
-        }
+        policies: ['global::is-public']
       }
     },
 
@@ -54,10 +45,16 @@ export default {
       path: '/carts/items/:documentId',
       handler: 'cart.removeItem',
       config: {
-        policies: ['global::is-authenticated'],
-        auth: {
-          scope: ['customer', 'admin']
-        }
+        policies: ['global::is-public']
+      }
+    },
+    // Remove cart only for admin
+    {
+      method: 'DELETE',
+      path: '/carts/:documentId',
+      handler: 'cart.delete',
+      config: {
+        policies: ['global::is-admin']
       }
     },
 
@@ -67,10 +64,7 @@ export default {
       path: '/carts/clear',
       handler: 'cart.clearCart',
       config: {
-        policies: ['global::is-authenticated'],
-        auth: {
-          scope: ['customer', 'admin']
-        }
+        policies: ['global::is-public']
       }
     },
 
@@ -80,10 +74,7 @@ export default {
       path: '/carts/calculate',
       handler: 'cart.calculateTotals',
       config: {
-        policies: ['global::is-public'],
-        auth: {
-          scope: ['customer', 'admin']
-        }
+        policies: ['global::is-public']
       }
     },
 
@@ -93,10 +84,7 @@ export default {
       path: '/carts/migrate',
       handler: 'cart.migrateGuestCart',
       config: {
-        policies: ['global::is-authenticated'],
-        auth: {
-          scope: ['customer', 'admin']
-        }
+        policies: ['global::is-public']
       }
     }
   ]

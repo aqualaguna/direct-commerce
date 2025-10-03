@@ -8,26 +8,30 @@
 // Node.js and external library imports
 import { factories } from '@strapi/strapi';
 
-const defaultRouter = factories.createCoreRouter(
-  'api::inventory.inventory' as any
-); // Strapi content type identifier
-
-const customRouter = (innerRouter, extraRoutes = []) => {
-  let routes;
-  return {
-    get prefix() {
-      return innerRouter.prefix;
+// Create core routes with minimal configuration to avoid conflicts
+const coreRoutes = factories.createCoreRouter('api::inventory.inventory', {
+  config: {
+    find: {
+      policies: ['global::is-authenticated'],
     },
-    get routes() {
-      if (!routes) {
-        routes = innerRouter.routes.concat(extraRoutes);
-      }
-      return routes;
+    findOne: {
+      policies: ['global::is-authenticated'],
     },
-  };
-};
+    create: {
+      policies: ['global::is-authenticated'],
+    },
+    update: {
+      policies: ['global::is-authenticated'],
+    },
+    delete: {
+      policies: ['global::is-authenticated'],
+    },
+  },
+});
 
-const customRoutes = [
+// Custom routes only - core CRUD routes are handled by createCoreRouter
+// IMPORTANT: Specific routes must come BEFORE parameterized routes to avoid conflicts
+const extraRoutes = [
   // Default CRUD routes
 
   // Custom inventory management routes
@@ -37,19 +41,17 @@ const customRoutes = [
     handler: 'inventory.initializeInventory',
     config: {
       policies: [
-        'api::inventory.is-authenticated',
-        'api::inventory.is-admin',
+        'global::is-authenticated',
       ],
     },
   },
   {
-    method: 'PUT',
-    path: '/inventories/:id/quantity',
+    method: 'POST',
+    path: '/inventories/:id/update-quantity',
     handler: 'inventory.updateQuantity',
     config: {
       policies: [
-        'api::inventory.is-authenticated',
-        'api::inventory.is-admin',
+        'global::is-authenticated',
       ],
     },
   },
@@ -58,7 +60,7 @@ const customRoutes = [
     path: '/inventories/reserve',
     handler: 'inventory.reserveStock',
     config: {
-      policies: ['api::inventory.is-authenticated'],
+      policies: ['global::is-authenticated'],
     },
   },
   {
@@ -66,7 +68,7 @@ const customRoutes = [
     path: '/inventories/reservations/:id/release',
     handler: 'inventory.releaseReservation',
     config: {
-      policies: ['api::inventory.is-authenticated'],
+      policies: ['global::is-authenticated'],
     },
   },
   {
@@ -74,7 +76,7 @@ const customRoutes = [
     path: '/inventories/product/:productId',
     handler: 'inventory.findByProduct',
     config: {
-      policies: ['api::inventory.is-authenticated'],
+      policies: ['global::is-authenticated'],
     },
   },
   {
@@ -82,7 +84,7 @@ const customRoutes = [
     path: '/inventories/low-stock',
     handler: 'inventory.getLowStock',
     config: {
-      policies: ['api::inventory.is-authenticated'],
+      policies: ['global::is-authenticated'],
     },
   },
   {
@@ -90,7 +92,7 @@ const customRoutes = [
     path: '/inventories/product/:productId/history',
     handler: 'inventory.getHistory',
     config: {
-      policies: ['api::inventory.is-authenticated'],
+      policies: ['global::is-authenticated'],
     },
   },
   {
@@ -99,8 +101,7 @@ const customRoutes = [
     handler: 'inventory.getAnalytics',
     config: {
       policies: [
-        'api::inventory.is-authenticated',
-        'api::inventory.is-admin',
+        'global::is-authenticated',
       ],
     },
   },
@@ -110,12 +111,23 @@ const customRoutes = [
     handler: 'inventory.updateLowStockThresholds',
     config: {
       policies: [
-        'api::inventory.is-authenticated',
-        'api::inventory.is-admin',
+        'global::is-authenticated',
       ],
     },
   },
 ];
 
-export default customRouter(defaultRouter, customRoutes);
+// Create a custom router that extends the core routes
+const customRouter = {
+  get prefix() {
+    return coreRoutes.prefix;
+  },
+  get routes() {
+    const coreRoutesArray = Array.isArray(coreRoutes.routes) ? coreRoutes.routes : [];
+    const allRoutes = [...extraRoutes, ...coreRoutesArray];
+    return allRoutes;
+  },
+};
+
+export default customRouter;
 

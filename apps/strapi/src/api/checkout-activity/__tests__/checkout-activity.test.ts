@@ -191,7 +191,7 @@ describe('Checkout Activity Controller', () => {
             checkoutSessionId: 'session-123',
             activityType: 'step_enter'
           },
-          sort: 'timestamp:desc',
+          sort: 'createdAt:desc',
           limit: 25,
           start: 0,
           populate: ['userId']

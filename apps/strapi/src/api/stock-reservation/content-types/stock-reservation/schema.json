@@ -28,7 +28,7 @@
       "type": "string",
       "required": true
     },
-    "customerId": {
+    "customer": {
       "type": "relation",
       "relation": "manyToOne",
       "target": "plugin::users-permissions.user"

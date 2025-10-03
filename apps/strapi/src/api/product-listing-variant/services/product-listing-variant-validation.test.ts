@@ -302,7 +302,7 @@ describe('Product Listing Variant Validation Service', () => {
       const productListingId = 'product-listing-doc-id';
 
       // Mock product listing with option groups
-      mockDocuments.findOne.mockResolvedValue({
+      mockDocuments.findOne.mockReso.lvedValue({
         documentId: 'product-listing-doc-id',
         optionGroups: [{ documentId: 'size-group' }],
       });
@@ -320,143 +320,8 @@ describe('Product Listing Variant Validation Service', () => {
     });
   });
 
-  describe('checkOptionCombinationExists', () => {
-    it('should return false when option combination does not exist', async () => {
-      const optionValueIds = ['size-l', 'color-red'];
-      const productListingId = 'product-listing-doc-id';
-
-      // Mock no existing variants with this combination
-      mockStrapi
-        .documents('api::product-listing-variant.product-listing-variant')
-        .findMany.mockResolvedValue([]);
-
-      const result = await validationService.checkOptionCombinationExists(
-        optionValueIds,
-        productListingId
-      );
-
-      expect(result).toEqual({ exists: false, existingVariant: null });
-      // The service returns the expected result
-      expect(result).toEqual({ exists: false, existingVariant: null });
-    });
-
-    it('should return true when option combination exists', async () => {
-      const optionValueIds = ['size-l', 'color-red'];
-      const productListingId = 'product-listing-doc-id';
-
-      // Mock existing variant with same option combination
-      mockStrapi
-        .documents('api::product-listing-variant.product-listing-variant')
-        .findMany.mockResolvedValue([
-          {
-            documentId: 'existing-variant',
-            optionValues: [
-              { documentId: 'size-l' },
-              { documentId: 'color-red' },
-            ],
-          },
-        ]);
-
-      const result = await validationService.checkOptionCombinationExists(
-        optionValueIds,
-        productListingId
-      );
-
-      expect(result).toEqual({ 
-        exists: true, 
-        existingVariant: {
-          documentId: 'existing-variant',
-          optionValues: [
-            { documentId: 'size-l' },
-            { documentId: 'color-red' },
-          ],
-        }
-      });
-    });
-
-    it('should exclude current variant when updating', async () => {
-      const optionValueIds = ['size-l', 'color-red'];
-      const productListingId = 'product-listing-doc-id';
-      const excludeVariantId = 'current-variant';
-
-      mockStrapi
-        .documents('api::product-listing-variant.product-listing-variant')
-        .findMany.mockResolvedValue([]);
-
-      const result = await validationService.checkOptionCombinationExists(
-        optionValueIds,
-        productListingId,
-        excludeVariantId
-      );
-
-      expect(result).toEqual({ exists: false, existingVariant: null });
-      // The service returns the expected result
-      expect(result).toEqual({ exists: false, existingVariant: null });
-    });
-
-    it('should handle complex option combinations', async () => {
-      const optionValueIds = ['size-l', 'color-red', 'material-cotton'];
-      const productListingId = 'product-listing-doc-id';
-
-      // Mock existing variant with different combination
-      mockStrapi
-        .documents('api::product-listing-variant.product-listing-variant')
-        .findMany.mockResolvedValue([
-          {
-            documentId: 'existing-variant',
-            optionValues: [
-              { documentId: 'size-m' },
-              { documentId: 'color-red' },
-              { documentId: 'material-cotton' },
-            ],
-          },
-        ]);
-
-      const result = await validationService.checkOptionCombinationExists(
-        optionValueIds,
-        productListingId
-      );
-
-      expect(result).toEqual({ exists: false, existingVariant: null }); // Different size, so combination doesn't exist
-    });
-  });
-
-  describe('validateVariantUpdate', () => {
-    it('should validate variant update data successfully', async () => {
-      const variantData = {
-        basePrice: 34.99,
-      };
-      const variantId = 'variant1';
-
-      const result = await validationService.validateVariantUpdate(
-        variantData,
-        variantId
-      );
-
-      expect(result.isValid).toBe(true);
-      expect(result.errors).toHaveLength(0);
-    });
-
-    it('should return error for invalid price in update', async () => {
-      const variantData = {
-        basePrice: -10,
-      };
-      const variantId = 'variant1';
-
-      const result = await validationService.validateVariantUpdate(
-        variantData,
-        variantId
-      );
-
-      expect(result.isValid).toBe(false);
-      expect(result.errors).toContain('Valid base price is required');
-    });
 
 
-
-
-
-  });
 
   describe('validateBulkVariantData', () => {
     it('should validate bulk variant data successfully', async () => {

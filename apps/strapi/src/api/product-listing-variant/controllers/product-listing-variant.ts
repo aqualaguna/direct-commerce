@@ -36,7 +36,7 @@ export default factories.createCoreController(
             sort,
             limit: pagination.pageSize,
             start: (pagination.page - 1) * pagination.pageSize,
-            populate: ['productListing', 'optionValues', 'images'],
+            populate: ['productListing', 'optionValue', 'images'],
           });
 
         // Get total count for pagination metadata
@@ -75,9 +75,17 @@ export default factories.createCoreController(
           .documents('api::product-listing-variant.product-listing-variant')
           .findOne({
             documentId,
-            populate: ['productListing', 'optionValues', 'images'],
+            populate: {
+              productListing: {
+                populate: {
+                  category: true,
+                },
+              },
+              product: true,
+              optionValue: true,
+              images: true,
+            },
           });
-
         if (!variant) {
           return ctx.notFound('Variant not found');
         }
@@ -97,13 +105,12 @@ export default factories.createCoreController(
         if (!validationResult.isValid) {
           return ctx.badRequest("Validation failed", validationResult.errors);
         }
-
         // Use Document Service API for creation
         const variant = await strapi
           .documents('api::product-listing-variant.product-listing-variant')
           .create({
             data,
-            populate: ['productListing', 'optionValues', 'images'],
+            populate: ['productListing', 'optionValue', 'images'],
           });
 
         return { data: variant };
@@ -129,7 +136,7 @@ export default factories.createCoreController(
           .update({
             documentId,
             data,
-            populate: ['productListing', 'optionValues', 'images'],
+            populate: ['productListing', 'optionValue', 'images'],
           });
 
         return { data: variant };
@@ -182,7 +189,7 @@ export default factories.createCoreController(
           .findMany({
             filters,
             sort: 'createdAt:asc',
-            populate: ['optionValues', 'images'],
+            populate: ['optionValue', 'images'],
           });
 
         return variants;
@@ -194,57 +201,6 @@ export default factories.createCoreController(
         return ctx.internalServerError('Internal server error');
       }
     },
-
-    // Custom method to find variant by option combination
-    async findByOptions(ctx) {
-      try {
-        const { productListingId } = ctx.params;
-        const { optionValues } = ctx.request.body;
-
-        if (
-          !productListingId ||
-          !optionValues ||
-          !Array.isArray(optionValues)
-        ) {
-          return ctx.badRequest(
-            'Product listing ID and option values array are required'
-          );
-        }
-
-        // Find variants for this product listing
-        const variants = await strapi
-          .documents('api::product-listing-variant.product-listing-variant')
-          .findMany({
-            filters: {
-              productListing: productListingId,
-            },
-            populate: ['optionValues'],
-          });
-
-        // Find variant that matches the option combination
-        const matchingVariant = variants.find(variant => {
-          const variantOptionValues = variant.optionValues.map(
-            ov => ov.documentId
-          );
-          return optionValues.every(optionValueId =>
-            variantOptionValues.includes(optionValueId)
-          );
-        });
-
-        if (!matchingVariant) {
-          return ctx.notFound('No variant found with the specified options');
-        }
-
-        return matchingVariant;
-      } catch (error) {
-        strapi.log.error(
-          'Error in product-listing-variant findByOptions:',
-          error
-        );
-        return ctx.internalServerError('Internal server error');
-      }
-    },
-
 
     // Custom method to calculate variant price
     async calculatePrice(ctx) {

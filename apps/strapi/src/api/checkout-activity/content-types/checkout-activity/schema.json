@@ -146,7 +146,7 @@
     },
     "sessionId": {
       "type": "string",
-      "maxLength": 255
+      "required": false
     }
   }
 }

@@ -11,12 +11,32 @@
  */
 
 import { factories } from '@strapi/strapi'
+import { getPrice } from '../../../utils/price';
 
 // Import global services directly
-const cartPersistenceService = require('../../../services/cart-persistence');
-const cartCalculationService = require('../../../services/cart-calculation');
 
 export default factories.createCoreController('api::cart.cart', ({ strapi }) => ({
+  delete: async (ctx) => {
+    const { documentId } = ctx.params;
+
+    const cart = await strapi.documents('api::cart.cart').findOne({
+      documentId,
+    });
+
+    if (!cart) {
+      return ctx.notFound('Cart not found');
+    }
+
+
+    await strapi.documents('api::cart.cart').delete({
+      documentId
+    });
+
+    return {
+      message: 'Cart deleted successfully',
+      data: null
+    };
+  },
   /**
    * Get current user cart
    */
@@ -24,15 +44,21 @@ export default factories.createCoreController('api::cart.cart', ({ strapi }) => 
     try {
       const { user } = ctx.state;
       const { sessionId } = ctx.query;
+      const cartPersistenceService = strapi.service('api::cart.cart-persistence');
+      const cartCalculationService = strapi.service('api::cart.cart-calculation');
+
+      if (!user && !sessionId) {
+        return ctx.unauthorized('User or session ID is required');
+      }
 
       let cart = null;
 
       if (user) {
         // Get cart for authenticated user
-        cart = await cartPersistenceService({ strapi }).getCartByUserId(user.id);
+        cart = await cartPersistenceService.getCartByUserId(user.id);
       } else if (sessionId) {
         // Get cart for guest user
-        cart = await cartPersistenceService({ strapi }).getCartBySessionId(sessionId);
+        cart = await cartPersistenceService.getCartBySessionId(sessionId);
       }
 
       if (!cart) {
@@ -40,7 +66,7 @@ export default factories.createCoreController('api::cart.cart', ({ strapi }) => 
       }
 
       // Calculate totals
-      const calculation = await cartCalculationService({ strapi }).calculateCartTotals(cart);
+      const calculation = await cartCalculationService.calculateCartTotals(cart);
 
       return {
         data: {
@@ -61,24 +87,32 @@ export default factories.createCoreController('api::cart.cart', ({ strapi }) => 
     try {
       const { user } = ctx.state;
       const { sessionId } = ctx.query;
-      const { productId, productListingId, variantId, quantity = 1 } = ctx.request.body;
-
+      const { productId, productListingId, variantId, quantity } = ctx.request.body;
+      const cartPersistenceService = strapi.service('api::cart.cart-persistence');
+      const cartCalculationService = strapi.service('api::cart.cart-calculation');
       // Validate input
-      if (!productId || !quantity || quantity < 1) {
-        return ctx.badRequest('Product ID and valid quantity are required');
+      if (!productId || !quantity || quantity < 1 || !productListingId) {
+        return ctx.badRequest('Product ID, product listing ID, and valid quantity are required');
+      }
+      if (typeof quantity !== 'number' || Number.isNaN(Number(quantity))) {
+        return ctx.badRequest('Quantity must be a number and finite');
+      }
+
+      if (!user && !sessionId) {
+        return ctx.unauthorized('User or session ID is required');
       }
 
       // Get or create cart
       let cart = null;
       if (user) {
-        cart = await cartPersistenceService({ strapi }).getCartByUserId(user.id);
+        cart = await cartPersistenceService.getCartByUserId(user.id);
         if (!cart) {
-          cart = await cartPersistenceService({ strapi }).createUserCart(user.id);
+          cart = await cartPersistenceService.createUserCart(user.id);
         }
       } else if (sessionId) {
-        cart = await cartPersistenceService({ strapi }).getCartBySessionId(sessionId);
+        cart = await cartPersistenceService.getCartBySessionId(sessionId);
         if (!cart) {
-          cart = await cartPersistenceService({ strapi }).createGuestCart(sessionId);
+          cart = await cartPersistenceService.createGuestCart(sessionId);
         }
       } else {
         return ctx.badRequest('Session ID required for guest users');
@@ -112,7 +146,6 @@ export default factories.createCoreController('api::cart.cart', ({ strapi }) => 
         documentId: productId,
         filters: { status: 'active' }
       });
-
       if (!product) {
         return ctx.notFound('Product not found or inactive');
       }
@@ -122,24 +155,56 @@ export default factories.createCoreController('api::cart.cart', ({ strapi }) => 
       if (variantId) {
         variant = await strapi.documents('api::product-listing-variant.product-listing-variant').findOne({
           documentId: variantId,
-          filters: { }
+          filters: { },
+          populate: {
+            productListing: true,
+            optionValue: true
+          }
         });
+      }
+      // check if variant valid for the product listing
+      if (variant && variant.productListing.documentId !== productListing.documentId) {
+        return ctx.badRequest('Variant is not valid for the product listing');
+      }
+      // check if variant valid for the product listing
+      if (productListing.type === 'variant' && !variant) {
+        return ctx.badRequest('Variant is required for variant product listing');
+      }
+      // Check inventory availability before adding to cart
+      let availableInventory = 0;
+   
+      // Check product inventory
+      const productInventory = await strapi.documents('api::inventory.inventory').findFirst({
+        filters: {
+          product: { id: product.id },
+        }
+      });
+      availableInventory = productInventory?.quantity || 0;
+
+      // Check if requested quantity exceeds available inventory
+      if (quantity > availableInventory) {
+        return ctx.badRequest(`Insufficient inventory. Only ${availableInventory} items available.`);
       }
 
       // Check if item already exists in cart
       const existingItem = await strapi.documents('api::cart-item.cart-item').findFirst({
         filters: {
-          cart: cart.documentId,
-          productListing: productListing.documentId,
-          variant: variantId || null
+          cart: cart.id,
+          productListing: productListing.id,
+          ...(variant ? { variant: variant.id } : { variant: null })
         }
       });
 
       let cartItem;
       if (existingItem) {
-        // Update existing item quantity
+        // Check if total quantity (existing + new) exceeds inventory
         const newQuantity = existingItem.quantity + quantity;
-        const newTotal = newQuantity * existingItem.price;
+        if (newQuantity > availableInventory) {
+          return ctx.badRequest(`Insufficient inventory. Only ${availableInventory} items available. You already have ${existingItem.quantity} in your cart.`);
+        }
+        
+        // Update existing item quantity
+        const newTotal = parseFloat((newQuantity * existingItem.price).toString());
 
         cartItem = await strapi.documents('api::cart-item.cart-item').update({
           documentId: existingItem.documentId,
@@ -147,24 +212,35 @@ export default factories.createCoreController('api::cart.cart', ({ strapi }) => 
             quantity: newQuantity,
             total: newTotal,
             updatedAt: new Date()
+          },
+          populate: {
+            product: true,
+            productListing: true,
+            variant: true
           }
         });
       } else {
         // Create new cart item
-        const price = variant?.price || productListing.basePrice || 0;
-        const total = price * quantity;
+        const price = productListing.type === 'variant' ? getPrice(variant) : getPrice(productListing);
+        const total = parseFloat((price * quantity).toString());
 
         cartItem = await strapi.documents('api::cart-item.cart-item').create({
           data: {
-            cart: cart.documentId,
-            product: productId,
-            productListing: productListing.documentId,
-            variant: variantId || null,
+            cart: cart.id,
+            product: product.id,
+            productListing: productListing.id,
+            variant: variant?.id || null,
             quantity,
             price,
             total,
             addedAt: new Date(),
-            updatedAt: new Date()
+            updatedAt: new Date(),
+            selectedOptions: variant ? variant.optionValue : null
+          },
+          populate: {
+            product: true,
+            productListing: true,
+            variant: true
           }
         });
       }
@@ -173,6 +249,7 @@ export default factories.createCoreController('api::cart.cart', ({ strapi }) => 
       const updatedCart = await strapi.documents('api::cart.cart').findOne({
         documentId: cart.documentId,
         populate: {
+          user: true,
           items: {
             populate: {
               product: true,
@@ -183,7 +260,7 @@ export default factories.createCoreController('api::cart.cart', ({ strapi }) => 
         }
       });
 
-      const calculation = await cartCalculationService({ strapi }).calculateCartTotals(updatedCart);
+      const calculation = await cartCalculationService.calculateCartTotals(updatedCart);
 
       // Update cart totals
       await strapi.documents('api::cart.cart').update({
@@ -218,22 +295,60 @@ export default factories.createCoreController('api::cart.cart', ({ strapi }) => 
     try {
       const { documentId } = ctx.params;
       const { quantity } = ctx.request.body;
-
+      const { user } = ctx.state;
+      const { sessionId } = ctx.query;
+      const cartPersistenceService = strapi.service('api::cart.cart-persistence');
+      const cartCalculationService = strapi.service('api::cart.cart-calculation');
       // Validate input
       if (!quantity || quantity < 1) {
         return ctx.badRequest('Valid quantity is required');
       }
-
       // Get cart item
       const cartItem = await strapi.documents('api::cart-item.cart-item').findOne({
         documentId,
         populate: {
-          cart: true
+          cart: {
+            populate: {
+              user: true,
+            }
+          },
+          product: true,
+          variant: true
         }
       });
-
+      // check if user has access to the cart item
       if (!cartItem) {
         return ctx.notFound('Cart item not found');
+      }
+
+      if (cartItem.cart.user && cartItem.cart.user.id !== user.id) {
+        return ctx.forbidden('Access denied');
+      }
+      if (cartItem.cart.sessionId && cartItem.cart.sessionId !== sessionId) {
+        return ctx.forbidden('Access denied');
+      }
+
+      if (!user && !sessionId) {
+        return ctx.forbidden('Access denied');
+      }
+
+      // Check inventory availability
+      const product = cartItem.product;
+      const variant = cartItem.variant;
+      
+      // Get current inventory
+      let availableInventory = 0;
+      // Check product inventory
+      const productInventory = await strapi.documents('api::inventory.inventory').findFirst({
+        filters: {
+          product: { id: product.id },
+        }
+      });
+      availableInventory = productInventory?.quantity || 0;
+
+      // Check if requested quantity exceeds available inventory
+      if (quantity > availableInventory) {
+        return ctx.badRequest(`Insufficient inventory. Only ${availableInventory} items available.`);
       }
 
       // Update item
@@ -261,7 +376,7 @@ export default factories.createCoreController('api::cart.cart', ({ strapi }) => 
         }
       });
 
-      const calculation = await cartCalculationService({ strapi }).calculateCartTotals(cart);
+      const calculation = await cartCalculationService.calculateCartTotals(cart);
 
       // Update cart totals
       await strapi.documents('api::cart.cart').update({
@@ -292,17 +407,33 @@ export default factories.createCoreController('api::cart.cart', ({ strapi }) => 
   async removeItem(ctx) {
     try {
       const { documentId } = ctx.params;
-
+      const { user } = ctx.state;
+      const { sessionId } = ctx.query;
+      const cartPersistenceService = strapi.service('api::cart.cart-persistence');
+      const cartCalculationService = strapi.service('api::cart.cart-calculation');
       // Get cart item
       const cartItem = await strapi.documents('api::cart-item.cart-item').findOne({
         documentId,
         populate: {
-          cart: true
+          cart: {
+            populate: {
+              user: true,
+            }
+          }
         }
       });
-
       if (!cartItem) {
         return ctx.notFound('Cart item not found');
+      }
+
+      if (cartItem.cart.user && cartItem.cart.user.id !== user.id) {
+        return ctx.forbidden('Access denied');
+      }
+      if (cartItem.cart.sessionId && cartItem.cart.sessionId !== sessionId) {
+        return ctx.forbidden('Access denied');
+      }
+      if (!user && !sessionId) {
+        return ctx.forbidden('Access denied');
       }
 
       // Delete cart item
@@ -324,7 +455,7 @@ export default factories.createCoreController('api::cart.cart', ({ strapi }) => 
         }
       });
 
-      const calculation = await cartCalculationService({ strapi }).calculateCartTotals(cart);
+      const calculation = await cartCalculationService.calculateCartTotals(cart);
 
       // Update cart totals
       await strapi.documents('api::cart.cart').update({
@@ -356,13 +487,14 @@ export default factories.createCoreController('api::cart.cart', ({ strapi }) => 
     try {
       const { user } = ctx.state;
       const { sessionId } = ctx.query;
+      const cartPersistenceService = strapi.service('api::cart.cart-persistence');
+      const cartCalculationService = strapi.service('api::cart.cart-calculation');
 
       let cart = null;
-
       if (user) {
-        cart = await cartPersistenceService({ strapi }).getCartByUserId(user.id);
+        cart = await cartPersistenceService.getCartByUserId(user.id);
       } else if (sessionId) {
-        cart = await cartPersistenceService({ strapi }).getCartBySessionId(sessionId);
+        cart = await cartPersistenceService.getCartBySessionId(sessionId);
       }
 
       if (!cart) {
@@ -372,7 +504,7 @@ export default factories.createCoreController('api::cart.cart', ({ strapi }) => 
       // Delete all cart items
       const cartItems = await strapi.documents('api::cart-item.cart-item').findMany({
         filters: {
-          cart: cart.documentId
+          cart: cart.id
         }
       });
 
@@ -412,13 +544,15 @@ export default factories.createCoreController('api::cart.cart', ({ strapi }) => 
       const { user } = ctx.state;
       const { sessionId } = ctx.query;
       const { shippingAddress, shippingMethod, discountCode } = ctx.request.body;
+      const cartPersistenceService = strapi.service('api::cart.cart-persistence');
+      const cartCalculationService = strapi.service('api::cart.cart-calculation');
 
       let cart = null;
 
       if (user) {
-        cart = await cartPersistenceService({ strapi }).getCartByUserId(user.id);
+        cart = await cartPersistenceService.getCartByUserId(user.id);
       } else if (sessionId) {
-        cart = await cartPersistenceService({ strapi }).getCartBySessionId(sessionId);
+        cart = await cartPersistenceService.getCartBySessionId(sessionId);
       }
 
       if (!cart) {
@@ -426,7 +560,7 @@ export default factories.createCoreController('api::cart.cart', ({ strapi }) => 
       }
 
       // Calculate totals with options
-      const calculation = await cartCalculationService({ strapi }).calculateCartTotals(cart, {
+      const calculation = await cartCalculationService.calculateCartTotals(cart, {
         shippingAddress,
         shippingMethod,
         discountCode
@@ -463,6 +597,8 @@ export default factories.createCoreController('api::cart.cart', ({ strapi }) => 
     try {
       const { user } = ctx.state;
       const { sessionId } = ctx.request.body;
+      const cartPersistenceService = strapi.service('api::cart.cart-persistence');
+      const cartCalculationService = strapi.service('api::cart.cart-calculation');
 
       if (!user) {
         return ctx.unauthorized('User must be authenticated');
@@ -471,15 +607,16 @@ export default factories.createCoreController('api::cart.cart', ({ strapi }) => 
       if (!sessionId) {
         return ctx.badRequest('Session ID is required');
       }
-
-      const migratedCart = await cartPersistenceService({ strapi }).migrateGuestToUserCart(sessionId, user.id);
+      // check if cart exists
+      const cart = await cartPersistenceService.getCartBySessionId(sessionId);
+      if (!cart) {
+        return ctx.notFound('No guest cart found to migrate');
+      }
+      
+      const migratedCart = await cartPersistenceService.migrateGuestToUserCart(sessionId, user.id);
 
       if (!migratedCart) {
-        return {
-          data: {
-            message: 'No guest cart found to migrate'
-          }
-        };
+        return ctx.notFound('No guest cart found to migrate');
       }
 
       return {

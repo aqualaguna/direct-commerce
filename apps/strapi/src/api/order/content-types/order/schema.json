@@ -91,13 +91,15 @@
       "maxLength": 3
     },
     "shippingAddress": {
-      "type": "component",
-      "component": "shared.address",
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::address.address",
       "required": true
     },
     "billingAddress": {
-      "type": "component",
-      "component": "shared.address",
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::address.address",
       "required": true
     },
     "paymentStatus": {

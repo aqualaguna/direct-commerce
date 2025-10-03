@@ -44,7 +44,8 @@ describe('User Integration Tests', () => {
         await request(SERVER_URL)
           .delete(`/api/users/${user.id}`)
           .set('Authorization', `Bearer ${adminToken}`)
-          .timeout(10000);
+          .timeout(10000)
+          .expect(200);
       } catch (error) {
         console.warn(`Failed to delete user ${user.id}:`, error);
       }
@@ -694,8 +695,6 @@ describe('User Integration Tests', () => {
         if (response.status === 200) {
           testUsers.push(response.body.user);
         }
-        // Add delay between user creation to avoid rate limiting
-        // await new Promise(resolve => setTimeout(resolve, 500));
       }
     });
 

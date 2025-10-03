@@ -19,15 +19,10 @@ export default (config, { strapi }: { strapi: any }) => {
       // Use the proper ipKeyGenerator helper for IPv6 support
       keyGenerator: (req: any) => ipKeyGenerator(req.ip || req.connection?.remoteAddress || req.socket?.remoteAddress),
       // Skip rate limiting for certain conditions
-      // skip: req => {
-      //   // Skip if IP is undefined or unknown
-      //   const ip =
-      //     req.ip ||
-      //     req.connection?.remoteAddress ||
-      //     req.socket?.remoteAddress ||
-      //     req.connection?.socket?.remoteAddress;
-      //   return !ip || ip === 'unknown';
-      // },
+      skip: (req: any) => {
+        // Skip rate limiting in test environment
+        return process.env.NODE_ENV === 'test';
+      },
     });
 
     // Apply rate limiting
@@ -48,3 +43,5 @@ export default (config, { strapi }: { strapi: any }) => {
     await next();
   };
 };
+
+

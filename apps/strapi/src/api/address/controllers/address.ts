@@ -3,6 +3,8 @@
  */
 
 import { factories } from '@strapi/strapi';
+import { sanitizeAddressData } from '../../../utils';
+import { AddressOwnerType } from '../utils/types';
 
 export default factories.createCoreController('api::address.address', ({ strapi }) => ({
   /**
@@ -12,16 +14,23 @@ export default factories.createCoreController('api::address.address', ({ strapi 
     try {
       const { user } = ctx.state;
       const { type } = ctx.params;
+      const isGuest = !user && (ctx.query.sessionId);
 
-      if (!user) {
+      if (!user && !isGuest) {
         return ctx.unauthorized('Authentication required');
+      }
+      if (user && isGuest) {
+        return ctx.unauthorized('Ambiguous request - provide either user authentication or session ID, not both');
       }
 
       if (!type || !['shipping', 'billing', 'both'].includes(type)) {
         return ctx.badRequest('Invalid address type. Must be shipping, billing, or both');
       }
 
-      const addresses = await strapi.service('api::address.address').findByUserAndType(user.id, type);
+      const addresses = await strapi.service('api::address.address').findByUserAndType(
+        isGuest ? AddressOwnerType.GUEST : AddressOwnerType.USER,
+        isGuest ? ctx.query.sessionId : user.id,
+        type);
 
       return {
         data: addresses,
@@ -43,16 +52,23 @@ export default factories.createCoreController('api::address.address', ({ strapi 
     try {
       const { user } = ctx.state;
       const { type } = ctx.params;
+      const isGuest = !user && (ctx.query.sessionId);
 
-      if (!user) {
+      if (!user && !isGuest) {
         return ctx.unauthorized('Authentication required');
+      }
+      if (user && isGuest) {
+        return ctx.unauthorized('Ambiguous request - provide either user authentication or session ID, not both');
       }
 
       if (!type || !['shipping', 'billing', 'both'].includes(type)) {
         return ctx.badRequest('Invalid address type. Must be shipping, billing, or both');
       }
 
-      const address = await strapi.service('api::address.address').getDefaultAddress(user.id, type);
+      const address = await strapi.service('api::address.address').getDefaultAddress(
+        isGuest ? ctx.query.sessionId : user.id,
+        isGuest ? AddressOwnerType.GUEST : AddressOwnerType.USER,
+        type);
 
       return {
         data: address,
@@ -72,17 +88,22 @@ export default factories.createCoreController('api::address.address', ({ strapi 
   async setAsDefault(ctx) {
     try {
       const { user } = ctx.state;
-      const { documentId } = ctx.params;
-
-      if (!user) {
+      const documentId = ctx.params.documentId || ctx.params.id;
+      const sessionId = ctx?.query?.sessionId || ctx?.request?.body?.sessionId;
+      const isGuest = !user && (sessionId);
+      if (!user && !isGuest) {
         return ctx.unauthorized('Authentication required');
       }
-
+      if (user && isGuest) {
+        return ctx.unauthorized('Ambiguous request - provide either user authentication or session ID, not both');
+      }
       if (!documentId) {
         return ctx.badRequest('Address documentId is required');
       }
-
-      const address = await strapi.service('api::address.address').setAsDefault(documentId, user.id);
+      const address = await strapi.service('api::address.address').setAsDefault(
+        documentId, 
+        isGuest ? sessionId : user.id, 
+        isGuest ? AddressOwnerType.GUEST : AddressOwnerType.USER);
 
       return {
         data: address,
@@ -92,11 +113,11 @@ export default factories.createCoreController('api::address.address', ({ strapi 
       };
     } catch (error) {
       strapi.log.error('Error in setAsDefault:', error);
-      
+
       if (error.message === 'Address not found') {
         return ctx.notFound('Address not found');
       }
-      
+
       if (error.message === 'Unauthorized to modify this address') {
         return ctx.forbidden('Unauthorized to modify this address');
       }
@@ -104,37 +125,149 @@ export default factories.createCoreController('api::address.address', ({ strapi 
       return ctx.internalServerError('Failed to set address as default');
     }
   },
+  /**
+   * Find Many Addresses
+   */
+  async find(ctx) {
+    try {
+      const { user } = ctx.state;
+      const query: any = this.sanitizeQuery(ctx);
+      const { populate } = query;
+      const sessionId = ctx?.query?.sessionId || ctx?.request?.body?.sessionId;
+      const isGuest = !user && (sessionId);
 
+      if (!user && !isGuest) {
+        return ctx.unauthorized('Authentication required');
+      }
+      if (user && isGuest) {
+        return ctx.unauthorized('Ambiguous request - provide either user authentication or session ID, not both');
+      }
+
+      const paginationQuery = query.pagination as any || { page: '1', pageSize: '25' };
+      const pagination = {
+        page: Math.max(1, parseInt(String(paginationQuery.page || '1')) || 1),
+        pageSize: Math.min(
+          Math.max(1, parseInt(String(paginationQuery.pageSize || '25')) || 25),
+          100
+        ),
+      };
+      const filters: any = { ...((query.filters as object) || {}) };
+      
+      if (user) {
+        filters.sessionId = { $null: true };
+        filters.user = user.id;
+      }
+      if (isGuest) {
+        filters.sessionId = sessionId;
+        filters.user = { $null: true };
+      }
+      const addresses: any = await strapi.documents('api::address.address').findMany({
+        populate: populate ? String(populate).split(',') : undefined as any,
+        filters,
+        sort: (query.sort as any) || 'createdAt:desc',
+        limit: pagination.pageSize,
+        start: (pagination.page - 1) * pagination.pageSize,
+      });
+      const total = await strapi.documents('api::address.address').count({ filters });
+
+      return {
+        data: addresses,
+        meta: {
+          message: 'Addresses found successfully',
+          pagination: {
+            page: pagination.page,
+            pageSize: pagination.pageSize,
+            pageCount: Math.ceil(total / pagination.pageSize),
+            total: total
+          }
+        }
+      };
+    }
+    catch (error) {
+      strapi.log.error('Error in findMany:', error);
+      return ctx.internalServerError('Failed to find addresses');
+    }
+  },
+  /**
+   * Find One Address
+   */
+  async findOne(ctx) {
+    try {
+      const { user } = ctx.state;
+      const query: any = await this.sanitizeQuery(ctx);
+      const { populate } = query;
+      const documentId = ctx.params.documentId || ctx.params.id;
+      const sessionId = ctx?.query?.sessionId || ctx?.request?.body?.sessionId;
+      const isGuest = !user && (sessionId);
+
+      if (!user && !isGuest) {
+        return ctx.unauthorized('Authentication required');
+      }
+      if (user && isGuest) {
+        return ctx.unauthorized('Ambiguous request - provide either user authentication or session ID, not both');
+      }
+
+      const findParams = {
+        documentId,
+        populate: populate ? String(populate).split(',') : undefined
+      }
+      if (!findParams.populate) {
+        delete findParams.populate;
+      }
+      const address: any = await strapi.documents('api::address.address').findOne(findParams as any);
+      if (!address) {
+        return ctx.notFound('Address not found');
+      }
+      if (isGuest && address.sessionId !== sessionId) {
+        return ctx.forbidden('You can only view your own address');
+      }
+      if (user && address.user && address.user.id !== user.id) {
+        return ctx.forbidden('You can only view your own address');
+      }
+      return {
+        data: address,
+        meta: {
+          message: 'Address found successfully'
+        }
+      };
+
+    } catch (error) {
+      strapi.log.error('Error in findOne:', error);
+      return ctx.internalServerError('Failed to find address');
+    }
+  },
   /**
    * Create a new address for the authenticated user
    */
   async create(ctx) {
     try {
       const { user } = ctx.state;
-      const { data } = ctx.request.body;
-
-      if (!user) {
+      const rawData = ctx.request.body.data;
+      const sessionId = ctx?.query?.sessionId || ctx?.request?.body?.sessionId;
+      const isGuest = !user && (sessionId);
+      if (!user && !isGuest) {
         return ctx.unauthorized('Authentication required');
       }
+      if (user && isGuest) {
+        return ctx.unauthorized('Ambiguous request - provide either user authentication or session ID, not both');
+      }
 
-      if (!data) {
+      if (!rawData) {
         return ctx.badRequest('Address data is required');
       }
 
-      // Validate required fields
-      const requiredFields = ['type', 'firstName', 'lastName', 'address1', 'city', 'state', 'postalCode', 'country', 'phone'];
-      for (const field of requiredFields) {
-        if (!data[field]) {
-          return ctx.badRequest(`${field} is required`);
-        }
+      // Sanitize input data to prevent SQL injection and XSS
+      const data: any = sanitizeAddressData(rawData, { sanitizeHtmlEnabled: true });
+
+      const validationService = strapi.service('api::address.validation');
+      const result = validationService.validateAddress(data);
+      if (!result.isValid) {
+        return ctx.badRequest("Address validation failed", result.errors);
       }
 
-      // Validate address type
-      if (!['shipping', 'billing', 'both'].includes(data.type)) {
-        return ctx.badRequest('Invalid address type. Must be shipping, billing, or both');
-      }
-
-      const address = await strapi.service('api::address.address').createAddress(data, user.id);
+      const address = await strapi.service('api::address.address').createAddress(data,
+        isGuest ? sessionId : user.id,
+        isGuest ? AddressOwnerType.GUEST : AddressOwnerType.USER);
 
       return {
         data: address,
@@ -154,27 +287,40 @@ export default factories.createCoreController('api::address.address', ({ strapi 
   async update(ctx) {
     try {
       const { user } = ctx.state;
-      const { documentId } = ctx.params;
-      const { data } = ctx.request.body;
+      const documentId = ctx.params.documentId || ctx.params.id;
+      const rawData = ctx.request.body.data;
+      const sessionId = ctx?.query?.sessionId || ctx?.request?.body?.sessionId;
+      const isGuest = !user && (sessionId);
+      const isApiTokenRequest = ctx.state.auth?.strategy?.name === 'api-token';
 
-      if (!user) {
+      if (!user && !isGuest && !isApiTokenRequest) {
         return ctx.unauthorized('Authentication required');
       }
-
+      if (user && isGuest && !isApiTokenRequest) {
+        return ctx.unauthorized('Ambiguous request - provide either user authentication or session ID, not both');
+      }
       if (!documentId) {
         return ctx.badRequest('Address documentId is required');
       }
 
-      if (!data) {
+      if (!rawData) {
         return ctx.badRequest('Address data is required');
       }
+
+      // Sanitize input data to prevent SQL injection and XSS
+      const data: any = sanitizeAddressData(rawData, { sanitizeHtmlEnabled: true });
 
       // Validate address type if provided
       if (data.type && !['shipping', 'billing', 'both'].includes(data.type)) {
         return ctx.badRequest('Invalid address type. Must be shipping, billing, or both');
       }
-
-      const address = await strapi.service('api::address.address').updateAddress(documentId, data, user.id);
+      // is api token request
+      const address = await strapi.service('api::address.address').updateAddress(
+        documentId,
+        data,
+        isGuest ? sessionId : user?.id,
+        isGuest ? AddressOwnerType.GUEST : AddressOwnerType.USER,
+        isApiTokenRequest);
 
       return {
         data: address,
@@ -184,11 +330,11 @@ export default factories.createCoreController('api::address.address', ({ strapi 
       };
     } catch (error) {
       strapi.log.error('Error in update:', error);
-      
+
       if (error.message === 'Address not found') {
         return ctx.notFound('Address not found');
       }
-      
+
       if (error.message === 'Unauthorized to modify this address') {
         return ctx.forbidden('Unauthorized to modify this address');
       }
@@ -203,17 +349,24 @@ export default factories.createCoreController('api::address.address', ({ strapi 
   async delete(ctx) {
     try {
       const { user } = ctx.state;
-      const { documentId } = ctx.params;
-
-      if (!user) {
+      const documentId = ctx.params.documentId || ctx.params.id;
+      const sessionId = ctx?.query?.sessionId || ctx?.request?.body?.sessionId;
+      const isGuest = !user && (sessionId);
+      if (!user && !isGuest) {
         return ctx.unauthorized('Authentication required');
+      }
+      if (user && isGuest) {
+        return ctx.unauthorized('Ambiguous request - provide either user authentication or session ID, not both');
       }
 
       if (!documentId) {
         return ctx.badRequest('Address documentId is required');
       }
 
-      const result = await strapi.service('api::address.address').deleteAddress(documentId, user.id);
+      const result = await strapi.service('api::address.address').deleteAddress(
+        documentId,
+        isGuest ? sessionId : user.id,
+        isGuest ? AddressOwnerType.GUEST : AddressOwnerType.USER);
 
       return {
         data: result,
@@ -223,11 +376,11 @@ export default factories.createCoreController('api::address.address', ({ strapi 
       };
     } catch (error) {
       strapi.log.error('Error in delete:', error);
-      
+
       if (error.message === 'Address not found') {
         return ctx.notFound('Address not found');
       }
-      
+
       if (error.message === 'Unauthorized to delete this address') {
         return ctx.forbidden('Unauthorized to delete this address');
       }
@@ -243,9 +396,13 @@ export default factories.createCoreController('api::address.address', ({ strapi 
     try {
       const { user } = ctx.state;
       const { query } = ctx;
-
-      if (!user) {
+      const sessionId = ctx?.query?.sessionId || ctx?.request?.body?.sessionId;
+      const isGuest = !user && (sessionId);
+      if (!user && !isGuest) {
         return ctx.unauthorized('Authentication required');
+      }
+      if (user && isGuest) {
+        return ctx.unauthorized('Ambiguous request - provide either user authentication or session ID, not both');
       }
 
       // Extract filters from query
@@ -256,7 +413,10 @@ export default factories.createCoreController('api::address.address', ({ strapi 
       if (query.country) filters.country = { $contains: query.country };
       if (query.isDefault !== undefined) filters.isDefault = query.isDefault === 'true';
 
-      const addresses = await strapi.service('api::address.address').searchAddresses(user.id, filters);
+      const addresses = await strapi.service('api::address.address').searchAddresses(
+        isGuest ? sessionId : user.id,
+        isGuest ? AddressOwnerType.GUEST : AddressOwnerType.USER,
+        filters);
 
       return {
         data: addresses,
@@ -277,34 +437,42 @@ export default factories.createCoreController('api::address.address', ({ strapi 
   async getStats(ctx) {
     try {
       const { user } = ctx.state;
+      const sessionId = ctx?.query?.sessionId || ctx?.request?.body?.sessionId;
+      const isGuest = !user && (sessionId);
 
-      if (!user) {
+      if (!user && !isGuest) {
         return ctx.unauthorized('Authentication required');
       }
-
+      if (user && isGuest) {
+        return ctx.unauthorized('Ambiguous request - provide either user authentication or session ID, not both');
+      }
       // Get counts by type
       const shippingCount = await strapi.documents('api::address.address').count({
         filters: {
-          user: { id: user.id },
+          user: isGuest ? { $null: true } : { id: user.id },
+          sessionId: isGuest ? sessionId : { $null: true },
           type: { $in: ['shipping', 'both'] }
         }
       });
       const billingCount = await strapi.documents('api::address.address').count({
         filters: {
-          user: { id: user.id },
+          user: isGuest ? { $null: true } : { id: user.id },
+          sessionId: isGuest ? sessionId : { $null: true },
           type: { $in: ['billing', 'both'] }
         }
       });
 
       const totalCount = await strapi.documents('api::address.address').count({
         filters: {
-          user: { id: user.id }
+          user: isGuest ? { $null: true } : { id: user.id },
+          sessionId: isGuest ? sessionId : { $null: true },
         }
       });
 
       const defaultCount = await strapi.documents('api::address.address').count({
         filters: {
-          user: { id: user.id },
+          user: isGuest ? { $null: true } : { id: user.id },
+          sessionId: isGuest ? sessionId : { $null: true },
           isDefault: true
         }
       });
@@ -339,7 +507,7 @@ export default factories.createCoreController('api::address.address', ({ strapi 
 
       const validationService = strapi.service('api::address.validation');
       const result = validationService.validateAddress(data);
-
+      ctx.status = result.isValid ? 200 : 400;
       return {
         data: result,
         meta: {
@@ -384,31 +552,6 @@ export default factories.createCoreController('api::address.address', ({ strapi 
     }
   },
 
-  /**
-   * Format address data
-   */
-  async format(ctx) {
-    try {
-      const { data } = ctx.request.body;
-
-      if (!data) {
-        return ctx.badRequest('Address data is required');
-      }
-
-      const validationService = strapi.service('api::address.validation');
-      const formattedAddress = validationService.formatAddress(data);
-
-      return {
-        data: formattedAddress,
-        meta: {
-          message: 'Address formatted successfully'
-        }
-      };
-    } catch (error) {
-      strapi.log.error('Error in format:', error);
-      return ctx.internalServerError('Failed to format address');
-    }
-  },
 
   /**
    * Get address book for user
@@ -417,19 +560,24 @@ export default factories.createCoreController('api::address.address', ({ strapi 
     try {
       const { user } = ctx.state;
       const { query } = ctx;
+      const sessionId = ctx?.query?.sessionId || ctx?.request?.body?.sessionId;
+      const isGuest = !user && (sessionId);
 
-      if (!user) {
+      if (!user && !isGuest) {
         return ctx.unauthorized('Authentication required');
       }
-
+      if (user && isGuest) {
+        return ctx.unauthorized('Ambiguous request - provide either user authentication or session ID, not both');
+      }
       const options = {
-        page: parseInt(String(query.page)) || 1,
-        pageSize: parseInt(String(query.pageSize)) || 25,
-        sortBy: String(query.sortBy) || 'createdAt',
-        sortOrder: String(query.sortOrder) || 'desc'
+        limit: 10000,
+        start: 0,
+        sort: query.sort ? String(query.sort) : 'createdAt:desc',
       };
-
-      const addressBook = await strapi.service('api::address.address').getAddressBook(user.id, options);
+      const addressBook = await strapi.service('api::address.address').getAddressBook(
+        isGuest ? sessionId : user.id,
+        isGuest ? AddressOwnerType.GUEST : AddressOwnerType.USER,
+        options);
 
       return {
         data: addressBook,
@@ -450,16 +598,23 @@ export default factories.createCoreController('api::address.address', ({ strapi 
     try {
       const { user } = ctx.state;
       const { format = 'json' } = ctx.query;
-
-      if (!user) {
+      const sessionId = ctx?.query?.sessionId || ctx?.request?.body?.sessionId;
+      const isGuest = !user && (sessionId);
+      if (!user && !isGuest) {
         return ctx.unauthorized('Authentication required');
+      }
+      if (user && isGuest) {
+        return ctx.unauthorized('Ambiguous request - provide either user authentication or session ID, not both');
       }
 
       if (!['json', 'csv'].includes(String(format))) {
         return ctx.badRequest('Invalid format. Must be json or csv');
       }
 
-      const exportedData = await strapi.service('api::address.address').exportAddresses(user.id, format);
+      const exportedData = await strapi.service('api::address.address').exportAddresses(
+        isGuest ? sessionId : user.id,
+        isGuest ? AddressOwnerType.GUEST : AddressOwnerType.USER,
+        format);
 
       if (format === 'csv') {
         ctx.set('Content-Type', 'text/csv');
@@ -486,11 +641,15 @@ export default factories.createCoreController('api::address.address', ({ strapi 
     try {
       const { user } = ctx.state;
       const { addresses } = ctx.request.body;
+      const sessionId = ctx?.query?.sessionId || ctx?.request?.body?.sessionId;
+      const isGuest = !user && (sessionId);
 
-      if (!user) {
+      if (!user && !isGuest) {
         return ctx.unauthorized('Authentication required');
       }
-
+      if (user && isGuest) {
+        return ctx.unauthorized('Ambiguous request - provide either user authentication or session ID, not both');
+      }
       if (!addresses || !Array.isArray(addresses)) {
         return ctx.badRequest('Addresses array is required');
       }
@@ -503,7 +662,11 @@ export default factories.createCoreController('api::address.address', ({ strapi 
         return ctx.badRequest('Maximum 100 addresses can be imported at once');
       }
 
-      const results = await strapi.service('api::address.address').importAddresses(user.id, addresses);
+      const results = await strapi.service('api::address.address').importAddresses(
+        isGuest ? sessionId : user.id,
+        addresses,
+        isGuest ? AddressOwnerType.GUEST : AddressOwnerType.USER
+      );
 
       return {
         data: results,
@@ -523,12 +686,18 @@ export default factories.createCoreController('api::address.address', ({ strapi 
   async getAnalytics(ctx) {
     try {
       const { user } = ctx.state;
+      const sessionId = ctx?.query?.sessionId || ctx?.request?.body?.sessionId;
+      const isGuest = !user && (sessionId);
 
-      if (!user) {
+      if (!user && !isGuest) {
         return ctx.unauthorized('Authentication required');
       }
-
-      const analytics = await strapi.service('api::address.address').getAddressAnalytics(user.id);
+      if (user && isGuest) {
+        return ctx.unauthorized('Ambiguous request - provide either user authentication or session ID, not both');
+      }
+      const analytics = await strapi.service('api::address.address').getAddressAnalytics(
+        isGuest ? sessionId : user.id,
+        isGuest ? AddressOwnerType.GUEST : AddressOwnerType.USER);
 
       return {
         data: analytics,

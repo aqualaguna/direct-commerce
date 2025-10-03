@@ -33,7 +33,7 @@ export default factories.createCoreService(
       // Get raw behavior data
       const behaviors = await strapi.documents('api::user-behavior.user-behavior').findMany({
         filters,
-        sort: 'timestamp:asc',
+        sort: 'createdAt:asc',
         populate: ['user']
       })
 
@@ -263,7 +263,7 @@ export default factories.createCoreService(
     try {
       const behaviors = await strapi.documents('api::user-behavior.user-behavior').findMany({
         filters: { user: { documentId: userId } },
-        sort: 'timestamp:desc',
+        sort: 'createdAt:desc',
         limit: 100,
         start: 0
       })

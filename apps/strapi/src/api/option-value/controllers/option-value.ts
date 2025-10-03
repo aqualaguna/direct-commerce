@@ -181,8 +181,7 @@ export default factories.createCoreController(
             documentId,
             populate: ['variants'],
           });
-
-        if (optionValue && optionValue.variants.length > 0) {
+        if (optionValue && optionValue.variants && optionValue.variants.length > 0) {
           return ctx.badRequest(
             'Cannot delete option value that is used in variants'
           );
