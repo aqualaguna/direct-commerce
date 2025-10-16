@@ -2,7 +2,7 @@ import request from 'supertest';
 
 describe('Category Navigation and Search Integration Tests', () => {
   const SERVER_URL = 'http://localhost:1337';
-  let adminToken: string;
+  let apiToken: string;
 
   // Generate unique test data with timestamp
   const timestamp = Date.now();
@@ -14,9 +14,9 @@ describe('Category Navigation and Search Integration Tests', () => {
 
   beforeAll(async () => {
     // Get admin token for authenticated requests
-    adminToken = process.env.STRAPI_API_TOKEN as string;
+    apiToken = process.env.STRAPI_API_TOKEN as string;
 
-    if (!adminToken) {
+    if (!apiToken) {
       throw new Error('STRAPI_API_TOKEN environment variable is not set. Please ensure the test server is running and the token is generated.');
     }
   });
@@ -26,7 +26,7 @@ describe('Category Navigation and Search Integration Tests', () => {
     try {
       const response = await request(SERVER_URL)
         .get('/api/categories')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
 
       if (response.status === 200 && response.body.data) {
@@ -40,7 +40,7 @@ describe('Category Navigation and Search Integration Tests', () => {
             try {
               await request(SERVER_URL)
                 .delete(`/api/categories/${category.documentId}`)
-                .set('Authorization', `Bearer ${adminToken}`)
+                .set('Authorization', `Bearer ${apiToken}`)
                 .timeout(10000);
             } catch (error) {
               console.warn(`Failed to delete category ${category.documentId}:`, error);
@@ -68,7 +68,7 @@ describe('Category Navigation and Search Integration Tests', () => {
       for (const category of categories) {
         const response = await request(SERVER_URL)
           .post('/api/categories')
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .send({ data: category })
           .timeout(10000);
 
@@ -84,7 +84,7 @@ describe('Category Navigation and Search Integration Tests', () => {
         try {
           await request(SERVER_URL)
             .delete(`/api/categories/${categoryId}`)
-            .set('Authorization', `Bearer ${adminToken}`)
+            .set('Authorization', `Bearer ${apiToken}`)
             .timeout(10000);
         } catch (error) {
           console.warn(`Failed to delete category ${categoryId}:`, error);
@@ -96,7 +96,7 @@ describe('Category Navigation and Search Integration Tests', () => {
     it('should search categories by name', async () => {
       const response = await request(SERVER_URL)
         .get('/api/categories?filters[name][$containsi]=Electronics')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
 
       expect(response.status).toBe(200);
@@ -107,7 +107,7 @@ describe('Category Navigation and Search Integration Tests', () => {
     it('should paginate categories', async () => {
       const response = await request(SERVER_URL)
         .get('/api/categories?pagination[page]=1&pagination[pageSize]=2')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
 
       expect(response.status).toBe(200);
@@ -120,7 +120,7 @@ describe('Category Navigation and Search Integration Tests', () => {
     it('should search categories with search endpoint', async () => {
       const response = await request(SERVER_URL)
         .post('/api/categories/search?q=Electronics')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
 
       expect(response.status).toBe(200);
@@ -131,7 +131,7 @@ describe('Category Navigation and Search Integration Tests', () => {
     it('should handle search with empty query', async () => {
       const response = await request(SERVER_URL)
         .post('/api/categories/search?q=')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
 
       expect(response.status).toBe(400);
@@ -140,7 +140,7 @@ describe('Category Navigation and Search Integration Tests', () => {
     it('should handle search with missing query parameter', async () => {
       const response = await request(SERVER_URL)
         .post('/api/categories/search')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
 
       expect(response.status).toBe(400);
@@ -149,7 +149,7 @@ describe('Category Navigation and Search Integration Tests', () => {
     it('should filter categories by slug', async () => {
       const response = await request(SERVER_URL)
         .get('/api/categories?filters[slug][$containsi]=electronics')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
 
       expect(response.status).toBe(200);
@@ -160,7 +160,7 @@ describe('Category Navigation and Search Integration Tests', () => {
     it('should sort categories by name', async () => {
       const response = await request(SERVER_URL)
         .get('/api/categories?sort=name:asc')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
 
       expect(response.status).toBe(200);
@@ -171,7 +171,7 @@ describe('Category Navigation and Search Integration Tests', () => {
     it('should sort categories by creation date', async () => {
       const response = await request(SERVER_URL)
         .get('/api/categories?sort=createdAt:desc')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
 
       expect(response.status).toBe(200);
@@ -182,7 +182,7 @@ describe('Category Navigation and Search Integration Tests', () => {
     it('should limit search results', async () => {
       const response = await request(SERVER_URL)
         .post('/api/categories/search?q=Test&limit=5')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
 
       expect(response.status).toBe(200);
@@ -194,7 +194,7 @@ describe('Category Navigation and Search Integration Tests', () => {
     it('should handle pagination with large page size', async () => {
       const response = await request(SERVER_URL)
         .get('/api/categories?pagination[page]=1&pagination[pageSize]=100')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
 
       expect(response.status).toBe(200);
@@ -206,7 +206,7 @@ describe('Category Navigation and Search Integration Tests', () => {
     it('should handle pagination with invalid page number', async () => {
       const response = await request(SERVER_URL)
         .get('/api/categories?pagination[page]=0&pagination[pageSize]=10')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
 
       expect(response.status).toBe(200);

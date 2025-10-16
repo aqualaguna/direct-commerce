@@ -27,7 +27,7 @@
     "items": {
       "type": "relation",
       "relation": "oneToMany",
-      "target": "api::cart-item.cart-item",
+      "target": "api::cart.cart-item",
       "mappedBy": "cart",
       "description": "Cart items in this cart"
     },

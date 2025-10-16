@@ -1,9 +1,9 @@
+import { Core } from '@strapi/strapi';
 import { z } from 'zod';
 const checkoutCreateSchema = z.object({
     shippingAddress: z.string(),
     billingAddress: z.string(),
     shippingMethod: z.string(),
-    paymentMethod: z.string(),
     status: z.enum(['active', 'completed', 'abandoned', 'expired']).optional(),
     metadata: z.object({}).optional(),
     completedAt: z.string().optional(),
@@ -20,7 +20,7 @@ export type CheckoutCreateData = z.infer<typeof checkoutCreateSchema> & {
     sessionId: any,
 }
 
-export default ({ strapi }: { strapi: any }) => ({
+export default ({ strapi }: { strapi: Core.Strapi }) => ({
     async validateCheckoutData(data: any, userId: any, isGuest: boolean) {
         const errors: string[] = [];
         const validatedData: any = {};
@@ -106,33 +106,23 @@ export default ({ strapi }: { strapi: any }) => ({
             }
         }
 
-        // Validate payment method exists and is active
-        if (validatedData.paymentMethod) {
-            try {
-                const paymentMethod = await strapi.documents('api::basic-payment-method.basic-payment-method').findOne({
-                    documentId: validatedData.paymentMethod
-                });
-                
-                if (!paymentMethod) {
-                    errors.push('Payment method not found');
-                } else if (!paymentMethod.isActive) {
-                    errors.push('Payment method is not active');
-                }
-            } catch (error) {
-                errors.push('Error validating payment method ' + error.message);
-            }
-        }
-
         // Validate cart items exist and belong to the user
         if (validatedData.cartItems && validatedData.cartItems.length > 0) {
             try {
-                const cartItems = await strapi.documents('api::cart-item.cart-item').findMany({
+                const cartItems = await strapi.documents('api::cart.cart-item').findMany({
                     filters: {
                         documentId: {
                             $in: validatedData.cartItems
                         }
                     },
-                    populate: ['cart.user', 'cart.sessionId']
+                    populate: {
+                        cart: {
+                            populate: {
+                                user: true
+                            }
+                        },
+                        product: true
+                    }
                 });
                 
                 // Check if all cart items were found
@@ -149,6 +139,12 @@ export default ({ strapi }: { strapi: any }) => ({
                     if (cartOwner !== userId) {
                         errors.push(`Cart item ${cartItem.documentId} does not belong to the requesting user`);
                     }
+                    if (cartItem.deletedAt) {
+                        errors.push(`Cart item ${cartItem.documentId} is deleted`);
+                    }
+                }
+                validatedData.metadata = {
+                    cartItems
                 }
             } catch (error) {
                 errors.push('Error validating cart items ' + error.message);

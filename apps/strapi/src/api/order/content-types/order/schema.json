@@ -24,15 +24,10 @@
       "relation": "manyToOne",
       "target": "plugin::users-permissions.user"
     },
-    "cart": {
+    "checkout": {
       "type": "relation",
       "relation": "oneToOne",
-      "target": "api::cart.cart"
-    },
-    "checkoutSession": {
-      "type": "relation",
-      "relation": "oneToOne",
-      "target": "api::checkout.checkout-session"
+      "target": "api::checkout.checkout"
     },
     "status": {
       "type": "enumeration",
@@ -48,10 +43,16 @@
       "default": "pending",
       "required": true
     },
+    "statusHistory": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::order.order-status",
+      "mappedBy": "order"
+    },
     "items": {
       "type": "relation",
       "relation": "oneToMany",
-      "target": "api::order-item.order-item",
+      "target": "api::order.order-item",
       "mappedBy": "order"
     },
     "subtotal": {
@@ -106,7 +107,6 @@
       "type": "enumeration",
       "enum": [
         "pending",
-        "confirmed",
         "paid",
         "failed",
         "refunded",
@@ -115,15 +115,11 @@
       "default": "pending",
       "required": true
     },
-    "paymentMethod": {
-      "type": "string",
-      "required": true,
-      "maxLength": 100
-    },
-    "manualPayment": {
+    "payments": {
       "type": "relation",
-      "relation": "oneToOne",
-      "target": "api::manual-payment.manual-payment"
+      "relation": "oneToMany",
+      "target": "api::payment.payment",
+      "mappedBy": "order"
     },
     "shippingMethod": {
       "type": "string",
@@ -171,13 +167,6 @@
     "giftMessage": {
       "type": "text",
       "maxLength": 500
-    },
-    "referralCode": {
-      "type": "string",
-      "maxLength": 50
-    },
-    "tags": {
-      "type": "json"
     },
     "metadata": {
       "type": "json"

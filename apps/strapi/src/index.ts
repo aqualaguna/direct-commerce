@@ -6,7 +6,7 @@ import * as bcrypt from 'bcryptjs';
 const lifespan_7_days_millis = 7 * 24 * 3600 * 1000;
 
 // Test users configuration
-const testAdminUsers = [
+const testAdminPanelUsers = [
   {
     email: 'admin@test.com',
     password: 'Admin123',
@@ -26,15 +26,26 @@ const testAdminUsers = [
 ];
 
 const testCustomerUsers = [
-  {
-    email: 'customer@test.com',
-    password: 'Customer123',
-    username: 'Customer',
-    roleType: 'authenticated', // Use default authenticated role
-    confirmed: true,
-    isActive: true
-  },
-];
+    {
+      email: 'customer@test.com',
+      password: 'Customer123',
+      username: 'Customer',
+      roleType: 'authenticated', // Use default authenticated role
+      confirmed: true,
+      isActive: true
+    },
+  ];
+
+  const testAdminUsers = [
+    {
+      email: 'admin-user@test.com',
+      password: 'Admin123',
+      username: 'Admin',
+      roleType: 'admin', // Use default authenticated role
+      confirmed: true,
+      isActive: true
+    },
+  ];
 
 // Removed custom role creation - using default Strapi roles
 
@@ -49,6 +60,10 @@ async function setupPublicPermissions(strapi: Core.Strapi) {
             where: { type: 'authenticated' }
         });
 
+        let adminRoles = await strapi.query('plugin::users-permissions.role').findOne({
+            where: { type: 'admin' }
+        });
+        
 
         if (!publicRole) {
             console.warn('Public role not found, skipping permission setup');
@@ -59,12 +74,28 @@ async function setupPublicPermissions(strapi: Core.Strapi) {
             console.warn('Authenticated role not found, skipping permission setup');
             return;
         }
+        // Create end user roles for API authentication
+        if(!adminRoles) {
+            // create admin role for end users (not admin panel users)
+            adminRoles = await strapi.query('plugin::users-permissions.role').create({
+                data: {
+                    type: 'admin',
+                    name: 'Admin',
+                    description: 'Admin role for end users',
+                }
+            });
+            if(!adminRoles) {
+                console.warn('Admin role not found, skipping permission setup');
+                return;
+            }
+        }
 
 
         // Get the default permissions configuration from plugins config
         const pluginsConfig: any = strapi.config.get('plugin::users-permissions');
         const defaultPermissions = pluginsConfig?.defaultPermissions?.public;
         const defaultPermissionsAuthenticated = pluginsConfig?.defaultPermissions?.authenticated;
+        const defaultPermissionsAdmin = pluginsConfig?.defaultPermissions?.admin;
 
         if (!defaultPermissions) {
             console.warn('No default permissions configuration found');
@@ -73,7 +104,7 @@ async function setupPublicPermissions(strapi: Core.Strapi) {
 
         const { publicContentTypes, publicActions, customPermissions: customPermissionsPublic } = defaultPermissions;
         const { authenticatedContentTypes, authenticatedActions, customPermissions } = defaultPermissionsAuthenticated;
-
+        const { adminContentTypes, adminActions } = defaultPermissionsAdmin;
         // Set up permissions for both public and authenticated roles
         const permissions = [];
         
@@ -97,6 +128,30 @@ async function setupPublicPermissions(strapi: Core.Strapi) {
                         properties: {},
                         conditions: [],
                         role: authenticatedRole.id
+                    });
+                }
+            }
+        }
+        // Set up admin permissions
+        if (adminContentTypes && adminActions) {
+            for (const contentType of adminContentTypes) {
+                for (const action of adminActions) {
+                    // Add permission for admin role
+                    permissions.push({
+                        action: `${contentType}.${action}`,
+                        subject: null,
+                        properties: {},
+                        conditions: [],
+                        role: adminRoles.id
+                    });
+
+                    // Add permission for authenticated role
+                    permissions.push({
+                        action: `${contentType}.${action}`,
+                        subject: null,
+                        properties: {},
+                        conditions: [],
+                        role: adminRoles.id
                     });
                 }
             }
@@ -225,7 +280,7 @@ async function createE2EBearerTokenIfNotExist(strapi: Core.Strapi) {
 async function createTestUsersIfNotExist(strapi: Core.Strapi) {
     try {
         // Create admin users
-        for (const userData of testAdminUsers) {
+        for (const userData of testAdminPanelUsers) {
             // Check if user already exists
             const existingUser = await strapi.query('admin::user').findOne({
                 where: { email: userData.email }
@@ -285,6 +340,55 @@ async function createTestFrontendUsersIfNotExist(strapi: Core.Strapi) {
                 where: { email: userData.email }
             });
 
+            if (!existingUser) {
+                // Hash the password
+                const hashedPassword = await bcrypt.hash(userData.password, 10);
+                
+                // Get the authenticated role by type
+                const role = await strapi.query('plugin::users-permissions.role').findOne({
+                    where: { type: userData.roleType }
+                });
+
+                if (!role) {
+                    console.warn(`⚠️ Role with type '${userData.roleType}' not found, skipping user creation for ${userData.email}`);
+                    continue;
+                }
+
+                // Create the frontend user
+                await strapi.query('plugin::users-permissions.user').create({
+                    data: {
+                        email: userData.email,
+                        username: userData.username,
+                        password: hashedPassword,
+                        confirmed: userData.confirmed,
+                        blocked: false,
+                        role: role.id,
+                        isActive: userData.isActive,
+                        emailVerified: true
+                    }
+                });
+
+                console.info(`✅ Created test frontend user: ${userData.email} with role: ${role.name} (${role.type})`);
+            } else {
+                console.info(`ℹ️ Test frontend user already exists: ${userData.email}`);
+            }
+        }
+        for (const userData of testAdminUsers) {
+            // Check if user already exists
+            const existingUser = await strapi.query('plugin::users-permissions.user').findOne({
+                where: { email: userData.email },
+                // populate: {
+                //     role: {
+                //         populate: {
+                //             permissions: true
+                //         }
+                //     }
+                // }
+            });
+            // console.log('existingUser', existingUser)
+            // console.log('existingUser.role', existingUser?.role)
+            // console.log('existingUser.role.permissions', existingUser?.role?.permissions)
+          
             if (!existingUser) {
                 // Hash the password
                 const hashedPassword = await bcrypt.hash(userData.password, 10);

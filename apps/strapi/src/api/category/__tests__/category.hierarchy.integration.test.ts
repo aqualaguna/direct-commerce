@@ -2,7 +2,7 @@ import request from 'supertest';
 
 describe('Category Hierarchy Integration Tests', () => {
   const SERVER_URL = 'http://localhost:1337';
-  let adminToken: string;
+  let apiToken: string;
 
   // Generate unique test data with timestamp
   const timestamp = Date.now();
@@ -14,9 +14,9 @@ describe('Category Hierarchy Integration Tests', () => {
 
   beforeAll(async () => {
     // Get admin token for authenticated requests
-    adminToken = process.env.STRAPI_API_TOKEN as string;
+    apiToken = process.env.STRAPI_API_TOKEN as string;
 
-    if (!adminToken) {
+    if (!apiToken) {
       throw new Error('STRAPI_API_TOKEN environment variable is not set. Please ensure the test server is running and the token is generated.');
     }
   });
@@ -26,7 +26,7 @@ describe('Category Hierarchy Integration Tests', () => {
     try {
       const response = await request(SERVER_URL)
         .get('/api/categories')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
 
       if (response.status === 200 && response.body.data) {
@@ -40,7 +40,7 @@ describe('Category Hierarchy Integration Tests', () => {
             try {
               await request(SERVER_URL)
                 .delete(`/api/categories/${category.documentId}`)
-                .set('Authorization', `Bearer ${adminToken}`)
+                .set('Authorization', `Bearer ${apiToken}`)
                 .timeout(10000);
             } catch (error) {
               console.warn(`Failed to delete category ${category.documentId}:`, error);
@@ -61,7 +61,7 @@ describe('Category Hierarchy Integration Tests', () => {
       // Create parent category
       const parentResponse = await request(SERVER_URL)
         .post('/api/categories')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: { ...testCategory, name: `Parent Category ${timestamp}`, slug: `parent-category-${timestamp}` } })
         .timeout(10000);
 
@@ -74,13 +74,13 @@ describe('Category Hierarchy Integration Tests', () => {
       if (childCategoryId) {
         await request(SERVER_URL)
           .delete(`/api/categories/${childCategoryId}`)
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .timeout(10000);
       }
       if (parentCategoryId) {
         await request(SERVER_URL)
           .delete(`/api/categories/${parentCategoryId}`)
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .timeout(10000);
       }
     });
@@ -95,7 +95,7 @@ describe('Category Hierarchy Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .post('/api/categories')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: childCategory })
         .timeout(10000);
 
@@ -109,7 +109,7 @@ describe('Category Hierarchy Integration Tests', () => {
     it('should retrieve category with parent relationship', async () => {
       const response = await request(SERVER_URL)
         .get(`/api/categories/${childCategoryId}?populate=parent`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
 
       expect([200, 201]).toContain(response.status);
@@ -126,7 +126,7 @@ describe('Category Hierarchy Integration Tests', () => {
       // Create parent category
       const parentResponse = await request(SERVER_URL)
         .post('/api/categories')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: { ...testCategory, name: `Tree Parent Category ${timestamp}`, slug: `tree-parent-category-${timestamp}` } })
         .timeout(10000);
 
@@ -136,7 +136,7 @@ describe('Category Hierarchy Integration Tests', () => {
       // Create child category
       const childResponse = await request(SERVER_URL)
         .post('/api/categories')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: { ...testCategory, name: `Tree Child Category ${timestamp}`, slug: `tree-child-category-${timestamp}`, parent: treeParentCategoryId } })
         .timeout(10000);
 
@@ -150,7 +150,7 @@ describe('Category Hierarchy Integration Tests', () => {
         try {
           await request(SERVER_URL)
             .delete(`/api/categories/${treeChildCategoryId}`)
-            .set('Authorization', `Bearer ${adminToken}`)
+            .set('Authorization', `Bearer ${apiToken}`)
             .timeout(10000);
         } catch (error) {
           console.warn(`Failed to delete child category ${treeChildCategoryId}:`, error);
@@ -160,7 +160,7 @@ describe('Category Hierarchy Integration Tests', () => {
         try {
           await request(SERVER_URL)
             .delete(`/api/categories/${treeParentCategoryId}`)
-            .set('Authorization', `Bearer ${adminToken}`)
+            .set('Authorization', `Bearer ${apiToken}`)
             .timeout(10000);
         } catch (error) {
           console.warn(`Failed to delete parent category ${treeParentCategoryId}:`, error);
@@ -171,7 +171,7 @@ describe('Category Hierarchy Integration Tests', () => {
     it('should get category tree structure', async () => {
       const response = await request(SERVER_URL)
         .post('/api/categories/tree')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
 
       expect(response.status).toBe(200);
@@ -182,7 +182,7 @@ describe('Category Hierarchy Integration Tests', () => {
     it('should get category breadcrumbs', async () => {
       const response = await request(SERVER_URL)
         .get(`/api/categories/${treeChildCategoryId}/breadcrumbs`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
 
       expect(response.status).toBe(200);
@@ -193,7 +193,7 @@ describe('Category Hierarchy Integration Tests', () => {
     it('should get navigation menu', async () => {
       const response = await request(SERVER_URL)
         .post('/api/categories/navigation')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
 
       expect(response.status).toBe(200);
@@ -204,7 +204,7 @@ describe('Category Hierarchy Integration Tests', () => {
     it('should get sibling categories', async () => {
       const response = await request(SERVER_URL)
         .get(`/api/categories/${treeChildCategoryId}/siblings`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
 
       expect(response.status).toBe(200);
@@ -215,7 +215,7 @@ describe('Category Hierarchy Integration Tests', () => {
     it('should get category statistics', async () => {
       const response = await request(SERVER_URL)
         .get(`/api/categories/${treeParentCategoryId}/stats`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
 
         expect([200, 201]).toContain(response.status);

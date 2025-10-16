@@ -15,7 +15,7 @@ import request from 'supertest';
 
 describe('User Behavior Integration Tests', () => {
   const SERVER_URL = 'http://localhost:1337';
-  let adminToken: string;
+  let apiToken: string;
   let testUser: any;
   let testUserToken: string;
   
@@ -24,9 +24,9 @@ describe('User Behavior Integration Tests', () => {
 
   beforeAll(async () => {
     // Get admin token for authenticated requests
-    adminToken = process.env.STRAPI_API_TOKEN as string;
+    apiToken = process.env.STRAPI_API_TOKEN as string;
 
-    if (!adminToken) {
+    if (!apiToken) {
       throw new Error('STRAPI_API_TOKEN environment variable is not set. Please ensure the test server is running and the token is generated.');
     }
 
@@ -148,7 +148,7 @@ describe('User Behavior Integration Tests', () => {
 
   describe('API Health Check', () => {
     it('should be able to connect to the user-behavior API', async () => {
-      const response = await makeAuthenticatedRequest('GET', '/api/user-behaviors', adminToken);
+      const response = await makeAuthenticatedRequest('GET', '/api/user-behaviors', apiToken);
       
       expect(response.status).toBe(200);
       expect(response.body.data).toBeDefined();
@@ -157,7 +157,7 @@ describe('User Behavior Integration Tests', () => {
     });
 
     it('should handle invalid behavior ID gracefully', async () => {
-      const response = await makeAuthenticatedRequest('GET', '/api/user-behaviors/invalid-id', adminToken);
+      const response = await makeAuthenticatedRequest('GET', '/api/user-behaviors/invalid-id', apiToken);
 
       expect(response.status).toBe(404);
     });
@@ -309,7 +309,7 @@ describe('User Behavior Integration Tests', () => {
     });
 
     it('should calculate engagement metrics from behavior data', async () => {
-      const response = await makeAuthenticatedRequest('GET', '/api/user-behaviors/analytics', adminToken)
+      const response = await makeAuthenticatedRequest('GET', '/api/user-behaviors/analytics', apiToken)
         .expect(200);
 
       expect(response.body.data).toBeDefined();
@@ -327,7 +327,7 @@ describe('User Behavior Integration Tests', () => {
     });
 
     it('should calculate time spent statistics', async () => {
-      const response = await makeAuthenticatedRequest('GET', '/api/user-behaviors/analytics', adminToken)
+      const response = await makeAuthenticatedRequest('GET', '/api/user-behaviors/analytics', apiToken)
         .expect(200);
 
       const timeSpentStats = response.body.metrics.timeSpentStats;
@@ -341,7 +341,7 @@ describe('User Behavior Integration Tests', () => {
     });
 
     it('should calculate scroll depth statistics', async () => {
-      const response = await makeAuthenticatedRequest('GET', '/api/user-behaviors/analytics', adminToken)
+      const response = await makeAuthenticatedRequest('GET', '/api/user-behaviors/analytics', apiToken)
         .expect(200);
 
       const scrollDepthStats = response.body.metrics.scrollDepthStats;
@@ -357,7 +357,7 @@ describe('User Behavior Integration Tests', () => {
     });
 
     it('should calculate behavior type distribution', async () => {
-      const response = await makeAuthenticatedRequest('GET', '/api/user-behaviors/analytics', adminToken)
+      const response = await makeAuthenticatedRequest('GET', '/api/user-behaviors/analytics', apiToken)
         .expect(200);
 
       const distribution = response.body.metrics.behaviorTypeDistribution;
@@ -375,7 +375,7 @@ describe('User Behavior Integration Tests', () => {
     });
 
     it('should calculate device type distribution', async () => {
-      const response = await makeAuthenticatedRequest('GET', '/api/user-behaviors/analytics', adminToken)
+      const response = await makeAuthenticatedRequest('GET', '/api/user-behaviors/analytics', apiToken)
         .expect(200);
 
       const deviceDistribution = response.body.metrics.deviceTypeDistribution;
@@ -391,7 +391,7 @@ describe('User Behavior Integration Tests', () => {
 
   describe('Behavior Pattern Recognition', () => {
     it('should identify user behavior patterns', async () => {
-      const response = await makeAuthenticatedRequest('GET', `/api/user-behaviors/analytics?userId=${testUser.id}`, adminToken)
+      const response = await makeAuthenticatedRequest('GET', `/api/user-behaviors/analytics?userId=${testUser.id}`, apiToken)
         .expect(200);
 
       expect(response.body.data).toBeDefined();
@@ -414,7 +414,7 @@ describe('User Behavior Integration Tests', () => {
       const createResponse = await makeAuthenticatedRequest('POST', '/api/user-behaviors/track', testUserToken, { data: testBehavior })
         .expect(200);
 
-      const response = await makeAuthenticatedRequest('GET', `/api/user-behaviors?sessionId=${testBehavior.sessionId}`, adminToken)
+      const response = await makeAuthenticatedRequest('GET', `/api/user-behaviors?sessionId=${testBehavior.sessionId}`, apiToken)
         .expect(200);
 
       expect(response.body.data).toBeDefined();
@@ -427,7 +427,7 @@ describe('User Behavior Integration Tests', () => {
     });
 
     it('should identify popular pages and products', async () => {
-      const response = await makeAuthenticatedRequest('GET', '/api/user-behaviors/analytics', adminToken)
+      const response = await makeAuthenticatedRequest('GET', '/api/user-behaviors/analytics', apiToken)
         .expect(200);
 
       const metrics = response.body.metrics;
@@ -446,7 +446,7 @@ describe('User Behavior Integration Tests', () => {
 
   describe('Engagement Scoring and Ranking', () => {
     it('should rank users by engagement level', async () => {
-      const response = await makeAuthenticatedRequest('GET', '/api/user-behaviors/analytics?groupBy=behaviorType', adminToken)
+      const response = await makeAuthenticatedRequest('GET', '/api/user-behaviors/analytics?groupBy=behaviorType', apiToken)
         .expect(200);
 
       expect(response.body.data).toBeDefined();
@@ -462,7 +462,7 @@ describe('User Behavior Integration Tests', () => {
     });
 
     it('should calculate engagement scores by time period', async () => {
-      const response = await makeAuthenticatedRequest('GET', '/api/user-behaviors/analytics?groupBy=day', adminToken)
+      const response = await makeAuthenticatedRequest('GET', '/api/user-behaviors/analytics?groupBy=day', apiToken)
         .expect(200);
 
       expect(response.body.data).toBeDefined();
@@ -477,7 +477,7 @@ describe('User Behavior Integration Tests', () => {
     });
 
     it('should provide engagement summary statistics', async () => {
-      const response = await makeAuthenticatedRequest('GET', '/api/user-behaviors/analytics', adminToken)
+      const response = await makeAuthenticatedRequest('GET', '/api/user-behaviors/analytics', apiToken)
         .expect(200);
 
       const summary = response.body.summary;
@@ -492,7 +492,7 @@ describe('User Behavior Integration Tests', () => {
 
   describe('Behavior-Based Recommendations', () => {
     it('should provide behavior-based insights', async () => {
-      const response = await makeAuthenticatedRequest('GET', `/api/user-behaviors/analytics?userId=${testUser.id}`, adminToken)
+      const response = await makeAuthenticatedRequest('GET', `/api/user-behaviors/analytics?userId=${testUser.id}`, apiToken)
         .expect(200);
 
       const metrics = response.body.metrics;
@@ -513,7 +513,7 @@ describe('User Behavior Integration Tests', () => {
     });
 
     it('should identify trending behaviors', async () => {
-      const response = await makeAuthenticatedRequest('GET', '/api/user-behaviors/analytics?groupBy=hour', adminToken)
+      const response = await makeAuthenticatedRequest('GET', '/api/user-behaviors/analytics?groupBy=hour', apiToken)
         .expect(200);
 
       expect(response.body.data).toBeDefined();
@@ -605,7 +605,7 @@ describe('User Behavior Integration Tests', () => {
       const startTime = Date.now();
       
       // Get all behaviors to test performance
-      const response = await makeAuthenticatedRequest('GET', '/api/user-behaviors?pagination[pageSize]=100', adminToken)
+      const response = await makeAuthenticatedRequest('GET', '/api/user-behaviors?pagination[pageSize]=100', apiToken)
         .expect(200);
 
       const endTime = Date.now();
@@ -627,7 +627,7 @@ describe('User Behavior Integration Tests', () => {
       for (const query of queries) {
         const startTime = Date.now();
         
-        const response = await makeAuthenticatedRequest('GET', query, adminToken)
+        const response = await makeAuthenticatedRequest('GET', query, apiToken)
           .expect(200);
 
         const endTime = Date.now();
@@ -644,7 +644,7 @@ describe('User Behavior Integration Tests', () => {
       for (const pageSize of pageSizes) {
         const startTime = Date.now();
         
-        const response = await makeAuthenticatedRequest('GET', `/api/user-behaviors?pagination[pageSize]=${pageSize}`, adminToken)
+        const response = await makeAuthenticatedRequest('GET', `/api/user-behaviors?pagination[pageSize]=${pageSize}`, apiToken)
           .expect(200);
 
         const endTime = Date.now();
@@ -726,7 +726,7 @@ describe('User Behavior Integration Tests', () => {
 
   describe('Data Retrieval and Filtering', () => {
     it('should retrieve behaviors with proper pagination', async () => {
-      const response = await makeAuthenticatedRequest('GET', '/api/user-behaviors?pagination[page]=1&pagination[pageSize]=10', adminToken)
+      const response = await makeAuthenticatedRequest('GET', '/api/user-behaviors?pagination[page]=1&pagination[pageSize]=10', apiToken)
         .expect(200);
 
       expect(response.body.data).toBeDefined();
@@ -737,7 +737,7 @@ describe('User Behavior Integration Tests', () => {
     });
 
     it('should filter behaviors by user ID', async () => {
-      const response = await makeAuthenticatedRequest('GET', `/api/user-behaviors?userId=${testUser.id}`, adminToken)
+      const response = await makeAuthenticatedRequest('GET', `/api/user-behaviors?userId=${testUser.id}`, apiToken)
         .expect(200);
 
       expect(response.body.data).toBeDefined();
@@ -747,7 +747,7 @@ describe('User Behavior Integration Tests', () => {
     });
 
     it('should filter behaviors by behavior type', async () => {
-      const response = await makeAuthenticatedRequest('GET', '/api/user-behaviors?behaviorType=page_view', adminToken)
+      const response = await makeAuthenticatedRequest('GET', '/api/user-behaviors?behaviorType=page_view', apiToken)
         .expect(200);
 
       expect(response.body.data).toBeDefined();
@@ -760,7 +760,7 @@ describe('User Behavior Integration Tests', () => {
       const startDate = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(); // 24 hours ago
       const endDate = new Date().toISOString();
 
-      const response = await makeAuthenticatedRequest('GET', `/api/user-behaviors?startDate=${startDate}&endDate=${endDate}`, adminToken)
+      const response = await makeAuthenticatedRequest('GET', `/api/user-behaviors?startDate=${startDate}&endDate=${endDate}`, apiToken)
         .expect(200);
 
       expect(response.body.data).toBeDefined();
@@ -787,18 +787,18 @@ describe('User Behavior Integration Tests', () => {
       testBehaviorId = createResponse.body.data.documentId;
 
       // Now delete it
-      const deleteResponse = await makeAuthenticatedRequest('DELETE', `/api/user-behaviors/${testBehaviorId}`, adminToken)
+      const deleteResponse = await makeAuthenticatedRequest('DELETE', `/api/user-behaviors/${testBehaviorId}`, apiToken)
         .expect(200);
 
       expect(deleteResponse.body.message).toBe('User behavior deleted successfully');
 
       // Verify it's deleted by trying to fetch it
-      const fetchResponse = await makeAuthenticatedRequest('GET', `/api/user-behaviors/${testBehaviorId}`, adminToken);
+      const fetchResponse = await makeAuthenticatedRequest('GET', `/api/user-behaviors/${testBehaviorId}`, apiToken);
       expect(fetchResponse.status).toBe(404);
     });
 
     it('should handle deletion of non-existent behavior', async () => {
-      const response = await makeAuthenticatedRequest('DELETE', '/api/user-behaviors/non-existent-id', adminToken);
+      const response = await makeAuthenticatedRequest('DELETE', '/api/user-behaviors/non-existent-id', apiToken);
       expect(response.status).toBe(404);
     });
   });

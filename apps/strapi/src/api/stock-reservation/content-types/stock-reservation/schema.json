@@ -24,14 +24,21 @@
       "required": true,
       "min": 1
     },
-    "orderId": {
-      "type": "string",
+    "order": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::order.order",
       "required": true
     },
     "customer": {
       "type": "relation",
       "relation": "manyToOne",
-      "target": "plugin::users-permissions.user"
+      "target": "plugin::users-permissions.user",
+      "required": false
+    },
+    "sessionId": {
+      "type": "string",
+      "required": false
     },
     "status": {
       "type": "enumeration",

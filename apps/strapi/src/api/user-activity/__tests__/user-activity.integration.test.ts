@@ -15,7 +15,7 @@ import request from 'supertest';
 
 describe('User Activity Integration Tests', () => {
     const SERVER_URL = 'http://localhost:1337';
-    let adminToken: string;
+    let apiToken: string;
     let testUser: any;
     let testUserToken: string;
     let customerUser: any;
@@ -26,9 +26,9 @@ describe('User Activity Integration Tests', () => {
 
     beforeAll(async () => {
         // Get admin token for authenticated requests
-        adminToken = process.env.STRAPI_API_TOKEN as string;
+        apiToken = process.env.STRAPI_API_TOKEN as string;
 
-        if (!adminToken) {
+        if (!apiToken) {
             throw new Error('STRAPI_API_TOKEN environment variable is not set. Please ensure the test server is running and the token is generated.');
         }
 
@@ -138,7 +138,7 @@ describe('User Activity Integration Tests', () => {
         it('should be able to connect to the user-activity API', async () => {
             const response = await request(SERVER_URL)
                 .get('/api/user-activities')
-                .set('Authorization', `Bearer ${adminToken}`)
+                .set('Authorization', `Bearer ${apiToken}`)
                 .timeout(10000);
 
             // Should return 200 with pagination data
@@ -151,7 +151,7 @@ describe('User Activity Integration Tests', () => {
         it('should handle invalid activity ID gracefully', async () => {
             const response = await request(SERVER_URL)
                 .get('/api/user-activities/invalid-id')
-                .set('Authorization', `Bearer ${adminToken}`)
+                .set('Authorization', `Bearer ${apiToken}`)
                 .timeout(10000);
 
             // Should return 404 (not found) for invalid ID
@@ -182,7 +182,7 @@ describe('User Activity Integration Tests', () => {
             // Create activity via API
             const response = await request(SERVER_URL)
                 .post('/api/user-activities')
-                .set('Authorization', `Bearer ${adminToken}`)
+                .set('Authorization', `Bearer ${apiToken}`)
                 .send({ data: activityData })
                 .timeout(10000)
                 .expect(201);
@@ -204,7 +204,7 @@ describe('User Activity Integration Tests', () => {
 
             const response = await request(SERVER_URL)
                 .post('/api/user-activities')
-                .set('Authorization', `Bearer ${adminToken}`)
+                .set('Authorization', `Bearer ${apiToken}`)
                 .send({ data: loginActivity })
                 .timeout(10000)
                 .expect(201);
@@ -231,7 +231,7 @@ describe('User Activity Integration Tests', () => {
 
             const response = await request(SERVER_URL)
                 .post('/api/user-activities')
-                .set('Authorization', `Bearer ${adminToken}`)
+                .set('Authorization', `Bearer ${apiToken}`)
                 .send({ data: failedActivity })
                 .timeout(10000)
                 .expect(201);
@@ -252,7 +252,7 @@ describe('User Activity Integration Tests', () => {
 
             const response = await request(SERVER_URL)
                 .post('/api/user-activities')
-                .set('Authorization', `Bearer ${adminToken}`)
+                .set('Authorization', `Bearer ${apiToken}`)
                 .send({ data: invalidActivityData })
                 .timeout(10000)
                 .expect(400);
@@ -282,7 +282,7 @@ describe('User Activity Integration Tests', () => {
 
                 const response = await request(SERVER_URL)
                     .post('/api/user-activities')
-                    .set('Authorization', `Bearer ${adminToken}`)
+                    .set('Authorization', `Bearer ${apiToken}`)
                     .send({ data: activityData })
                     .timeout(10000)
                     .expect(201);
@@ -298,7 +298,7 @@ describe('User Activity Integration Tests', () => {
 
             const response = await request(SERVER_URL)
                 .post('/api/user-activities')
-                .set('Authorization', `Bearer ${adminToken}`)
+                .set('Authorization', `Bearer ${apiToken}`)
                 .send({ data: activityData })
                 .timeout(10000)
                 .expect(201);
@@ -312,7 +312,7 @@ describe('User Activity Integration Tests', () => {
 
             const response = await request(SERVER_URL)
                 .post('/api/user-activities')
-                .set('Authorization', `Bearer ${adminToken}`)
+                .set('Authorization', `Bearer ${apiToken}`)
                 .send({ data: activityDataWithoutSessionId })
                 .timeout(10000)
                 .expect(201);
@@ -342,7 +342,7 @@ describe('User Activity Integration Tests', () => {
 
                 const response = await request(SERVER_URL)
                     .post('/api/user-activities')
-                    .set('Authorization', `Bearer ${adminToken}`)
+                    .set('Authorization', `Bearer ${apiToken}`)
                     .send({ data: activityData })
                     .timeout(10000);
 
@@ -358,7 +358,7 @@ describe('User Activity Integration Tests', () => {
         it('should retrieve all user activities with pagination', async () => {
             const response = await request(SERVER_URL)
                 .get('/api/user-activities')
-                .set('Authorization', `Bearer ${adminToken}`)
+                .set('Authorization', `Bearer ${apiToken}`)
                 .timeout(10000)
                 .expect(200);
 
@@ -373,7 +373,7 @@ describe('User Activity Integration Tests', () => {
         it('should filter activities by user', async () => {
             const response = await request(SERVER_URL)
                 .get(`/api/user-activities?filters[user][id][$eq]=${testUser.id}`)
-                .set('Authorization', `Bearer ${adminToken}`)
+                .set('Authorization', `Bearer ${apiToken}`)
                 .timeout(10000)
                 .expect(200);
 
@@ -389,7 +389,7 @@ describe('User Activity Integration Tests', () => {
         it('should filter activities by activity type', async () => {
             const response = await request(SERVER_URL)
                 .get('/api/user-activities?filters[activityType][$eq]=login')
-                .set('Authorization', `Bearer ${adminToken}`)
+                .set('Authorization', `Bearer ${apiToken}`)
                 .timeout(10000)
                 .expect(200);
 
@@ -405,7 +405,7 @@ describe('User Activity Integration Tests', () => {
         it('should filter activities by success status', async () => {
             const response = await request(SERVER_URL)
                 .get('/api/user-activities?filters[success][$eq]=true')
-                .set('Authorization', `Bearer ${adminToken}`)
+                .set('Authorization', `Bearer ${apiToken}`)
                 .timeout(10000)
                 .expect(200);
 
@@ -425,7 +425,7 @@ describe('User Activity Integration Tests', () => {
 
             const response = await request(SERVER_URL)
                 .get(`/api/user-activities?filters[createdAt][$gte]=${yesterday.toISOString()}`)
-                .set('Authorization', `Bearer ${adminToken}`)
+                .set('Authorization', `Bearer ${apiToken}`)
                 .timeout(10000)
                 .expect(200);
 
@@ -442,7 +442,7 @@ describe('User Activity Integration Tests', () => {
         it('should sort activities by creation date', async () => {
             const response = await request(SERVER_URL)
                 .get('/api/user-activities?sort=createdAt:desc')
-                .set('Authorization', `Bearer ${adminToken}`)
+                .set('Authorization', `Bearer ${apiToken}`)
                 .timeout(10000)
                 .expect(200);
 
@@ -467,7 +467,7 @@ describe('User Activity Integration Tests', () => {
 
             const response = await request(SERVER_URL)
                 .get(`/api/user-activities/${activityId}`)
-                .set('Authorization', `Bearer ${adminToken}`)
+                .set('Authorization', `Bearer ${apiToken}`)
                 .timeout(10000)
                 .expect(200);
 
@@ -479,7 +479,7 @@ describe('User Activity Integration Tests', () => {
         it('should handle pagination correctly', async () => {
             const response = await request(SERVER_URL)
                 .get('/api/user-activities?pagination[page]=1&pagination[pageSize]=2')
-                .set('Authorization', `Bearer ${adminToken}`)
+                .set('Authorization', `Bearer ${apiToken}`)
                 .timeout(10000)
                 .expect(200);
 
@@ -495,7 +495,7 @@ describe('User Activity Integration Tests', () => {
         it('should provide analytics endpoint', async () => {
             const response = await request(SERVER_URL)
                 .get('/api/user-activities/analytics')
-                .set('Authorization', `Bearer ${adminToken}`)
+                .set('Authorization', `Bearer ${apiToken}`)
                 .timeout(10000)
                 .expect(200);
 
@@ -509,7 +509,7 @@ describe('User Activity Integration Tests', () => {
         it('should calculate success rate for activities', async () => {
             const response = await request(SERVER_URL)
                 .get('/api/user-activities/analytics')
-                .set('Authorization', `Bearer ${adminToken}`)
+                .set('Authorization', `Bearer ${apiToken}`)
                 .timeout(10000)
                 .expect(200);
 
@@ -522,7 +522,7 @@ describe('User Activity Integration Tests', () => {
         it('should count activities by type', async () => {
             const response = await request(SERVER_URL)
                 .get('/api/user-activities/analytics')
-                .set('Authorization', `Bearer ${adminToken}`)
+                .set('Authorization', `Bearer ${apiToken}`)
                 .timeout(10000)
                 .expect(200);
 
@@ -534,7 +534,7 @@ describe('User Activity Integration Tests', () => {
         it('should provide date range information', async () => {
             const response = await request(SERVER_URL)
                 .get('/api/user-activities/analytics')
-                .set('Authorization', `Bearer ${adminToken}`)
+                .set('Authorization', `Bearer ${apiToken}`)
                 .timeout(10000)
                 .expect(200);
 
@@ -551,7 +551,7 @@ describe('User Activity Integration Tests', () => {
         it('should allow admin users to access all activities', async () => {
             const response = await request(SERVER_URL)
                 .get('/api/user-activities')
-                .set('Authorization', `Bearer ${adminToken}`)
+                .set('Authorization', `Bearer ${apiToken}`)
                 .timeout(10000)
                 .expect(200);
 
@@ -609,7 +609,7 @@ describe('User Activity Integration Tests', () => {
             const activityData = createTestActivityData();
             const createResponse = await request(SERVER_URL)
                 .post('/api/user-activities')
-                .set('Authorization', `Bearer ${adminToken}`)
+                .set('Authorization', `Bearer ${apiToken}`)
                 .send({ data: activityData })
                 .timeout(10000);
             
@@ -643,7 +643,7 @@ describe('User Activity Integration Tests', () => {
 
             const response = await request(SERVER_URL)
                 .post('/api/user-activities')
-                .set('Authorization', `Bearer ${adminToken}`)
+                .set('Authorization', `Bearer ${apiToken}`)
                 .send({ data: activityData })
                 .timeout(10000);
 
@@ -673,7 +673,7 @@ describe('User Activity Integration Tests', () => {
 
             const response = await request(SERVER_URL)
                 .put(`/api/user-activities/${testActivity.documentId}`)
-                .set('Authorization', `Bearer ${adminToken}`)
+                .set('Authorization', `Bearer ${apiToken}`)
                 .send({ data: updateData })
                 .timeout(10000)
                 .expect(200);
@@ -691,14 +691,14 @@ describe('User Activity Integration Tests', () => {
 
             const response = await request(SERVER_URL)
                 .delete(`/api/user-activities/${testActivity.documentId}`)
-                .set('Authorization', `Bearer ${adminToken}`)
+                .set('Authorization', `Bearer ${apiToken}`)
                 .timeout(10000)
                 .expect(204);
 
             // Verify activity is deleted
             const getResponse = await request(SERVER_URL)
                 .get(`/api/user-activities/${testActivity.documentId}`)
-                .set('Authorization', `Bearer ${adminToken}`)
+                .set('Authorization', `Bearer ${apiToken}`)
                 .timeout(10000)
                 .expect(404);
 
@@ -715,7 +715,7 @@ describe('User Activity Integration Tests', () => {
             const activityData = createTestActivityData();
             const createResponse = await request(SERVER_URL)
                 .post('/api/user-activities')
-                .set('Authorization', `Bearer ${adminToken}`)
+                .set('Authorization', `Bearer ${apiToken}`)
                 .send({ data: activityData })
                 .timeout(10000);
 
@@ -769,7 +769,7 @@ describe('User Activity Integration Tests', () => {
             // Verify login activity was tracked
             const activitiesResponse = await request(SERVER_URL)
                 .get('/api/user-activities')
-                .set('Authorization', `Bearer ${adminToken}`)
+                .set('Authorization', `Bearer ${apiToken}`)
                 .timeout(10000);
 
             const loginActivities = activitiesResponse.body.data.filter(
@@ -801,7 +801,7 @@ describe('User Activity Integration Tests', () => {
             // Verify failed login activity was tracked
             const activitiesResponse = await request(SERVER_URL)
                 .get('/api/user-activities')
-                .set('Authorization', `Bearer ${adminToken}`)
+                .set('Authorization', `Bearer ${apiToken}`)
                 .timeout(10000);
 
             const failedLoginActivities = activitiesResponse.body.data.filter(
@@ -823,7 +823,7 @@ describe('User Activity Integration Tests', () => {
             // Get all activities to test performance
             const response = await request(SERVER_URL)
                 .get('/api/user-activities?pagination[pageSize]=100')
-                .set('Authorization', `Bearer ${adminToken}`)
+                .set('Authorization', `Bearer ${apiToken}`)
                 .timeout(30000) // Longer timeout for performance test
                 .expect(200);
 
@@ -851,7 +851,7 @@ describe('User Activity Integration Tests', () => {
 
                 const promise = request(SERVER_URL)
                     .post('/api/user-activities')
-                    .set('Authorization', `Bearer ${adminToken}`)
+                    .set('Authorization', `Bearer ${apiToken}`)
                     .send({ data: activityData })
                     .timeout(10000);
 
@@ -888,7 +888,7 @@ describe('User Activity Integration Tests', () => {
 
             const response = await request(SERVER_URL)
                 .post('/api/user-activities')
-                .set('Authorization', `Bearer ${adminToken}`)
+                .set('Authorization', `Bearer ${apiToken}`)
                 .send({ data: malformedData })
                 .timeout(10000);
 
@@ -910,7 +910,7 @@ describe('User Activity Integration Tests', () => {
 
             const response = await request(SERVER_URL)
                 .post('/api/user-activities')
-                .set('Authorization', `Bearer ${adminToken}`)
+                .set('Authorization', `Bearer ${apiToken}`)
                 .send({ data: largeActivityData })
                 .timeout(15000)
                 .expect(201);
@@ -938,7 +938,7 @@ describe('User Activity Integration Tests', () => {
 
             const response = await request(SERVER_URL)
                 .post('/api/user-activities')
-                .set('Authorization', `Bearer ${adminToken}`)
+                .set('Authorization', `Bearer ${apiToken}`)
                 .send({ data: sensitiveActivity })
                 .timeout(10000)
                 .expect(201);
@@ -959,7 +959,7 @@ describe('User Activity Integration Tests', () => {
 
             const response = await request(SERVER_URL)
                 .post('/api/user-activities')
-                .set('Authorization', `Bearer ${adminToken}`)
+                .set('Authorization', `Bearer ${apiToken}`)
                 .send({ data: activityWithIP })
                 .timeout(10000)
                 .expect(201);
@@ -985,7 +985,7 @@ describe('User Activity Integration Tests', () => {
 
             const response = await request(SERVER_URL)
                 .post('/api/user-activities')
-                .set('Authorization', `Bearer ${adminToken}`)
+                .set('Authorization', `Bearer ${apiToken}`)
                 .send({ data: consentActivity })
                 .timeout(10000)
                 .expect(201);

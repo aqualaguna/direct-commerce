@@ -1,0 +1,68 @@
+{
+  "kind": "collectionType",
+  "collectionName": "order_items",
+  "info": {
+    "singularName": "order-item",
+    "pluralName": "order-items",
+    "displayName": "Order Item",
+    "description": "Individual items within an order"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "order": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::order.order",
+      "inversedBy": "items"
+    },
+    "product": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::product.product",
+      "required": true,
+      "description": "Product in order"
+    },
+    "productListing": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::product-listing.product-listing",
+      "required": true
+    },
+    "variant": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::product-listing-variant.product-listing-variant"
+    },
+    "quantity": {
+      "type": "integer",
+      "required": true,
+      "min": 1,
+      "default": 1
+    },
+    "price": {
+      "type": "decimal",
+      "required": true,
+      "min": 0
+    },
+    "subtotal": {
+      "type": "decimal",
+      "required": true,
+      "min": 0
+    },
+    "tax": {
+      "type": "decimal",
+      "required": true,
+      "min": 0
+    },
+    "isDigital": {
+      "type": "boolean",
+      "default": false
+    },
+    "metadata": {
+      "type": "json"
+    }
+  }
+}

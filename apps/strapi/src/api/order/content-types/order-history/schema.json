@@ -1,0 +1,117 @@
+{
+  "kind": "collectionType",
+  "collectionName": "order_histories",
+  "info": {
+    "singularName": "order-history",
+    "pluralName": "order-histories",
+    "displayName": "Order History",
+    "description": "Order history tracking and audit trail"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "order": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::order.order",
+      "required": true
+    },
+    "eventType": {
+      "type": "enumeration",
+      "enum": [
+        "order_created",
+        "status_changed",
+        "payment_updated",
+        "shipping_updated",
+        "item_modified",
+        "address_changed",
+        "notes_updated",
+        "tracking_updated",
+        "refund_processed",
+        "cancellation_requested",
+        "fraud_flag_raised",
+        "admin_action",
+        "system_action"
+      ],
+      "required": true
+    },
+    "previousValue": {
+      "type": "json"
+    },
+    "newValue": {
+      "type": "json"
+    },
+    "changedBy": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user",
+      "required": false
+    },
+    "changeReason": {
+      "type": "text",
+      "maxLength": 500
+    },
+    "changeSource": {
+      "type": "enumeration",
+      "enum": [
+        "customer",
+        "admin",
+        "system",
+        "payment_gateway",
+        "shipping_carrier",
+        "fraud_detection",
+        "webhook"
+      ],
+      "required": true
+    },
+    "ipAddress": {
+      "type": "string",
+      "maxLength": 45
+    },
+    "userAgent": {
+      "type": "text",
+      "maxLength": 500
+    },
+    "sessionId": {
+      "type": "string",
+      "required": false
+    },
+    "affectedFields": {
+      "type": "json"
+    },
+    "metadata": {
+      "type": "json"
+    },
+    "isCustomerVisible": {
+      "type": "boolean",
+      "default": true
+    },
+    "priority": {
+      "type": "enumeration",
+      "enum": [
+        "low",
+        "normal",
+        "high",
+        "critical"
+      ],
+      "default": "normal"
+    },
+    "requiresFollowUp": {
+      "type": "boolean",
+      "default": false
+    },
+    "followUpNotes": {
+      "type": "text",
+      "maxLength": 1000
+    },
+    "automatedAction": {
+      "type": "string",
+      "maxLength": 100
+    },
+    "relatedEvents": {
+      "type": "json"
+    }
+  }
+}

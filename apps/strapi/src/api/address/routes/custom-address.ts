@@ -99,7 +99,7 @@ export default {
       path: '/addresses/analytics',
       handler: 'address.getAnalytics',
       config: {
-        policies: ['api::address.is-owner'],
+        policies: ['global::api-token-only'],
         description: 'Get address analytics and statistics',
       },
     },

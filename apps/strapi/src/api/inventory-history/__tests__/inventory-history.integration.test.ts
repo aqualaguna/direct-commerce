@@ -10,7 +10,7 @@ import request from 'supertest';
 
 describe('Inventory History Integration Tests', () => {
   const SERVER_URL = 'http://localhost:1337';
-  let adminToken: string;
+  let apiToken: string;
   let testProductId: string;
   let testInventoryId: string;
   let testCustomerId: string;
@@ -35,16 +35,16 @@ describe('Inventory History Integration Tests', () => {
 
   beforeAll(async () => {
     // Get admin token for authenticated requests
-    adminToken = process.env.STRAPI_API_TOKEN as string;
+    apiToken = process.env.STRAPI_API_TOKEN as string;
 
-    if (!adminToken) {
+    if (!apiToken) {
       throw new Error('STRAPI_API_TOKEN environment variable is not set. Please ensure the test server is running and the token is generated.');
     }
 
     // Create a test product for inventory history operations
     const productResponse = await request(SERVER_URL)
       .post('/api/products')
-      .set('Authorization', `Bearer ${adminToken}`)
+      .set('Authorization', `Bearer ${apiToken}`)
       .send({ data: testProduct })
       .timeout(10000);
     
@@ -63,7 +63,7 @@ describe('Inventory History Integration Tests', () => {
     // Initialize inventory to create initial history record
     const inventoryResponse = await request(SERVER_URL)
       .post('/api/inventories/initialize')
-      .set('Authorization', `Bearer ${adminToken}`)
+      .set('Authorization', `Bearer ${apiToken}`)
       .send({ productId: testProductId, initialQuantity: 100 })
       .timeout(10000);
     
@@ -71,7 +71,7 @@ describe('Inventory History Integration Tests', () => {
       // Inventory already exists, get the existing inventory
       const existingInventoryResponse = await request(SERVER_URL)
         .get(`/api/inventories/product/${testProductId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
       
       expect(existingInventoryResponse.status).toBe(200);
@@ -90,7 +90,7 @@ describe('Inventory History Integration Tests', () => {
         try {
           await request(SERVER_URL)
             .delete(`/api/inventory-histories?filters[product][documentId][$eq]=${testProductId}`)
-            .set('Authorization', `Bearer ${adminToken}`)
+            .set('Authorization', `Bearer ${apiToken}`)
             .timeout(10000);
         } catch (error) {
           console.warn('Failed to clean up inventory history:', error);
@@ -102,7 +102,7 @@ describe('Inventory History Integration Tests', () => {
         try {
           await request(SERVER_URL)
             .delete(`/api/inventory-histories/${historyId}`)
-            .set('Authorization', `Bearer ${adminToken}`)
+            .set('Authorization', `Bearer ${apiToken}`)
             .timeout(10000);
         } catch (error) {
           console.warn(`Failed to delete history record ${historyId}:`, error);
@@ -113,7 +113,7 @@ describe('Inventory History Integration Tests', () => {
         try {
           await request(SERVER_URL)
             .delete(`/api/inventories/${testInventoryId}`)
-            .set('Authorization', `Bearer ${adminToken}`)
+            .set('Authorization', `Bearer ${apiToken}`)
             .timeout(10000);
         } catch (error) {
           console.warn('Failed to delete inventory:', error);
@@ -124,7 +124,7 @@ describe('Inventory History Integration Tests', () => {
         try {
           await request(SERVER_URL)
             .delete(`/api/products/${testProductId}`)
-            .set('Authorization', `Bearer ${adminToken}`)
+            .set('Authorization', `Bearer ${apiToken}`)
             .timeout(10000);
         } catch (error) {
           console.warn('Failed to delete product:', error);
@@ -135,7 +135,7 @@ describe('Inventory History Integration Tests', () => {
         try {
           await request(SERVER_URL)
             .delete(`/api/users/${testCustomerId}`)
-            .set('Authorization', `Bearer ${adminToken}`)
+            .set('Authorization', `Bearer ${apiToken}`)
             .timeout(10000);
         } catch (error) {
           console.warn('Failed to delete customer:', error);
@@ -150,7 +150,7 @@ describe('Inventory History Integration Tests', () => {
     it('should be able to connect to the inventory history API', async () => {
       const response = await request(SERVER_URL)
         .get('/api/inventory-histories')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
       expect(response.status).toBe(200);
       expect(response.body.data).toBeDefined();
@@ -169,7 +169,7 @@ describe('Inventory History Integration Tests', () => {
     it('should handle invalid history ID gracefully', async () => {
       const response = await request(SERVER_URL)
         .get('/api/inventory-histories/invalid-id')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
 
       expect(response.status).toBe(404);
@@ -187,7 +187,7 @@ describe('Inventory History Integration Tests', () => {
 
       const inventoryResponse = await request(SERVER_URL)
         .post(`/api/inventories/${testInventoryId}/update-quantity`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send(updateData)
         .timeout(10000);
 
@@ -196,7 +196,7 @@ describe('Inventory History Integration Tests', () => {
       // Verify history record was created
       const historyResponse = await request(SERVER_URL)
         .get(`/api/inventory-histories?filters[product][documentId][$eq]=${testProductId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
 
       expect(historyResponse.status).toBe(200);
@@ -229,7 +229,7 @@ describe('Inventory History Integration Tests', () => {
 
       const inventoryResponse = await request(SERVER_URL)
         .post(`/api/inventories/${testInventoryId}/update-quantity`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send(updateData)
         .timeout(10000);
 
@@ -238,7 +238,7 @@ describe('Inventory History Integration Tests', () => {
       // Verify history record was created
       const historyResponse = await request(SERVER_URL)
         .get(`/api/inventory-histories?filters[product][documentId][$eq]=${testProductId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
 
       expect(historyResponse.status).toBe(200);
@@ -268,7 +268,7 @@ describe('Inventory History Integration Tests', () => {
 
       const reservationResponse = await request(SERVER_URL)
         .post('/api/inventories/reserve')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send(reservationData)
         .timeout(10000);
       // Skip this test if reservation endpoints are not fully implemented
@@ -282,7 +282,7 @@ describe('Inventory History Integration Tests', () => {
       // Verify history record was created for reservation
       const historyResponse = await request(SERVER_URL)
         .get(`/api/inventory-histories?filters[product][documentId][$eq]=${testProductId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
 
       expect(historyResponse.status).toBe(200);
@@ -311,7 +311,7 @@ describe('Inventory History Integration Tests', () => {
 
       const inventoryResponse = await request(SERVER_URL)
         .post(`/api/inventories/${testInventoryId}/update-quantity`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send(updateData)
         .timeout(10000);
 
@@ -320,7 +320,7 @@ describe('Inventory History Integration Tests', () => {
       // Verify history record was created with metadata
       const historyResponse = await request(SERVER_URL)
         .get(`/api/inventory-histories?filters[product][documentId][$eq]=${testProductId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
 
       expect(historyResponse.status).toBe(200);
@@ -347,7 +347,7 @@ describe('Inventory History Integration Tests', () => {
 
       const inventoryResponse = await request(SERVER_URL)
         .post(`/api/inventories/${testInventoryId}/update-quantity`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send(updateData)
         .timeout(10000);
 
@@ -356,7 +356,7 @@ describe('Inventory History Integration Tests', () => {
       // Verify history record was created with order source
       const historyResponse = await request(SERVER_URL)
         .get(`/api/inventory-histories?filters[product][documentId][$eq]=${testProductId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
 
       expect(historyResponse.status).toBe(200);
@@ -378,7 +378,7 @@ describe('Inventory History Integration Tests', () => {
     it('should retrieve all inventory history for a product', async () => {
       const response = await request(SERVER_URL)
         .get(`/api/inventory-histories?filters[product][documentId][$eq]=${testProductId}&populate=product`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
 
       expect(response.status).toBe(200);
@@ -403,7 +403,7 @@ describe('Inventory History Integration Tests', () => {
     it('should filter inventory history by action type', async () => {
       const response = await request(SERVER_URL)
         .get(`/api/inventory-histories?filters[product][documentId][$eq]=${testProductId}&filters[action][$eq]=increase`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
 
       expect(response.status).toBe(200);
@@ -419,7 +419,7 @@ describe('Inventory History Integration Tests', () => {
     it('should filter inventory history by source', async () => {
       const response = await request(SERVER_URL)
         .get(`/api/inventory-histories?filters[product][documentId][$eq]=${testProductId}&filters[source][$eq]=manual`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
 
       expect(response.status).toBe(200);
@@ -439,7 +439,7 @@ describe('Inventory History Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .get(`/api/inventory-histories?filters[product][documentId][$eq]=${testProductId}&filters[timestamp][$gte]=${oneHourAgo.toISOString()}&filters[timestamp][$lte]=${oneHourFromNow.toISOString()}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
 
       expect(response.status).toBe(200);
@@ -457,7 +457,7 @@ describe('Inventory History Integration Tests', () => {
     it('should filter inventory history by order ID', async () => {
       const response = await request(SERVER_URL)
         .get(`/api/inventory-histories?filters[product][documentId][$eq]=${testProductId}&filters[orderId][$eq]=BULK-${timestamp}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
 
       expect(response.status).toBe(200);
@@ -473,7 +473,7 @@ describe('Inventory History Integration Tests', () => {
     it('should sort inventory history by timestamp', async () => {
       const response = await request(SERVER_URL)
         .get(`/api/inventory-histories?filters[product][documentId][$eq]=${testProductId}&sort=createdAt:desc`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
 
       expect(response.status).toBe(200);
@@ -492,7 +492,7 @@ describe('Inventory History Integration Tests', () => {
     it('should paginate inventory history results', async () => {
       const response = await request(SERVER_URL)
         .get(`/api/inventory-histories?filters[product][documentId][$eq]=${testProductId}&pagination[page]=1&pagination[pageSize]=2`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
 
       expect(response.status).toBe(200);
@@ -509,7 +509,7 @@ describe('Inventory History Integration Tests', () => {
     it('should get inventory history summary statistics', async () => {
       const response = await request(SERVER_URL)
         .get(`/api/inventory-histories?filters[product][documentId][$eq]=${testProductId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
 
       expect(response.status).toBe(200);
@@ -535,7 +535,7 @@ describe('Inventory History Integration Tests', () => {
     it('should analyze inventory movement patterns', async () => {
       const response = await request(SERVER_URL)
         .get(`/api/inventory-histories?filters[product][documentId][$eq]=${testProductId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
 
       expect(response.status).toBe(200);
@@ -559,7 +559,7 @@ describe('Inventory History Integration Tests', () => {
     it('should track inventory changes by source', async () => {
       const response = await request(SERVER_URL)
         .get(`/api/inventory-histories?filters[product][documentId][$eq]=${testProductId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
 
       expect(response.status).toBe(200);
@@ -586,7 +586,7 @@ describe('Inventory History Integration Tests', () => {
 
         const response = await request(SERVER_URL)
           .post(`/api/inventories/${testInventoryId}/update-quantity`)
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .send(updateData)
           .timeout(10000);
 
@@ -597,7 +597,7 @@ describe('Inventory History Integration Tests', () => {
       // Analyze the rapid changes
       const historyResponse = await request(SERVER_URL)
         .get(`/api/inventory-histories?filters[product][documentId][$eq]=${testProductId}&filters[source][$eq]=system`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
 
       expect(historyResponse.status).toBe(200);
@@ -612,7 +612,7 @@ describe('Inventory History Integration Tests', () => {
     it('should maintain data integrity over time', async () => {
       const response = await request(SERVER_URL)
         .get(`/api/inventory-histories?filters[product][documentId][$eq]=${testProductId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
 
       expect(response.status).toBe(200);
@@ -637,7 +637,7 @@ describe('Inventory History Integration Tests', () => {
     it('should preserve audit trail completeness', async () => {
       const response = await request(SERVER_URL)
         .get(`/api/inventory-histories?filters[product][documentId][$eq]=${testProductId}&populate=product`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
 
       expect(response.status).toBe(200);
@@ -670,7 +670,7 @@ describe('Inventory History Integration Tests', () => {
         volumePromises.push(
           request(SERVER_URL)
             .post(`/api/inventories/${testInventoryId}/update-quantity`)
-            .set('Authorization', `Bearer ${adminToken}`)
+            .set('Authorization', `Bearer ${apiToken}`)
             .send(updateData)
             .timeout(10000)
         );
@@ -684,7 +684,7 @@ describe('Inventory History Integration Tests', () => {
       // Verify all records were created
       const historyResponse = await request(SERVER_URL)
         .get(`/api/inventory-histories?filters[product][documentId][$eq]=${testProductId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
 
       expect(historyResponse.status).toBe(200);
@@ -697,7 +697,7 @@ describe('Inventory History Integration Tests', () => {
       // Get a specific history record
       const historyResponse = await request(SERVER_URL)
         .get(`/api/inventory-histories?filters[product][documentId][$eq]=${testProductId}&pagination[pageSize]=1`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
 
       expect(historyResponse.status).toBe(200);
@@ -709,7 +709,7 @@ describe('Inventory History Integration Tests', () => {
       // Delete the record
       const deleteResponse = await request(SERVER_URL)
         .delete(`/api/inventory-histories/${recordId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
 
       expect(deleteResponse.status).toBe(204);
@@ -717,7 +717,7 @@ describe('Inventory History Integration Tests', () => {
       // Verify record is deleted
       const verifyResponse = await request(SERVER_URL)
         .get(`/api/inventory-histories/${recordId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
 
       expect(verifyResponse.status).toBe(404);
@@ -727,7 +727,7 @@ describe('Inventory History Integration Tests', () => {
       // Get multiple history records
       const historyResponse = await request(SERVER_URL)
         .get(`/api/inventory-histories?filters[product][documentId][$eq]=${testProductId}&pagination[pageSize]=5`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
 
       expect(historyResponse.status).toBe(200);
@@ -739,7 +739,7 @@ describe('Inventory History Integration Tests', () => {
       const deletePromises = records.slice(0, 2).map((record: any) =>
         request(SERVER_URL)
           .delete(`/api/inventory-histories/${record.documentId}`)
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .timeout(10000)
       );
 
@@ -753,7 +753,7 @@ describe('Inventory History Integration Tests', () => {
       // Verify that deleting history records doesn't affect inventory records
       const inventoryResponse = await request(SERVER_URL)
         .get(`/api/inventories/${testInventoryId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
 
       expect(inventoryResponse.status).toBe(200);
@@ -769,7 +769,7 @@ describe('Inventory History Integration Tests', () => {
       
       const response = await request(SERVER_URL)
         .get(`/api/inventory-histories?filters[product][documentId][$eq]=${testProductId}&pagination[pageSize]=100`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
 
       const endTime = Date.now();
@@ -793,7 +793,7 @@ describe('Inventory History Integration Tests', () => {
         concurrentPromises.push(
           request(SERVER_URL)
             .post(`/api/inventories/${testInventoryId}/update-quantity`)
-            .set('Authorization', `Bearer ${adminToken}`)
+            .set('Authorization', `Bearer ${apiToken}`)
             .send(updateData)
             .timeout(10000)
         );
@@ -809,7 +809,7 @@ describe('Inventory History Integration Tests', () => {
       // Verify all history records were created
       const historyResponse = await request(SERVER_URL)
         .get(`/api/inventory-histories?filters[product][documentId][$eq]=${testProductId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
 
       expect(historyResponse.status).toBe(200);
@@ -830,7 +830,7 @@ describe('Inventory History Integration Tests', () => {
         
         const response = await request(SERVER_URL)
           .get(`/api/inventory-histories?${pattern}`)
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .timeout(10000);
 
         const endTime = Date.now();
@@ -849,7 +849,7 @@ describe('Inventory History Integration Tests', () => {
         
         const response = await request(SERVER_URL)
           .get(`/api/inventory-histories?filters[product][documentId][$eq]=${testProductId}&pagination[pageSize]=${pageSize}`)
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .timeout(10000);
 
         const endTime = Date.now();
@@ -866,7 +866,7 @@ describe('Inventory History Integration Tests', () => {
     it('should verify inventory history records exist in database', async () => {
       const response = await request(SERVER_URL)
         .get(`/api/inventory-histories?filters[product][documentId][$eq]=${testProductId}&populate=product`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
 
       expect(response.status).toBe(200);
@@ -895,7 +895,7 @@ describe('Inventory History Integration Tests', () => {
     it('should verify history record relationships are maintained', async () => {
       const response = await request(SERVER_URL)
         .get(`/api/inventory-histories?filters[product][documentId][$eq]=${testProductId}&populate=product`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
 
       expect(response.status).toBe(200);
@@ -913,7 +913,7 @@ describe('Inventory History Integration Tests', () => {
     it('should verify history record data consistency', async () => {
       const response = await request(SERVER_URL)
         .get(`/api/inventory-histories?filters[product][documentId][$eq]=${testProductId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
 
       expect(response.status).toBe(200);
@@ -946,7 +946,7 @@ describe('Inventory History Integration Tests', () => {
     it('should handle non-existent product in history queries', async () => {
       const response = await request(SERVER_URL)
         .get('/api/inventory-histories?filters[product][documentId][$eq]=non-existent-product')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
 
       expect(response.status).toBe(200);
@@ -958,7 +958,7 @@ describe('Inventory History Integration Tests', () => {
     it('should handle invalid date range filters', async () => {
       const response = await request(SERVER_URL)
         .get(`/api/inventory-histories?filters[product][documentId][$eq]=${testProductId}&filters[timestamp][$gte]=invalid-date`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
 
       expect(response.status).toBe(400);
@@ -967,7 +967,7 @@ describe('Inventory History Integration Tests', () => {
     it('should handle malformed query parameters', async () => {
       const response = await request(SERVER_URL)
         .get(`/api/inventory-histories?filters[invalid][field]=value`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
 
       expect(response.status).toBe(400);
@@ -976,7 +976,7 @@ describe('Inventory History Integration Tests', () => {
     it('should handle large page size requests gracefully', async () => {
       const response = await request(SERVER_URL)
         .get(`/api/inventory-histories?filters[product][documentId][$eq]=${testProductId}&pagination[pageSize]=10000`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
 
       expect(response.status).toBe(200);

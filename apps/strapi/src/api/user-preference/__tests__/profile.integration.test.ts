@@ -18,7 +18,7 @@ import { writeFileSync } from 'fs';
 
 describe('Profile Integration Tests', () => {
   const SERVER_URL = 'http://localhost:1337';
-  let adminToken: string;
+  let apiToken: string;
   
   // Generate unique test data with timestamp
   const timestamp = Date.now();
@@ -29,9 +29,9 @@ describe('Profile Integration Tests', () => {
 
   beforeAll(async () => {
     // Get admin token for authenticated requests
-    adminToken = process.env.STRAPI_API_TOKEN as string;
+    apiToken = process.env.STRAPI_API_TOKEN as string;
 
-    if (!adminToken) {
+    if (!apiToken) {
       throw new Error('STRAPI_API_TOKEN environment variable is not set. Please ensure the test server is running and the token is generated.');
     }
   });
@@ -43,7 +43,7 @@ describe('Profile Integration Tests', () => {
       try {
         await request(SERVER_URL)
           .delete(`/api/users/${user.id}`)
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .timeout(10000);
       } catch (error) {
         console.warn(`Failed to delete user ${user.id}:`, error);

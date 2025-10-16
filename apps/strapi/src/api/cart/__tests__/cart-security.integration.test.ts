@@ -16,7 +16,7 @@ import request from 'supertest';
 
 describe('Cart Security and Permissions Integration Tests', () => {
   const SERVER_URL = 'http://localhost:1337';
-  let adminToken: string;
+  let apiToken: string;
   let testUser: any;
   let testUser2: any;
   let testProduct: any;
@@ -28,9 +28,9 @@ describe('Cart Security and Permissions Integration Tests', () => {
 
   beforeAll(async () => {
     // Get admin token for authenticated requests
-    adminToken = process.env.STRAPI_API_TOKEN as string;
+    apiToken = process.env.STRAPI_API_TOKEN as string;
 
-    if (!adminToken) {
+    if (!apiToken) {
       throw new Error('STRAPI_API_TOKEN environment variable is not set. Please ensure the test server is running and the token is generated.');
     }
 
@@ -80,7 +80,7 @@ describe('Cart Security and Permissions Integration Tests', () => {
 
     const productResponse = await request(SERVER_URL)
       .post('/api/products')
-      .set('Authorization', `Bearer ${adminToken}`)
+      .set('Authorization', `Bearer ${apiToken}`)
       .send({ data: productData })
       .timeout(10000);
 
@@ -103,7 +103,7 @@ describe('Cart Security and Permissions Integration Tests', () => {
 
     const productListingResponse = await request(SERVER_URL)
       .post('/api/product-listings')
-      .set('Authorization', `Bearer ${adminToken}`)
+      .set('Authorization', `Bearer ${apiToken}`)
       .send({ data: productListingData })
       .timeout(10000);
     if (productListingResponse.status !== 200) {
@@ -119,7 +119,7 @@ describe('Cart Security and Permissions Integration Tests', () => {
       try {
         await request(SERVER_URL)
           .delete(`/api/carts/${testCart.documentId}`)
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .timeout(10000);
       } catch (error) {
         console.warn('Failed to clean up test cart:', error.message);
@@ -130,7 +130,7 @@ describe('Cart Security and Permissions Integration Tests', () => {
       try {
         await request(SERVER_URL)
           .delete(`/api/product-listings/${testProductListing.documentId}`)
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .timeout(10000);
       } catch (error) {
         console.warn('Failed to clean up test product listing:', error.message);
@@ -141,7 +141,7 @@ describe('Cart Security and Permissions Integration Tests', () => {
       try {
         await request(SERVER_URL)
           .delete(`/api/products/${testProduct.documentId}`)
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .timeout(10000);
       } catch (error) {
         console.warn('Failed to clean up test product:', error.message);
@@ -152,7 +152,7 @@ describe('Cart Security and Permissions Integration Tests', () => {
       try {
         await request(SERVER_URL)
           .delete(`/api/users/${testUser.id}`)
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .timeout(10000);
       } catch (error) {
         console.warn('Failed to clean up test user 1:', error.message);
@@ -163,7 +163,7 @@ describe('Cart Security and Permissions Integration Tests', () => {
       try {
         await request(SERVER_URL)
           .delete(`/api/users/${testUser2.id}`)
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .timeout(10000);
       } catch (error) {
         console.warn('Failed to clean up test user 2:', error.message);

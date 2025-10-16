@@ -15,16 +15,16 @@ import request from 'supertest';
 
 describe('Role Management Integration Tests', () => {
   const SERVER_URL = 'http://localhost:1337';
-  let adminToken: string;
+  let apiToken: string;
   
   // Generate unique test data with timestamp
   const timestamp = Date.now();
 
   beforeAll(async () => {
     // Get admin token for authenticated requests
-    adminToken = process.env.STRAPI_API_TOKEN as string;
+    apiToken = process.env.STRAPI_API_TOKEN as string;
 
-    if (!adminToken) {
+    if (!apiToken) {
       throw new Error('STRAPI_API_TOKEN environment variable is not set. Please ensure the test server is running and the token is generated.');
     }
   });
@@ -69,7 +69,7 @@ describe('Role Management Integration Tests', () => {
     // For testing purposes, we'll use the admin token
     return {
       user: registerResponse.body.user,
-      token: adminToken, // Use admin token for admin operations
+      token: apiToken, // Use admin token for admin operations
       userData
     };
   };
@@ -97,7 +97,7 @@ describe('Role Management Integration Tests', () => {
   describe('Role Creation and Assignment', () => {
     let testUser: any;
     let adminUser: any;
-    let adminToken: string;
+    let apiToken: string;
 
     beforeEach(async () => {
       const userResult = await createTestUser();
@@ -105,7 +105,7 @@ describe('Role Management Integration Tests', () => {
       
       const adminResult = await createAdminUser();
       adminUser = adminResult.user;
-      adminToken = adminResult.token;
+      apiToken = adminResult.token;
     });
 
     it('should assign role to user successfully', async () => {
@@ -116,7 +116,7 @@ describe('Role Management Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .post('/api/role-management/assign')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send(roleAssignmentData)
         .timeout(10000)
         .expect(200);
@@ -138,7 +138,7 @@ describe('Role Management Integration Tests', () => {
 
         const response = await request(SERVER_URL)
           .post('/api/role-management/assign')
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .send(roleAssignmentData)
           .timeout(10000)
           .expect(200);
@@ -162,7 +162,7 @@ describe('Role Management Integration Tests', () => {
 
         const response = await request(SERVER_URL)
           .post('/api/role-management/assign')
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .send(roleAssignmentData)
           .timeout(10000)
           .expect(400);
@@ -180,7 +180,7 @@ describe('Role Management Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .post('/api/role-management/assign')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send(roleAssignmentData)
         .timeout(10000)
         .expect(400);
@@ -197,7 +197,7 @@ describe('Role Management Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .post('/api/role-management/assign')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send(roleAssignmentData)
         .timeout(10000)
         .expect(400);
@@ -321,7 +321,7 @@ describe('Role Management Integration Tests', () => {
       // Test with admin token
       const adminResponse = await request(SERVER_URL)
         .get('/api/role-management/permissions')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000)
         .expect(200);
 
@@ -402,7 +402,7 @@ describe('Role Management Integration Tests', () => {
 
       const adminResponse = await request(SERVER_URL)
         .get('/api/role-management/permissions')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000)
         .expect(200);
 
@@ -578,7 +578,7 @@ describe('Role Management Integration Tests', () => {
 
       const assignResponse = await request(SERVER_URL)
         .post('/api/role-management/assign')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send(roleAssignmentData)
         .timeout(10000)
         .expect(200);
@@ -588,7 +588,7 @@ describe('Role Management Integration Tests', () => {
       // Test admin access to role hierarchy
       const hierarchyResponse = await request(SERVER_URL)
         .get('/api/role-management/hierarchy')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000)
         .expect(200);
 
@@ -597,7 +597,7 @@ describe('Role Management Integration Tests', () => {
       // Test admin access to permissions
       const permissionsResponse = await request(SERVER_URL)
         .get('/api/role-management/permissions')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000)
         .expect(200);
 
@@ -620,7 +620,7 @@ describe('Role Management Integration Tests', () => {
         if (endpoint.requiresAdmin) {
           response = await request(SERVER_URL)
             [endpoint.method.toLowerCase() as keyof typeof request](endpoint.path)
-            .set('Authorization', `Bearer ${adminToken}`)
+            .set('Authorization', `Bearer ${apiToken}`)
             .timeout(10000);
         } else if (endpoint.requiresAuth) {
           response = await request(SERVER_URL)
@@ -640,14 +640,14 @@ describe('Role Management Integration Tests', () => {
 
   describe('Role Cleanup and Reassignment', () => {
     let testUser: any;
-    let adminToken: string;
+    let apiToken: string;
 
     beforeEach(async () => {
       const userResult = await createTestUser();
       testUser = userResult.user;
       
       const adminResult = await createAdminUser();
-      adminToken = adminResult.token;
+      apiToken = adminResult.token;
     });
 
     it('should revoke role from user successfully', async () => {
@@ -659,7 +659,7 @@ describe('Role Management Integration Tests', () => {
 
       await request(SERVER_URL)
         .post('/api/role-management/assign')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send(roleAssignmentData)
         .timeout(10000)
         .expect(200);
@@ -671,7 +671,7 @@ describe('Role Management Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .post('/api/role-management/revoke')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send(roleRevocationData)
         .timeout(10000)
         .expect(200);
@@ -684,7 +684,7 @@ describe('Role Management Integration Tests', () => {
     it('should require userId for role revocation', async () => {
       const response = await request(SERVER_URL)
         .post('/api/role-management/revoke')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({})
         .timeout(10000)
         .expect(400);
@@ -702,7 +702,7 @@ describe('Role Management Integration Tests', () => {
 
       await request(SERVER_URL)
         .post('/api/role-management/assign')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send(initialRoleData)
         .timeout(10000)
         .expect(200);
@@ -715,7 +715,7 @@ describe('Role Management Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .post('/api/role-management/assign')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send(reassignRoleData)
         .timeout(10000)
         .expect(200);
@@ -735,7 +735,7 @@ describe('Role Management Integration Tests', () => {
 
         const response = await request(SERVER_URL)
           .post('/api/role-management/assign')
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .send(roleData)
           .timeout(10000)
           .expect(200);
@@ -757,7 +757,7 @@ describe('Role Management Integration Tests', () => {
 
       const assignResponse = await request(SERVER_URL)
         .post('/api/role-management/assign')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send(roleData)
         .timeout(10000)
         .expect(200);
@@ -772,7 +772,7 @@ describe('Role Management Integration Tests', () => {
 
       const revokeResponse = await request(SERVER_URL)
         .post('/api/role-management/revoke')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send(revokeData)
         .timeout(10000)
         .expect(200);
@@ -919,7 +919,7 @@ describe('Role Management Integration Tests', () => {
       // Get permissions for admin
       const adminResponse = await request(SERVER_URL)
         .get('/api/role-management/permissions')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000)
         .expect(200);
 
@@ -955,7 +955,7 @@ describe('Role Management Integration Tests', () => {
     it('should handle malformed request data', async () => {
       const response = await request(SERVER_URL)
         .post('/api/role-management/assign')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send('invalid-json-data')
         .timeout(10000)
         .expect(400);
@@ -971,7 +971,7 @@ describe('Role Management Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .post('/api/role-management/assign')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send(roleAssignmentData)
         .timeout(10000);
 
@@ -988,7 +988,7 @@ describe('Role Management Integration Tests', () => {
       // Attempt concurrent role assignments
       const response1 = await request(SERVER_URL)
         .post('/api/role-management/assign')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send(roleAssignmentData)
         .timeout(10000);
 
@@ -996,7 +996,7 @@ describe('Role Management Integration Tests', () => {
 
       const response2 = await request(SERVER_URL)
         .post('/api/role-management/assign')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ ...roleAssignmentData, role: 'support' })
         .timeout(10000);
 

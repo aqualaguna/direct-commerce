@@ -26,10 +26,18 @@ export default factories.createCoreController('api::cart.cart', ({ strapi }) => 
     if (!cart) {
       return ctx.notFound('Cart not found');
     }
-
-
-    await strapi.documents('api::cart.cart').delete({
-      documentId
+    // delete all cart items
+    await strapi.db.transaction(async (tx) => {
+      await strapi.db.query('api::cart.cart-item').deleteMany({
+        where: {
+          cart: cart.id
+        }
+      });
+      await strapi.db.query('api::cart.cart').delete({
+        where: {
+          documentId
+        }
+      });
     });
 
     return {
@@ -187,10 +195,11 @@ export default factories.createCoreController('api::cart.cart', ({ strapi }) => 
       }
 
       // Check if item already exists in cart
-      const existingItem = await strapi.documents('api::cart-item.cart-item').findFirst({
+      const existingItem = await strapi.documents('api::cart.cart-item').findFirst({
         filters: {
           cart: cart.id,
           productListing: productListing.id,
+          deletedAt: { $null: true },
           ...(variant ? { variant: variant.id } : { variant: null })
         }
       });
@@ -206,7 +215,7 @@ export default factories.createCoreController('api::cart.cart', ({ strapi }) => 
         // Update existing item quantity
         const newTotal = parseFloat((newQuantity * existingItem.price).toString());
 
-        cartItem = await strapi.documents('api::cart-item.cart-item').update({
+        cartItem = await strapi.documents('api::cart.cart-item').update({
           documentId: existingItem.documentId,
           data: {
             quantity: newQuantity,
@@ -224,7 +233,7 @@ export default factories.createCoreController('api::cart.cart', ({ strapi }) => 
         const price = productListing.type === 'variant' ? getPrice(variant) : getPrice(productListing);
         const total = parseFloat((price * quantity).toString());
 
-        cartItem = await strapi.documents('api::cart-item.cart-item').create({
+        cartItem = await strapi.documents('api::cart.cart-item').create({
           data: {
             cart: cart.id,
             product: product.id,
@@ -304,7 +313,7 @@ export default factories.createCoreController('api::cart.cart', ({ strapi }) => 
         return ctx.badRequest('Valid quantity is required');
       }
       // Get cart item
-      const cartItem = await strapi.documents('api::cart-item.cart-item').findOne({
+      const cartItem = await strapi.documents('api::cart.cart-item').findOne({
         documentId,
         populate: {
           cart: {
@@ -326,6 +335,10 @@ export default factories.createCoreController('api::cart.cart', ({ strapi }) => 
       }
       if (cartItem.cart.sessionId && cartItem.cart.sessionId !== sessionId) {
         return ctx.forbidden('Access denied');
+      }
+      
+      if (cartItem.deletedAt) {
+        return ctx.notFound('Cart item not found');
       }
 
       if (!user && !sessionId) {
@@ -353,7 +366,7 @@ export default factories.createCoreController('api::cart.cart', ({ strapi }) => 
 
       // Update item
       const total = cartItem.price * quantity;
-      const updatedItem = await strapi.documents('api::cart-item.cart-item').update({
+      const updatedItem = await strapi.documents('api::cart.cart-item').update({
         documentId,
         data: {
           quantity,
@@ -367,6 +380,9 @@ export default factories.createCoreController('api::cart.cart', ({ strapi }) => 
         documentId: cartItem.cart.documentId,
         populate: {
           items: {
+            filters: {
+              deletedAt: { $null: true }
+            },
             populate: {
               product: true,
               productListing: true,
@@ -412,7 +428,7 @@ export default factories.createCoreController('api::cart.cart', ({ strapi }) => 
       const cartPersistenceService = strapi.service('api::cart.cart-persistence');
       const cartCalculationService = strapi.service('api::cart.cart-calculation');
       // Get cart item
-      const cartItem = await strapi.documents('api::cart-item.cart-item').findOne({
+      const cartItem = await strapi.documents('api::cart.cart-item').findOne({
         documentId,
         populate: {
           cart: {
@@ -422,7 +438,7 @@ export default factories.createCoreController('api::cart.cart', ({ strapi }) => 
           }
         }
       });
-      if (!cartItem) {
+      if (!cartItem || cartItem.deletedAt) {
         return ctx.notFound('Cart item not found');
       }
 
@@ -436,9 +452,12 @@ export default factories.createCoreController('api::cart.cart', ({ strapi }) => 
         return ctx.forbidden('Access denied');
       }
 
-      // Delete cart item
-      await strapi.documents('api::cart-item.cart-item').delete({
-        documentId
+      // Soft delete cart item
+      await strapi.documents('api::cart.cart-item').update({
+        documentId,
+        data: { 
+          deletedAt: new Date()
+        }
       });
 
       // Recalculate cart totals
@@ -446,6 +465,9 @@ export default factories.createCoreController('api::cart.cart', ({ strapi }) => 
         documentId: cartItem.cart.documentId,
         populate: {
           items: {
+            filters: {
+              deletedAt: { $null: true }
+            },
             populate: {
               product: true,
               productListing: true,
@@ -502,15 +524,19 @@ export default factories.createCoreController('api::cart.cart', ({ strapi }) => 
       }
 
       // Delete all cart items
-      const cartItems = await strapi.documents('api::cart-item.cart-item').findMany({
+      const cartItems = await strapi.documents('api::cart.cart-item').findMany({
         filters: {
-          cart: cart.id
+          cart: cart.id,
+          deletedAt: {$null: true}
         }
       });
 
       for (const item of cartItems) {
-        await strapi.documents('api::cart-item.cart-item').delete({
-          documentId: item.documentId
+        await strapi.documents('api::cart.cart-item').update({
+          documentId: item.documentId,
+          data: {
+            deletedAt: new Date()
+          }
         });
       }
 

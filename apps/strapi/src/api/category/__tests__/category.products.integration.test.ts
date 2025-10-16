@@ -2,7 +2,7 @@ import request from 'supertest';
 
 describe('Category Product Management Integration Tests', () => {
   const SERVER_URL = 'http://localhost:1337';
-  let adminToken: string;
+  let apiToken: string;
 
   // Generate unique test data with timestamp
   const timestamp = Date.now();
@@ -14,9 +14,9 @@ describe('Category Product Management Integration Tests', () => {
 
   beforeAll(async () => {
     // Get admin token for authenticated requests
-    adminToken = process.env.STRAPI_API_TOKEN as string;
+    apiToken = process.env.STRAPI_API_TOKEN as string;
 
-    if (!adminToken) {
+    if (!apiToken) {
       throw new Error('STRAPI_API_TOKEN environment variable is not set. Please ensure the test server is running and the token is generated.');
     }
   });
@@ -26,7 +26,7 @@ describe('Category Product Management Integration Tests', () => {
     try {
       const response = await request(SERVER_URL)
         .get('/api/categories')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
 
       if (response.status === 200 && response.body.data) {
@@ -38,7 +38,7 @@ describe('Category Product Management Integration Tests', () => {
             try {
               await request(SERVER_URL)
                 .delete(`/api/categories/${category.documentId}`)
-                .set('Authorization', `Bearer ${adminToken}`)
+                .set('Authorization', `Bearer ${apiToken}`)
                 .timeout(10000);
             } catch (error) {
               console.warn(`Failed to delete category ${category.documentId}:`, error);
@@ -59,7 +59,7 @@ describe('Category Product Management Integration Tests', () => {
       // Create a test category
       const categoryResponse = await request(SERVER_URL)
         .post('/api/categories')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: { ...testCategory, name: `Product Test Category ${timestamp}`, slug: `product-test-category-${timestamp}` } })
         .timeout(10000);
 
@@ -90,7 +90,7 @@ describe('Category Product Management Integration Tests', () => {
         try {
           const productResponse = await request(SERVER_URL)
             .post('/api/products')
-            .set('Authorization', `Bearer ${adminToken}`)
+            .set('Authorization', `Bearer ${apiToken}`)
             .send({ data: product })
             .timeout(10000);
 
@@ -112,7 +112,7 @@ describe('Category Product Management Integration Tests', () => {
         try {
           await request(SERVER_URL)
             .post(`/api/categories/${testCategoryId}/products/assign`)
-            .set('Authorization', `Bearer ${adminToken}`)
+            .set('Authorization', `Bearer ${apiToken}`)
             .send({ productIds: testProductIds })
             .timeout(10000);
           
@@ -128,7 +128,7 @@ describe('Category Product Management Integration Tests', () => {
         try {
           await request(SERVER_URL)
             .delete(`/api/products/${productId}`)
-            .set('Authorization', `Bearer ${adminToken}`)
+            .set('Authorization', `Bearer ${apiToken}`)
             .timeout(10000);
         } catch (error) {
           console.warn(`Failed to delete product ${productId}:`, error);
@@ -140,7 +140,7 @@ describe('Category Product Management Integration Tests', () => {
         try {
           await request(SERVER_URL)
             .delete(`/api/categories/${testCategoryId}`)
-            .set('Authorization', `Bearer ${adminToken}`)
+            .set('Authorization', `Bearer ${apiToken}`)
             .timeout(10000);
         } catch (error) {
           console.warn(`Failed to delete category ${testCategoryId}:`, error);
@@ -151,7 +151,7 @@ describe('Category Product Management Integration Tests', () => {
     it('should get products in category', async () => {
       const response = await request(SERVER_URL)
         .get(`/api/categories/${testCategoryId}/products`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
 
       expect(response.status).toBe(200);
@@ -168,7 +168,7 @@ describe('Category Product Management Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .post(`/api/categories/${testCategoryId}/products/assign`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ productIds: testProductIds })
         .timeout(10000);
 
@@ -186,7 +186,7 @@ describe('Category Product Management Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .post(`/api/categories/${testCategoryId}/products/remove`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ productIds: testProductIds })
         .timeout(10000);
 
@@ -205,7 +205,7 @@ describe('Category Product Management Integration Tests', () => {
       // Create a target category
       const targetCategoryResponse = await request(SERVER_URL)
         .post('/api/categories')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: { ...testCategory, name: `Target Category ${timestamp}`, slug: `target-category-${timestamp}` } })
         .timeout(10000);
 
@@ -215,7 +215,7 @@ describe('Category Product Management Integration Tests', () => {
       try {
         const response = await request(SERVER_URL)
           .post(`/api/categories/${testCategoryId}/products/move`)
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .send({ 
             targetCategoryId: targetCategoryId,
             productIds: testProductIds 
@@ -230,7 +230,7 @@ describe('Category Product Management Integration Tests', () => {
         try {
           await request(SERVER_URL)
             .delete(`/api/categories/${targetCategoryId}`)
-            .set('Authorization', `Bearer ${adminToken}`)
+            .set('Authorization', `Bearer ${apiToken}`)
             .timeout(10000);
         } catch (error) {
           console.warn(`Failed to delete target category ${targetCategoryId}:`, error);
@@ -241,7 +241,7 @@ describe('Category Product Management Integration Tests', () => {
     it('should handle invalid product assignment', async () => {
       const response = await request(SERVER_URL)
         .post(`/api/categories/${testCategoryId}/products/assign`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ productIds: ['invalid-product-id'] })
         .timeout(10000);
 
@@ -256,7 +256,7 @@ describe('Category Product Management Integration Tests', () => {
     it('should handle empty product list for assignment', async () => {
       const response = await request(SERVER_URL)
         .post(`/api/categories/${testCategoryId}/products/assign`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ productIds: [] })
         .timeout(10000);
 
@@ -266,7 +266,7 @@ describe('Category Product Management Integration Tests', () => {
     it('should handle missing productIds in assignment request', async () => {
       const response = await request(SERVER_URL)
         .post(`/api/categories/${testCategoryId}/products/assign`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({})
         .timeout(10000);
 
@@ -278,7 +278,7 @@ describe('Category Product Management Integration Tests', () => {
       
       const response = await request(SERVER_URL)
         .get(`/api/categories/${nonExistentCategoryId}/products`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
 
       expect(response.status).toBe(404);

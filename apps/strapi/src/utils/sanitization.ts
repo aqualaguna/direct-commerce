@@ -74,12 +74,20 @@ export const sanitizeAddressData = (data: any, options: SanitizeOptions = {}): a
  * @param input - The string to sanitize
  * @returns Sanitized string with malicious patterns removed
  */
-export const sanitizeString = (input: string): string => {
+export const sanitizeString = (input: string, options: SanitizeOptions = {}): string => {
+  const { 
+    sanitizeHtmlEnabled = false, 
+    allowedTags = [], 
+    allowedAttributes = {}, 
+    allowedSchemes = [], 
+    allowedSchemesByTag = {}, 
+    allowedSchemesAppliedToAttributes = [], 
+  } = options;
   if (!input || typeof input !== 'string') {
     return input;
   }
   
-  return input
+  const sqlSanitized = input
     .replace(/['";]/g, '') // Remove quotes and semicolons
     .replace(/--/g, '') // Remove SQL comments
     .replace(/\/\*/g, '') // Remove SQL comment start
@@ -94,6 +102,17 @@ export const sanitizeString = (input: string): string => {
     .replace(/javascript:/gi, '') // Remove javascript: protocol
     .replace(/on\w+\s*=/gi, '') // Remove event handlers
     .trim();
+    if (sanitizeHtmlEnabled) {
+      return sanitizeHtml(sqlSanitized, {
+        disallowedTagsMode: 'recursiveEscape',
+        allowedTags,
+        allowedAttributes,
+        allowedSchemes,
+        allowedSchemesByTag,
+        allowedSchemesAppliedToAttributes,
+      });
+    }
+  return sqlSanitized;
 };
 
 

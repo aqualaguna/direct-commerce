@@ -14,7 +14,7 @@ import request from 'supertest';
 
 describe('Option Value Integration Tests', () => {
   const SERVER_URL = 'http://localhost:1337';
-  let adminToken: string;
+  let apiToken: string;
   let testOptionGroup: any;
   
   // Generate unique test data with timestamp
@@ -28,7 +28,7 @@ describe('Option Value Integration Tests', () => {
         try {
           await request(SERVER_URL)
             .delete(`/api/option-groups/${testOptionGroup.documentId}`)
-            .set('Authorization', `Bearer ${adminToken}`)
+            .set('Authorization', `Bearer ${apiToken}`)
             .expect(200);
         } catch (error) {
           console.warn(`Failed to clean up test option group ${testOptionGroup.documentId}:`, error.message);
@@ -42,9 +42,9 @@ describe('Option Value Integration Tests', () => {
   beforeAll(async () => {
     try {
       // Get admin token for authenticated requests
-      adminToken = process.env.STRAPI_API_TOKEN as string;
+      apiToken = process.env.STRAPI_API_TOKEN as string;
 
-      if (!adminToken) {
+      if (!apiToken) {
         throw new Error('STRAPI_API_TOKEN environment variable is not set. Please ensure the test server is running and the token is generated.');
       }
 
@@ -59,7 +59,7 @@ describe('Option Value Integration Tests', () => {
 
       const optionGroupResponse = await request(SERVER_URL)
         .post('/api/option-groups')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: optionGroupData })
         .expect(201);
       testOptionGroup = optionGroupResponse.body.data;
@@ -116,7 +116,7 @@ describe('Option Value Integration Tests', () => {
       const optionValueData = createTestOptionValueData();
       const response = await request(SERVER_URL)
         .post('/api/option-values')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: optionValueData })
         // .expect(200);
       expect(response.body).toBeDefined();
@@ -133,7 +133,7 @@ describe('Option Value Integration Tests', () => {
     it('should retrieve option value by documentId', async () => {
       const response = await request(SERVER_URL)
         .get(`/api/option-values/${createdOptionValue.documentId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .expect(200);
 
       expect(response.body).toBeDefined();
@@ -152,7 +152,7 @@ describe('Option Value Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .put(`/api/option-values/${createdOptionValue.documentId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: updateData })
         .expect(200);
 
@@ -166,7 +166,7 @@ describe('Option Value Integration Tests', () => {
     it('should delete option value and verify removal', async () => {
       const response = await request(SERVER_URL)
         .delete(`/api/option-values/${createdOptionValue.documentId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .expect(200);
 
       expect(response.body).toBeDefined();
@@ -175,7 +175,7 @@ describe('Option Value Integration Tests', () => {
       // Verify option value is deleted
       await request(SERVER_URL)
         .get(`/api/option-values/${createdOptionValue.documentId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .expect(404);
     });
   });
@@ -189,7 +189,7 @@ describe('Option Value Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .post('/api/option-values')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: invalidData })
         .expect(400);
 
@@ -204,7 +204,7 @@ describe('Option Value Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .post('/api/option-values')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: invalidData })
         .expect(400);
 
@@ -218,7 +218,7 @@ describe('Option Value Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .post('/api/option-values')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: invalidData })
         .expect(400);
 
@@ -232,7 +232,7 @@ describe('Option Value Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .post('/api/option-values')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: invalidData })
         .expect(400);
 
@@ -246,7 +246,7 @@ describe('Option Value Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .post('/api/option-values')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: invalidData })
         .expect(400);
 
@@ -260,7 +260,7 @@ describe('Option Value Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .post('/api/option-values')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: invalidData })
         .expect(400);
 
@@ -272,7 +272,7 @@ describe('Option Value Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .post('/api/option-values')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: validData })
         .expect(200);
       
@@ -283,7 +283,7 @@ describe('Option Value Integration Tests', () => {
       // Clean up
       await request(SERVER_URL)
         .delete(`/api/option-values/${response.body.data.documentId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .expect(200);
     });
   });
@@ -302,7 +302,7 @@ describe('Option Value Integration Tests', () => {
       for (const data of optionValuesData) {
         const response = await request(SERVER_URL)
           .post('/api/option-values')
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .send({ data })
           .expect(200);
         
@@ -315,7 +315,7 @@ describe('Option Value Integration Tests', () => {
       for (const optionValue of testOptionValues) {
         await request(SERVER_URL)
           .delete(`/api/option-values/${optionValue.documentId}`)
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .expect(200);
       }
     });
@@ -323,7 +323,7 @@ describe('Option Value Integration Tests', () => {
     it('should retrieve all option values with pagination', async () => {
       const response = await request(SERVER_URL)
         .get('/api/option-values')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .expect(200);
       
       expect(response.body).toBeDefined();
@@ -335,7 +335,7 @@ describe('Option Value Integration Tests', () => {
     it('should filter option values by option group', async () => {
       const response = await request(SERVER_URL)
         .get(`/api/option-values/option-group/${testOptionGroup.documentId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .expect(200);
 
       expect(response.body).toBeDefined();
@@ -350,7 +350,7 @@ describe('Option Value Integration Tests', () => {
     it('should sort option values by sortOrder', async () => {
       const response = await request(SERVER_URL)
         .get('/api/option-values?sort=sortOrder:asc')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .expect(200);
 
       expect(response.body).toBeDefined();
@@ -367,7 +367,7 @@ describe('Option Value Integration Tests', () => {
     it('should apply pagination correctly', async () => {
       const response = await request(SERVER_URL)
         .get('/api/option-values?pagination[page]=1&pagination[pageSize]=2')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .expect(200);
 
       expect(response.body).toBeDefined();
@@ -380,7 +380,7 @@ describe('Option Value Integration Tests', () => {
     it('should handle invalid pagination parameters gracefully', async () => {
       const response = await request(SERVER_URL)
         .get('/api/option-values?pagination[page]=-1&pagination[pageSize]=1000')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .expect(200);
 
       expect(response.body).toBeDefined();
@@ -399,7 +399,7 @@ describe('Option Value Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .post('/api/option-values/bulk-create')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: bulkData })
         .expect(200);
 
@@ -420,7 +420,7 @@ describe('Option Value Integration Tests', () => {
       for (const optionValue of response.body.created) {
         await request(SERVER_URL)
           .delete(`/api/option-values/${optionValue.documentId}`)
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .expect(200);
       }
     });
@@ -434,7 +434,7 @@ describe('Option Value Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .post('/api/option-values/bulk-create')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: bulkData })
         .expect(200);
 
@@ -447,7 +447,7 @@ describe('Option Value Integration Tests', () => {
       for (const optionValue of response.body.created) {
         await request(SERVER_URL)
           .delete(`/api/option-values/${optionValue.documentId}`)
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .expect(200);
       }
     });
@@ -455,7 +455,7 @@ describe('Option Value Integration Tests', () => {
     it('should reject bulk creation with invalid data format', async () => {
       const response = await request(SERVER_URL)
         .post('/api/option-values/bulk-create')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: 'invalid-data' })
         .expect(400);
 
@@ -466,7 +466,7 @@ describe('Option Value Integration Tests', () => {
     it('should reject bulk creation with missing data', async () => {
       const response = await request(SERVER_URL)
         .post('/api/option-values/bulk-create')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({})
         .expect(400);
 
@@ -491,7 +491,7 @@ describe('Option Value Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .post('/api/option-values/bulk-create')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: bulkData })
         .expect(200);
 
@@ -510,7 +510,7 @@ describe('Option Value Integration Tests', () => {
       for (const optionValue of response.body.created) {
         await request(SERVER_URL)
           .delete(`/api/option-values/${optionValue.documentId}`)
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .expect(200);
       }
     });
@@ -520,7 +520,7 @@ describe('Option Value Integration Tests', () => {
       
       const response = await request(SERVER_URL)
         .get('/api/option-values?pagination[pageSize]=50')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .expect(200);
 
       const endTime = Date.now();
@@ -540,7 +540,7 @@ describe('Option Value Integration Tests', () => {
       
       const response = await request(SERVER_URL)
         .get(`/api/option-values/${nonExistentId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .expect(404);
 
       expect(response.body.error).toBeDefined();
@@ -552,7 +552,7 @@ describe('Option Value Integration Tests', () => {
       
       const response = await request(SERVER_URL)
         .get(`/api/option-values/${invalidId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .expect(404);
 
       expect(response.body.error).toBeDefined();
@@ -563,7 +563,7 @@ describe('Option Value Integration Tests', () => {
       const optionValueData = createTestOptionValueData();
       const createResponse = await request(SERVER_URL)
         .post('/api/option-values')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: optionValueData })
         .expect(200);
 
@@ -576,7 +576,7 @@ describe('Option Value Integration Tests', () => {
       // The delete should work if no variants use this option value
       await request(SERVER_URL)
         .delete(`/api/option-values/${optionValueId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .expect(200);
     });
 
@@ -584,7 +584,7 @@ describe('Option Value Integration Tests', () => {
       // Test with malformed request data
       const response = await request(SERVER_URL)
         .post('/api/option-values')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ invalidData: 'test' })
         .expect(500);
       expect(response.body.error).toBeDefined();
@@ -597,7 +597,7 @@ describe('Option Value Integration Tests', () => {
       const optionValueData = createTestOptionValueData();
       const createResponse = await request(SERVER_URL)
         .post('/api/option-values')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: optionValueData })
         .expect(200);
 
@@ -613,7 +613,7 @@ describe('Option Value Integration Tests', () => {
       // Clean up
       await request(SERVER_URL)
         .delete(`/api/option-values/${optionValueId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .expect(200);
     });
 
@@ -623,7 +623,7 @@ describe('Option Value Integration Tests', () => {
       // Create option value
       const createResponse = await request(SERVER_URL)
         .post('/api/option-values')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: optionValueData })
         .expect(200);
 
@@ -633,11 +633,11 @@ describe('Option Value Integration Tests', () => {
       const updatePromises = [
         request(SERVER_URL)
           .put(`/api/option-values/${optionValueId}`)
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .send({ data: { displayName: 'Concurrent Update 1' } }),
         request(SERVER_URL)
           .put(`/api/option-values/${optionValueId}`)
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .send({ data: { sortOrder: 999 } }),
       ];
 
@@ -650,7 +650,7 @@ describe('Option Value Integration Tests', () => {
       // Clean up
       await request(SERVER_URL)
         .delete(`/api/option-values/${optionValueId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .expect(200);
     });
   });
@@ -664,7 +664,7 @@ describe('Option Value Integration Tests', () => {
       
       const response = await request(SERVER_URL)
         .post('/api/option-values')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: optionValueData })
         .expect(200);
       
@@ -676,7 +676,7 @@ describe('Option Value Integration Tests', () => {
       if (testOptionValue) {
         await request(SERVER_URL)
           .delete(`/api/option-values/${testOptionValue.documentId}`)
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .expect(200);
       }
     });
@@ -684,7 +684,7 @@ describe('Option Value Integration Tests', () => {
     it('should populate option group relationship', async () => {
       const response = await request(SERVER_URL)
         .get(`/api/option-values/${testOptionValue.documentId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .expect(200);
 
       expect(response.body.data.optionGroup).toBeDefined();
@@ -696,7 +696,7 @@ describe('Option Value Integration Tests', () => {
     it('should retrieve option values by option group', async () => {
       const response = await request(SERVER_URL)
         .get(`/api/option-values/option-group/${testOptionGroup.documentId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .expect(200);
 
       expect(response.body).toBeDefined();
@@ -725,7 +725,7 @@ describe('Option Value Integration Tests', () => {
 
         const optionGroupResponse = await request(SERVER_URL)
           .post('/api/option-groups')
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .send({ data: newOptionGroupData })
           .expect(201);
 
@@ -738,7 +738,7 @@ describe('Option Value Integration Tests', () => {
 
         const optionValueResponse = await request(SERVER_URL)
           .post('/api/option-values')
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .send({ data: newOptionValueData })
           .expect(200);
 
@@ -747,7 +747,7 @@ describe('Option Value Integration Tests', () => {
         // Try to delete the option group (should fail if it has option values)
         const deleteResponse = await request(SERVER_URL)
           .delete(`/api/option-groups/${newOptionGroup.documentId}`)
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .expect(400);
 
         expect(deleteResponse.body.error).toBeDefined();
@@ -758,7 +758,7 @@ describe('Option Value Integration Tests', () => {
           try {
             await request(SERVER_URL)
               .delete(`/api/option-values/${newOptionValue.documentId}`)
-              .set('Authorization', `Bearer ${adminToken}`)
+              .set('Authorization', `Bearer ${apiToken}`)
               .expect(200);
           } catch (error) {
             console.warn(`Failed to clean up constraint test option value ${newOptionValue.documentId}:`, error.message);
@@ -769,7 +769,7 @@ describe('Option Value Integration Tests', () => {
           try {
             await request(SERVER_URL)
               .delete(`/api/option-groups/${newOptionGroup.documentId}`)
-              .set('Authorization', `Bearer ${adminToken}`)
+              .set('Authorization', `Bearer ${apiToken}`)
               .expect(200);
           } catch (error) {
             console.warn(`Failed to clean up constraint test option group ${newOptionGroup.documentId}:`, error.message);

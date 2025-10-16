@@ -2,7 +2,7 @@ import request from 'supertest';
 
 describe('Category CRUD Integration Tests', () => {
   const SERVER_URL = 'http://localhost:1337';
-  let adminToken: string;
+  let apiToken: string;
 
   // Generate unique test data with timestamp
   const timestamp = Date.now();
@@ -14,9 +14,9 @@ describe('Category CRUD Integration Tests', () => {
 
   beforeAll(async () => {
     // Get admin token for authenticated requests
-    adminToken = process.env.STRAPI_API_TOKEN as string;
+    apiToken = process.env.STRAPI_API_TOKEN as string;
 
-    if (!adminToken) {
+    if (!apiToken) {
       throw new Error('STRAPI_API_TOKEN environment variable is not set. Please ensure the test server is running and the token is generated.');
     }
   });
@@ -26,7 +26,7 @@ describe('Category CRUD Integration Tests', () => {
     try {
       const response = await request(SERVER_URL)
         .get('/api/categories')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
 
       if (response.status === 200 && response.body.data) {
@@ -42,7 +42,7 @@ describe('Category CRUD Integration Tests', () => {
             try {
               await request(SERVER_URL)
                 .delete(`/api/categories/${category.documentId}`)
-                .set('Authorization', `Bearer ${adminToken}`)
+                .set('Authorization', `Bearer ${apiToken}`)
                 .timeout(10000);
             } catch (error) {
               console.warn(`Failed to delete category ${category.documentId}:`, error);
@@ -61,7 +61,7 @@ describe('Category CRUD Integration Tests', () => {
     it('should create a new category', async () => {
       const response = await request(SERVER_URL)
         .post('/api/categories')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: testCategory })
         .timeout(10000);
 
@@ -76,7 +76,7 @@ describe('Category CRUD Integration Tests', () => {
       try {
         await request(SERVER_URL)
           .delete(`/api/categories/${createdCategoryId}`)
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .timeout(10000);
       } catch (error) {
         console.warn(`Failed to delete category ${createdCategoryId}:`, error);
@@ -87,7 +87,7 @@ describe('Category CRUD Integration Tests', () => {
       // Create a fresh category for this test
       const createResponse = await request(SERVER_URL)
         .post('/api/categories')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: { ...testCategory, name: `Retrieve Test Category ${timestamp}`, slug: `retrieve-test-category-${timestamp}` } })
         .timeout(10000);
 
@@ -95,7 +95,7 @@ describe('Category CRUD Integration Tests', () => {
       const categoryId = createResponse.body.data.documentId;
       const response = await request(SERVER_URL)
         .get(`/api/categories/${categoryId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
       expect(response.status).toBe(200);
       expect(response.body.data).toBeDefined();
@@ -106,7 +106,7 @@ describe('Category CRUD Integration Tests', () => {
       try {
         await request(SERVER_URL)
           .delete(`/api/categories/${categoryId}`)
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .timeout(10000);
       } catch (error) {
         console.warn(`Failed to delete category ${categoryId}:`, error);
@@ -117,7 +117,7 @@ describe('Category CRUD Integration Tests', () => {
       // Create a fresh category for this test
       const createResponse = await request(SERVER_URL)
         .post('/api/categories')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: { ...testCategory, name: `Update Test Category ${timestamp}`, slug: `update-test-category-${timestamp}` } })
         .timeout(10000);
 
@@ -131,7 +131,7 @@ describe('Category CRUD Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .put(`/api/categories/${categoryId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: updateData })
         .timeout(10000);
       expect(response.status).toBe(200);
@@ -142,7 +142,7 @@ describe('Category CRUD Integration Tests', () => {
       try {
         await request(SERVER_URL)
           .delete(`/api/categories/${categoryId}`)
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .timeout(10000);
       } catch (error) {
         console.warn(`Failed to delete category ${categoryId}:`, error);
@@ -153,7 +153,7 @@ describe('Category CRUD Integration Tests', () => {
       // Create a fresh category for this test
       const createResponse = await request(SERVER_URL)
         .post('/api/categories')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: { ...testCategory, name: `List Test Category ${timestamp}`, slug: `list-test-category-${timestamp}` } })
         .timeout(10000);
 
@@ -161,7 +161,7 @@ describe('Category CRUD Integration Tests', () => {
       const categoryId = createResponse.body.data.documentId;
       const response = await request(SERVER_URL)
         .get('/api/categories')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
       expect(response.status).toBe(200);
       expect(response.body.data).toBeDefined();
@@ -171,7 +171,7 @@ describe('Category CRUD Integration Tests', () => {
       // Clean up
       await request(SERVER_URL)
         .delete(`/api/categories/${categoryId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
     });
 
@@ -179,7 +179,7 @@ describe('Category CRUD Integration Tests', () => {
       // Create a fresh category for this test
       const createResponse = await request(SERVER_URL)
         .post('/api/categories')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: { ...testCategory, name: `Delete Test Category ${timestamp}`, slug: `delete-test-category-${timestamp}` } })
         .timeout(10000);
 
@@ -188,7 +188,7 @@ describe('Category CRUD Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .delete(`/api/categories/${categoryId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
       expect(response.status).toBe(200);
       // Category is already deleted in this test, no cleanup needed
@@ -198,7 +198,7 @@ describe('Category CRUD Integration Tests', () => {
       // Create a fresh category for this test
       const createResponse = await request(SERVER_URL)
         .post('/api/categories')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: { ...testCategory, name: `404 Test Category ${timestamp}`, slug: `404-test-category-${timestamp}` } })
         .timeout(10000);
 
@@ -208,13 +208,13 @@ describe('Category CRUD Integration Tests', () => {
       // Delete the category
       await request(SERVER_URL)
         .delete(`/api/categories/${categoryId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
 
       // Try to retrieve the deleted category
       const response = await request(SERVER_URL)
         .get(`/api/categories/${categoryId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
 
       expect(response.status).toBe(404);

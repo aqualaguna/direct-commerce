@@ -15,7 +15,7 @@ import request from 'supertest';
 
 describe('Product Listing Integration Tests', () => {
   const SERVER_URL = 'http://localhost:1337';
-  let adminToken: string;
+  let apiToken: string;
   let testProduct: any;
   let testCategory: any;
   let testProductListing: any;
@@ -25,9 +25,9 @@ describe('Product Listing Integration Tests', () => {
 
   beforeAll(async () => {
     // Get admin token for authenticated requests
-    adminToken = process.env.STRAPI_API_TOKEN as string;
+    apiToken = process.env.STRAPI_API_TOKEN as string;
 
-    if (!adminToken) {
+    if (!apiToken) {
       throw new Error('STRAPI_API_TOKEN environment variable is not set. Please ensure the test server is running and the token is generated.');
     }
 
@@ -42,7 +42,7 @@ describe('Product Listing Integration Tests', () => {
 
     const productResponse = await request(SERVER_URL)
       .post('/api/products')
-      .set('Authorization', `Bearer ${adminToken}`)
+      .set('Authorization', `Bearer ${apiToken}`)
       .send({ data: productData })
       .timeout(10000);
 
@@ -63,7 +63,7 @@ describe('Product Listing Integration Tests', () => {
 
     const categoryResponse = await request(SERVER_URL)
       .post('/api/categories')
-      .set('Authorization', `Bearer ${adminToken}`)
+      .set('Authorization', `Bearer ${apiToken}`)
       .send({ data: categoryData })
       .timeout(10000);
 
@@ -80,7 +80,7 @@ describe('Product Listing Integration Tests', () => {
       try {
         await request(SERVER_URL)
           .delete(`/api/product-listings/${testProductListing.documentId}`)
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .timeout(10000);
       } catch (error) {
         console.warn('Failed to clean up test product listing:', error.message);
@@ -91,7 +91,7 @@ describe('Product Listing Integration Tests', () => {
       try {
         await request(SERVER_URL)
           .delete(`/api/products/${testProduct.documentId}`)
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .timeout(10000);
       } catch (error) {
         console.warn('Failed to clean up test product:', error.message);
@@ -102,7 +102,7 @@ describe('Product Listing Integration Tests', () => {
       try {
         await request(SERVER_URL)
           .delete(`/api/categories/${testCategory.documentId}`)
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .timeout(10000);
       } catch (error) {
         console.warn('Failed to clean up test category:', error.message);
@@ -129,7 +129,7 @@ describe('Product Listing Integration Tests', () => {
       };
       const response = await request(SERVER_URL)
         .post('/api/product-listings')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: productListingData })
         .timeout(10000)
         .expect(200);
@@ -153,7 +153,7 @@ describe('Product Listing Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .get(`/api/product-listings/${testProductListing.documentId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .expect(200)
         .timeout(10000);
 
@@ -175,7 +175,7 @@ describe('Product Listing Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .put(`/api/product-listings/${testProductListing.documentId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: updateData })
         .expect(200)
         .timeout(10000);
@@ -196,14 +196,14 @@ describe('Product Listing Integration Tests', () => {
 
       await request(SERVER_URL)
         .delete(`/api/product-listings/${documentId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .expect(200)
         .timeout(10000);
 
       // Verify deletion by attempting to retrieve
       await request(SERVER_URL)
         .get(`/api/product-listings/${documentId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .expect(404)
         .timeout(10000);
 
@@ -221,7 +221,7 @@ describe('Product Listing Integration Tests', () => {
 
       await request(SERVER_URL)
         .post('/api/product-listings')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: invalidData })
         .expect(400)
         .timeout(10000);
@@ -239,7 +239,7 @@ describe('Product Listing Integration Tests', () => {
 
       await request(SERVER_URL)
         .post('/api/product-listings')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: invalidData })
         .expect(400)
         .timeout(10000);
@@ -255,7 +255,7 @@ describe('Product Listing Integration Tests', () => {
 
       await request(SERVER_URL)
         .post('/api/product-listings')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: invalidData })
         .expect(400)
         .timeout(10000);
@@ -271,7 +271,7 @@ describe('Product Listing Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .post('/api/product-listings')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: invalidData })
         .expect(400)
         .timeout(10000);
@@ -322,7 +322,7 @@ describe('Product Listing Integration Tests', () => {
       for (const data of productListingData) {
         const response = await request(SERVER_URL)
           .post('/api/product-listings')
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .send({ data })
           .timeout(10000);
 
@@ -340,7 +340,7 @@ describe('Product Listing Integration Tests', () => {
         try {
           await request(SERVER_URL)
             .delete(`/api/product-listings/${listing.documentId}`)
-            .set('Authorization', `Bearer ${adminToken}`)
+            .set('Authorization', `Bearer ${apiToken}`)
             .timeout(10000);
         } catch (error) {
           console.warn('Failed to clean up test product listing:', error.message);
@@ -351,7 +351,7 @@ describe('Product Listing Integration Tests', () => {
     it('should filter product listings by type', async () => {
       const response = await request(SERVER_URL)
         .get('/api/product-listings')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .query({ 'filters[type]': 'single' })
         .expect(200)
         .timeout(10000);
@@ -368,7 +368,7 @@ describe('Product Listing Integration Tests', () => {
     it('should filter product listings by featured status', async () => {
       const response = await request(SERVER_URL)
         .get('/api/product-listings')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .query({ 'filters[featured]': true })
         .expect(200)
         .timeout(10000);
@@ -385,7 +385,7 @@ describe('Product Listing Integration Tests', () => {
     it('should filter product listings by active status', async () => {
       const response = await request(SERVER_URL)
         .get('/api/product-listings')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .query({ 'filters[isActive]': true })
         .expect(200)
         .timeout(10000);
@@ -402,7 +402,7 @@ describe('Product Listing Integration Tests', () => {
     it('should sort product listings by price ascending', async () => {
       const response = await request(SERVER_URL)
         .get('/api/product-listings')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .query({ sort: 'basePrice:asc' })
         .expect(200)
         .timeout(10000);
@@ -421,7 +421,7 @@ describe('Product Listing Integration Tests', () => {
     it('should sort product listings by price descending', async () => {
       const response = await request(SERVER_URL)
         .get('/api/product-listings')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .query({ sort: 'basePrice:desc' })
         .expect(200)
         .timeout(10000);
@@ -440,7 +440,7 @@ describe('Product Listing Integration Tests', () => {
     it('should apply pagination to product listings', async () => {
       const response = await request(SERVER_URL)
         .get('/api/product-listings')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .query({ page: 1, pageSize: 2 })
         .expect(200)
         .timeout(10000);
@@ -481,7 +481,7 @@ describe('Product Listing Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .post('/api/product-listings')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: productListingData })
         .timeout(10000);
 
@@ -498,7 +498,7 @@ describe('Product Listing Integration Tests', () => {
         try {
           await request(SERVER_URL)
             .delete(`/api/product-listings/${testProductListing.documentId}`)
-            .set('Authorization', `Bearer ${adminToken}`)
+            .set('Authorization', `Bearer ${apiToken}`)
             .timeout(10000);
         } catch (error) {
           console.warn('Failed to clean up test product listing:', error.message);
@@ -509,7 +509,7 @@ describe('Product Listing Integration Tests', () => {
     it('should get product listings by type', async () => {
       const response = await request(SERVER_URL)
         .get(`/api/product-listings/type/variant`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .expect(200)
         .timeout(10000);
 
@@ -525,7 +525,7 @@ describe('Product Listing Integration Tests', () => {
     it('should get product listing with variants', async () => {
       const response = await request(SERVER_URL)
         .get(`/api/product-listings/${testProductListing.documentId}/with-variants`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .expect(200)
         .timeout(10000);
 
@@ -537,7 +537,7 @@ describe('Product Listing Integration Tests', () => {
     it('should return 404 for non-existent product listing', async () => {
       await request(SERVER_URL)
         .get('/api/product-listings/non-existent-document-id')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .expect(404)
         .timeout(10000);
     });
@@ -545,7 +545,7 @@ describe('Product Listing Integration Tests', () => {
     it('should return 400 for invalid type parameter', async () => {
       await request(SERVER_URL)
         .get('/api/product-listings/type/invalid-type')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .expect(400)
         .timeout(10000);
     });
@@ -557,7 +557,7 @@ describe('Product Listing Integration Tests', () => {
       
       const response = await request(SERVER_URL)
         .get('/api/product-listings')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .query({ pageSize: 100 })
         .expect(200)
         .timeout(30000);
@@ -578,7 +578,7 @@ describe('Product Listing Integration Tests', () => {
         promises.push(
           request(SERVER_URL)
             .get('/api/product-listings')
-            .set('Authorization', `Bearer ${adminToken}`)
+            .set('Authorization', `Bearer ${apiToken}`)
             .query({ page: 1, pageSize: 10 })
             .timeout(10000)
         );
@@ -603,7 +603,7 @@ describe('Product Listing Integration Tests', () => {
         try {
           await request(SERVER_URL)
             .delete(`/api/product-listings/${draftProductListing.documentId}`)
-            .set('Authorization', `Bearer ${adminToken}`)
+            .set('Authorization', `Bearer ${apiToken}`)
             .timeout(10000);
         } catch (error) {
           console.warn('Failed to clean up draft product listing:', error.message);
@@ -625,7 +625,7 @@ describe('Product Listing Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .post('/api/product-listings')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: productListingData })
         .expect(200)
         .timeout(10000);
@@ -646,7 +646,7 @@ describe('Product Listing Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .post(`/api/product-listings/${draftProductListing.documentId}/publish`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .expect(200)
         .timeout(10000);
 
@@ -661,7 +661,7 @@ describe('Product Listing Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .post(`/api/product-listings/${draftProductListing.documentId}/unpublish`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .expect(200)
         .timeout(10000);
       expect(response.body.documentId).toBe(draftProductListing.documentId);

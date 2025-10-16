@@ -15,7 +15,7 @@ import request from 'supertest';
 
 describe('Cart Persistence Integration Tests', () => {
   const SERVER_URL = 'http://localhost:1337';
-  let adminToken: string;
+  let apiToken: string;
   let testUser: any;
   let testProduct: any;
   let testProductListing: any;
@@ -29,9 +29,9 @@ describe('Cart Persistence Integration Tests', () => {
 
   beforeAll(async () => {
     // Get admin token for authenticated requests
-    adminToken = process.env.STRAPI_API_TOKEN as string;
+    apiToken = process.env.STRAPI_API_TOKEN as string;
 
-    if (!adminToken) {
+    if (!apiToken) {
       throw new Error('STRAPI_API_TOKEN environment variable is not set. Please ensure the test server is running and the token is generated.');
     }
 
@@ -65,7 +65,7 @@ describe('Cart Persistence Integration Tests', () => {
 
     const productResponse = await request(SERVER_URL)
       .post('/api/products')
-      .set('Authorization', `Bearer ${adminToken}`)
+      .set('Authorization', `Bearer ${apiToken}`)
       .send({ data: productData })
       .timeout(10000);
 
@@ -88,7 +88,7 @@ describe('Cart Persistence Integration Tests', () => {
 
     const productListingResponse = await request(SERVER_URL)
       .post('/api/product-listings')
-      .set('Authorization', `Bearer ${adminToken}`)
+      .set('Authorization', `Bearer ${apiToken}`)
       .send({ data: productListingData })
       .timeout(10000);
     
@@ -110,7 +110,7 @@ describe('Cart Persistence Integration Tests', () => {
 
     const variantResponse = await request(SERVER_URL)
       .post('/api/product-listing-variants')
-      .set('Authorization', `Bearer ${adminToken}`)
+      .set('Authorization', `Bearer ${apiToken}`)
       .send({ data: variantData })
       .timeout(10000);
     
@@ -128,7 +128,7 @@ describe('Cart Persistence Integration Tests', () => {
         try {
           await request(SERVER_URL)
             .delete(`/api/users/${user.id}`)
-            .set('Authorization', `Bearer ${adminToken}`)
+            .set('Authorization', `Bearer ${apiToken}`)
             .expect(200)
             .timeout(10000);
         } catch (error) {
@@ -141,7 +141,7 @@ describe('Cart Persistence Integration Tests', () => {
       try {
         await request(SERVER_URL)
           .delete(`/api/product-listing-variants/${testVariant.documentId}`)
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .expect(200)
           .timeout(10000);
       } catch (error) {
@@ -153,7 +153,7 @@ describe('Cart Persistence Integration Tests', () => {
       try {
         await request(SERVER_URL)
           .delete(`/api/product-listings/${testProductListing.documentId}`)
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .expect(200)
           .timeout(10000);
       } catch (error) {
@@ -165,7 +165,7 @@ describe('Cart Persistence Integration Tests', () => {
       try {
         await request(SERVER_URL)
           .delete(`/api/products/${testProduct.documentId}`)
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .expect(200)
           .timeout(10000);
       } catch (error) {

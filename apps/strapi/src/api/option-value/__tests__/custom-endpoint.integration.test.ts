@@ -11,7 +11,7 @@ import request from 'supertest';
 
 describe('Option Value Custom Endpoints Integration Tests', () => {
   const SERVER_URL = 'http://localhost:1337';
-  let adminToken: string;
+  let apiToken: string;
   let testOptionGroup: any;
   let testOptionGroup2: any;
   let testProduct: any;
@@ -30,7 +30,7 @@ describe('Option Value Custom Endpoints Integration Tests', () => {
         try {
           await request(SERVER_URL)
             .delete(`/api/option-values/${optionValue.documentId}`)
-            .set('Authorization', `Bearer ${adminToken}`)
+            .set('Authorization', `Bearer ${apiToken}`)
             .expect(200);
         } catch (error) {
           console.warn(`Failed to clean up option value ${optionValue.documentId}:`, error.message);
@@ -42,7 +42,7 @@ describe('Option Value Custom Endpoints Integration Tests', () => {
         try {
           await request(SERVER_URL)
             .delete(`/api/product-listings/${testProductListing.documentId}`)
-            .set('Authorization', `Bearer ${adminToken}`)
+            .set('Authorization', `Bearer ${apiToken}`)
             .expect(200);
         } catch (error) {
           console.warn(`Failed to clean up product listing ${testProductListing.documentId}:`, error.message);
@@ -54,7 +54,7 @@ describe('Option Value Custom Endpoints Integration Tests', () => {
         try {
           await request(SERVER_URL)
             .delete(`/api/products/${testProduct.documentId}`)
-            .set('Authorization', `Bearer ${adminToken}`)
+            .set('Authorization', `Bearer ${apiToken}`)
             .expect(200);
         } catch (error) {
           console.warn(`Failed to clean up product ${testProduct.documentId}:`, error.message);
@@ -65,7 +65,7 @@ describe('Option Value Custom Endpoints Integration Tests', () => {
         try {
           await request(SERVER_URL)
             .delete(`/api/categories/${testCategory.documentId}`)
-            .set('Authorization', `Bearer ${adminToken}`)
+            .set('Authorization', `Bearer ${apiToken}`)
             .expect(200);
         } catch (error) {
           console.warn(`Failed to clean up category ${testCategory.documentId}:`, error.message);
@@ -77,7 +77,7 @@ describe('Option Value Custom Endpoints Integration Tests', () => {
         try {
           await request(SERVER_URL)
             .delete(`/api/option-groups/${testOptionGroup2.documentId}`)
-            .set('Authorization', `Bearer ${adminToken}`)
+            .set('Authorization', `Bearer ${apiToken}`)
             .expect(200);
         } catch (error) {
           console.warn(`Failed to clean up option group 2 ${testOptionGroup2.documentId}:`, error.message);
@@ -88,7 +88,7 @@ describe('Option Value Custom Endpoints Integration Tests', () => {
         try {
           await request(SERVER_URL)
             .delete(`/api/option-groups/${testOptionGroup.documentId}`)
-            .set('Authorization', `Bearer ${adminToken}`)
+            .set('Authorization', `Bearer ${apiToken}`)
             .expect(200);
         } catch (error) {
           console.warn(`Failed to clean up option group ${testOptionGroup.documentId}:`, error.message);
@@ -102,9 +102,9 @@ describe('Option Value Custom Endpoints Integration Tests', () => {
   beforeAll(async () => {
     try {
       // Get admin token for authenticated requests
-      adminToken = process.env.STRAPI_API_TOKEN as string;
+      apiToken = process.env.STRAPI_API_TOKEN as string;
 
-      if (!adminToken) {
+      if (!apiToken) {
         throw new Error('STRAPI_API_TOKEN environment variable is not set. Please ensure the test server is running and the token is generated.');
       }
 
@@ -119,7 +119,7 @@ describe('Option Value Custom Endpoints Integration Tests', () => {
 
       const optionGroupResponse = await request(SERVER_URL)
         .post('/api/option-groups')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: optionGroupData })
         .expect(201);
       testOptionGroup = optionGroupResponse.body.data;
@@ -134,7 +134,7 @@ describe('Option Value Custom Endpoints Integration Tests', () => {
 
       const optionGroupResponse2 = await request(SERVER_URL)
         .post('/api/option-groups')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: optionGroupData2 })
         .expect(201);
       testOptionGroup2 = optionGroupResponse2.body.data;
@@ -150,7 +150,7 @@ describe('Option Value Custom Endpoints Integration Tests', () => {
 
       const productResponse = await request(SERVER_URL)
         .post('/api/products')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: productData })
         .expect(200);
       testProduct = productResponse.body.data;
@@ -166,7 +166,7 @@ describe('Option Value Custom Endpoints Integration Tests', () => {
 
       const categoryResponse = await request(SERVER_URL)
         .post('/api/categories')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: categoryData })
         .expect(200);
       testCategory = categoryResponse.body.data;
@@ -187,7 +187,7 @@ describe('Option Value Custom Endpoints Integration Tests', () => {
 
       const productListingResponse = await request(SERVER_URL)
         .post('/api/product-listings')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: productListingData })
         .expect(200);
       testProductListing = productListingResponse.body;
@@ -217,7 +217,7 @@ describe('Option Value Custom Endpoints Integration Tests', () => {
       for (const data of optionValuesData) {
         const response = await request(SERVER_URL)
           .post('/api/option-values')
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .send({ data })
           .expect(200);
         
@@ -248,7 +248,7 @@ describe('Option Value Custom Endpoints Integration Tests', () => {
     it('should retrieve option values by option group successfully', async () => {
       const response = await request(SERVER_URL)
         .get(`/api/option-values/option-group/${testOptionGroup.documentId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .expect(200);
 
       expect(response.body).toBeDefined();
@@ -278,7 +278,7 @@ describe('Option Value Custom Endpoints Integration Tests', () => {
     it('should return option values sorted by sortOrder', async () => {
       const response = await request(SERVER_URL)
         .get(`/api/option-values/option-group/${testOptionGroup.documentId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .expect(200);
 
       expect(response.body.data.length).toBeGreaterThanOrEqual(2);
@@ -305,7 +305,7 @@ describe('Option Value Custom Endpoints Integration Tests', () => {
 
           const emptyOptionGroupResponse = await request(SERVER_URL)
             .post('/api/option-groups')
-            .set('Authorization', `Bearer ${adminToken}`)
+            .set('Authorization', `Bearer ${apiToken}`)
             .send({ data: emptyOptionGroupData })
             .expect(201);
 
@@ -313,7 +313,7 @@ describe('Option Value Custom Endpoints Integration Tests', () => {
 
           const response = await request(SERVER_URL)
             .get(`/api/option-values/option-group/${emptyOptionGroup.documentId}`)
-            .set('Authorization', `Bearer ${adminToken}`)
+            .set('Authorization', `Bearer ${apiToken}`)
             .expect(200);
 
           expect(response.body.data).toEqual([]);
@@ -323,7 +323,7 @@ describe('Option Value Custom Endpoints Integration Tests', () => {
             try {
               await request(SERVER_URL)
                 .delete(`/api/option-groups/${emptyOptionGroup.documentId}`)
-                .set('Authorization', `Bearer ${adminToken}`)
+                .set('Authorization', `Bearer ${apiToken}`)
                 .expect(200);
             } catch (error) {
               console.warn(`Failed to clean up empty option group ${emptyOptionGroup.documentId}:`, error.message);
@@ -337,7 +337,7 @@ describe('Option Value Custom Endpoints Integration Tests', () => {
       
       const response = await request(SERVER_URL)
         .get(`/api/option-values/option-group/${nonExistentId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .expect(404);
 
       expect(response.body.error).toBeDefined();
@@ -347,7 +347,7 @@ describe('Option Value Custom Endpoints Integration Tests', () => {
     it('should return 400 for missing option group ID', async () => {
       const response = await request(SERVER_URL)
         .get('/api/option-values/option-group/')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .expect(404); // Express returns 404 for missing route parameter
     });
   });
@@ -356,7 +356,7 @@ describe('Option Value Custom Endpoints Integration Tests', () => {
     it('should retrieve option values by product listing successfully', async () => {
       const response = await request(SERVER_URL)
         .get(`/api/option-values/product-listing/${testProductListing.documentId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .expect(200);
 
       expect(response.body).toBeDefined();
@@ -385,7 +385,7 @@ describe('Option Value Custom Endpoints Integration Tests', () => {
     it('should return option values sorted by sortOrder', async () => {
       const response = await request(SERVER_URL)
         .get(`/api/option-values/product-listing/${testProductListing.documentId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .expect(200);
 
       expect(response.body.data.length).toBeGreaterThanOrEqual(3);
@@ -417,7 +417,7 @@ describe('Option Value Custom Endpoints Integration Tests', () => {
 
           const emptyProductListingResponse = await request(SERVER_URL)
             .post('/api/product-listings')
-            .set('Authorization', `Bearer ${adminToken}`)
+            .set('Authorization', `Bearer ${apiToken}`)
             .send({ data: emptyProductListingData })
             .expect(200);
 
@@ -425,7 +425,7 @@ describe('Option Value Custom Endpoints Integration Tests', () => {
 
           const response = await request(SERVER_URL)
             .get(`/api/option-values/product-listing/${emptyProductListing.documentId}`)
-            .set('Authorization', `Bearer ${adminToken}`)
+            .set('Authorization', `Bearer ${apiToken}`)
             .expect(200);
 
           expect(response.body.data).toEqual([]);
@@ -435,7 +435,7 @@ describe('Option Value Custom Endpoints Integration Tests', () => {
             try {
               await request(SERVER_URL)
                 .delete(`/api/product-listings/${emptyProductListing.documentId}`)
-                .set('Authorization', `Bearer ${adminToken}`)
+                .set('Authorization', `Bearer ${apiToken}`)
                 .expect(200);
             } catch (error) {
               console.warn(`Failed to clean up empty product listing ${emptyProductListing.documentId}:`, error.message);
@@ -449,7 +449,7 @@ describe('Option Value Custom Endpoints Integration Tests', () => {
       
       const response = await request(SERVER_URL)
         .get(`/api/option-values/product-listing/${nonExistentId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .expect(404);
 
       expect(response.body.error).toBeDefined();
@@ -459,7 +459,7 @@ describe('Option Value Custom Endpoints Integration Tests', () => {
     it('should return 400 for missing product listing ID', async () => {
       const response = await request(SERVER_URL)
         .get('/api/option-values/product-listing/')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .expect(404); // Express returns 404 for missing route parameter
     });
   });
@@ -489,7 +489,7 @@ describe('Option Value Custom Endpoints Integration Tests', () => {
 
           const response = await request(SERVER_URL)
             .post('/api/option-values/bulk-create')
-            .set('Authorization', `Bearer ${adminToken}`)
+            .set('Authorization', `Bearer ${apiToken}`)
             .send({ data: bulkData })
             .expect(200);
 
@@ -514,7 +514,7 @@ describe('Option Value Custom Endpoints Integration Tests', () => {
             try {
               await request(SERVER_URL)
                 .delete(`/api/option-values/${optionValue.documentId}`)
-                .set('Authorization', `Bearer ${adminToken}`)
+                .set('Authorization', `Bearer ${apiToken}`)
                 .expect(200);
             } catch (error) {
               console.warn(`Failed to clean up bulk created option value ${optionValue.documentId}:`, error.message);
@@ -549,7 +549,7 @@ describe('Option Value Custom Endpoints Integration Tests', () => {
 
           const response = await request(SERVER_URL)
             .post('/api/option-values/bulk-create')
-            .set('Authorization', `Bearer ${adminToken}`)
+            .set('Authorization', `Bearer ${apiToken}`)
             .send({ data: bulkData })
             .expect(200);
 
@@ -576,7 +576,7 @@ describe('Option Value Custom Endpoints Integration Tests', () => {
             try {
               await request(SERVER_URL)
                 .delete(`/api/option-values/${optionValue.documentId}`)
-                .set('Authorization', `Bearer ${adminToken}`)
+                .set('Authorization', `Bearer ${apiToken}`)
                 .expect(200);
             } catch (error) {
               console.warn(`Failed to clean up partial bulk created option value ${optionValue.documentId}:`, error.message);
@@ -588,7 +588,7 @@ describe('Option Value Custom Endpoints Integration Tests', () => {
     it('should handle empty bulk data array', async () => {
       const response = await request(SERVER_URL)
         .post('/api/option-values/bulk-create')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: [] })
         .expect(200);
 
@@ -601,7 +601,7 @@ describe('Option Value Custom Endpoints Integration Tests', () => {
     it('should reject bulk creation with invalid data format', async () => {
       const response = await request(SERVER_URL)
         .post('/api/option-values/bulk-create')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: 'invalid-data' })
         .expect(400);
 
@@ -612,7 +612,7 @@ describe('Option Value Custom Endpoints Integration Tests', () => {
     it('should reject bulk creation with missing data', async () => {
       const response = await request(SERVER_URL)
         .post('/api/option-values/bulk-create')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({})
         .expect(400);
 
@@ -637,7 +637,7 @@ describe('Option Value Custom Endpoints Integration Tests', () => {
 
           const response = await request(SERVER_URL)
             .post('/api/option-values/bulk-create')
-            .set('Authorization', `Bearer ${adminToken}`)
+            .set('Authorization', `Bearer ${apiToken}`)
             .send({ data: bulkData })
             .expect(200);
 
@@ -658,7 +658,7 @@ describe('Option Value Custom Endpoints Integration Tests', () => {
             try {
               await request(SERVER_URL)
                 .delete(`/api/option-values/${optionValue.documentId}`)
-                .set('Authorization', `Bearer ${adminToken}`)
+                .set('Authorization', `Bearer ${apiToken}`)
                 .expect(200);
             } catch (error) {
               console.warn(`Failed to clean up performance test option value ${optionValue.documentId}:`, error.message);
@@ -684,7 +684,7 @@ describe('Option Value Custom Endpoints Integration Tests', () => {
 
           const response = await request(SERVER_URL)
             .post('/api/option-values/bulk-create')
-            .set('Authorization', `Bearer ${adminToken}`)
+            .set('Authorization', `Bearer ${apiToken}`)
             .send({ data: bulkData })
             .expect(200);
 
@@ -700,7 +700,7 @@ describe('Option Value Custom Endpoints Integration Tests', () => {
             try {
               await request(SERVER_URL)
                 .delete(`/api/option-values/${optionValue.documentId}`)
-                .set('Authorization', `Bearer ${adminToken}`)
+                .set('Authorization', `Bearer ${apiToken}`)
                 .expect(200);
             } catch (error) {
               console.warn(`Failed to clean up duplicate test option value ${optionValue.documentId}:`, error.message);

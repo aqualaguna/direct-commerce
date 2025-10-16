@@ -92,6 +92,9 @@ export default ({ strapi }: { strapi: any }): CartPersistenceService => ({
         },
         populate: {
           items: {
+            filters: {
+              deletedAt: null
+            },
             populate: {
               product: true,
               productListing: true,
@@ -124,11 +127,14 @@ export default ({ strapi }: { strapi: any }): CartPersistenceService => ({
             fields: ['id', 'email', 'username', 'documentId']
           },
           items: {
+            filters: {
+              deletedAt: null
+            },
             populate: {
               product: true,
               productListing: true,
               variant: true
-            }
+            },
           }
         }
       });
@@ -162,7 +168,7 @@ export default ({ strapi }: { strapi: any }): CartPersistenceService => ({
       if (guestCart.items && guestCart.items.length > 0) {
         for (const item of guestCart.items) {
           // Check if item already exists in user cart
-          const existingItem = await strapi.documents('api::cart-item.cart-item').findFirst({
+          const existingItem = await strapi.documents('api::cart.cart-item').findFirst({
             filters: {
               cart: userCart.id,
               product: item.product.id,
@@ -172,7 +178,7 @@ export default ({ strapi }: { strapi: any }): CartPersistenceService => ({
 
           if (existingItem) {
             // Update quantity
-            await strapi.documents('api::cart-item.cart-item').update({
+            await strapi.documents('api::cart.cart-item').update({
               documentId: existingItem.documentId,
               data: {
                 quantity: existingItem.quantity + item.quantity,
@@ -182,7 +188,7 @@ export default ({ strapi }: { strapi: any }): CartPersistenceService => ({
             });
           } else {
             // Create new item in user cart
-            await strapi.documents('api::cart-item.cart-item').create({
+            await strapi.documents('api::cart.cart-item').create({
               data: {
                 cart: userCart.id,
                 product: item.product.id,
@@ -254,14 +260,14 @@ export default ({ strapi }: { strapi: any }): CartPersistenceService => ({
       let deletedCount = 0;
       for (const cart of expiredCarts) {
         // Delete cart items first
-        const cartItems = await strapi.documents('api::cart-item.cart-item').findMany({
+        const cartItems = await strapi.documents('api::cart.cart-item').findMany({
           filters: {
             cart: cart.documentId
           }
         });
 
         for (const item of cartItems) {
-          await strapi.documents('api::cart-item.cart-item').delete({
+          await strapi.documents('api::cart.cart-item').delete({
             documentId: item.documentId
           });
         }
@@ -288,14 +294,14 @@ export default ({ strapi }: { strapi: any }): CartPersistenceService => ({
   async deleteCart(cartId: string) {
     try {
       // Delete cart items first
-      const cartItems = await strapi.documents('api::cart-item.cart-item').findMany({
+      const cartItems = await strapi.documents('api::cart.cart-item').findMany({
         filters: {
           cart: cartId
         }
       });
 
       for (const item of cartItems) {
-        await strapi.documents('api::cart-item.cart-item').delete({
+        await strapi.documents('api::cart.cart-item').delete({
           documentId: item.documentId
         });
       }

@@ -227,6 +227,48 @@ export default ({ env }) => ({
               properties: {},
               conditions: [],
             },
+            {
+              action: 'api::checkout.checkout.create',
+              subject: null,
+              properties: {},
+              conditions: [],
+            },
+            {
+              action: 'api::checkout.checkout.validateCheckout',
+              subject: null,
+              properties: {},
+              conditions: [],
+            },
+            {
+              action: 'api::checkout.checkout.completeCheckout',
+              subject: null,
+              properties: {},
+              conditions: [],
+            },
+            {
+              action: 'api::checkout.checkout.abandonCheckout',
+              subject: null,
+              properties: {},
+              conditions: [],
+            },
+            {
+              action: 'api::payment.payment.createPayment',
+              subject: null,
+              properties: {},
+              conditions: [],
+            },
+            {
+              action: 'api::payment-method.payment-method.getActive',
+              subject: null,
+              properties: {},
+              conditions: [],
+            },
+            {
+              action: 'api::payment-method.payment-method.getByCode',
+              subject: null,
+              properties: {},
+              conditions: [],
+            },
           ]
         },
         authenticated: {
@@ -475,7 +517,44 @@ export default ({ env }) => ({
               properties: {},
               conditions: [],
             },
+            {
+              action: 'api::checkout.checkout.create',
+              subject: null,
+              properties: {},
+              conditions: [],
+            },
+            {
+              action: 'api::checkout.checkout.validateCheckout',
+              subject: null,
+              properties: {},
+              conditions: [],
+            },
+            {
+              action: 'api::checkout.checkout.completeCheckout',
+              subject: null,
+              properties: {},
+              conditions: [],
+            },
+            {
+              action: 'api::checkout.checkout.abandonCheckout',
+              subject: null,
+              properties: {},
+              conditions: [],
+            },
+            {
+              action: 'api::payment.payment.createPayment',
+              subject: null,
+              properties: {},
+              conditions: [],
+            },
           ]
+        },
+        admin: {
+          // List of content types that should be accessible by admin users
+          adminContentTypes: [
+            'api::payment-comment.payment-comment',
+          ],
+          adminActions: ['find', 'findOne', 'create', 'update', 'delete'],
         }
       },
     },

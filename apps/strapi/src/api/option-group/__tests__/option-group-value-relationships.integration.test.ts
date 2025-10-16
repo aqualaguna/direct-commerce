@@ -13,13 +13,13 @@
 import request from 'supertest';
 
 const SERVER_URL = 'http://localhost:1337';
-async function cleanupAll(testOptionValues: any[], testOptionGroups: any[], adminToken: string) {
+async function cleanupAll(testOptionValues: any[], testOptionGroups: any[], apiToken: string) {
   // Clean up test option values first (due to foreign key constraints)
   for (const optionValue of testOptionValues) {
     try {
       await request(SERVER_URL)
         .delete(`/api/option-values/${optionValue.documentId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .expect(200);
     } catch (error) {
       // Option value might already be deleted
@@ -32,21 +32,21 @@ async function cleanupAll(testOptionValues: any[], testOptionGroups: any[], admi
     try {
       const result = await request(SERVER_URL)
         .delete(`/api/option-groups/${optionGroup.documentId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
       if (result.status === 400) {
         console.log(`Failed to delete option group ${optionGroup.documentId} due to remaining values, retrying cleanup...`);
 
         const lastData = await request(SERVER_URL)
           .get(`/api/option-groups/${optionGroup.documentId}`)
-          .set('Authorization', `Bearer ${adminToken}`);
+          .set('Authorization', `Bearer ${apiToken}`);
         for (const optionValue of lastData.body.data.optionValues) {
           await request(SERVER_URL)
             .delete(`/api/option-values/${optionValue.documentId}`)
-            .set('Authorization', `Bearer ${adminToken}`);
+            .set('Authorization', `Bearer ${apiToken}`);
         }
         await request(SERVER_URL)
           .delete(`/api/option-groups/${optionGroup.documentId}`)
-          .set('Authorization', `Bearer ${adminToken}`);
+          .set('Authorization', `Bearer ${apiToken}`);
       }
     } catch (error) {
       // Option group might already be deleted
@@ -57,7 +57,7 @@ async function cleanupAll(testOptionValues: any[], testOptionGroups: any[], admi
 }
 
 describe('Option Group and Value Relationships Integration Tests', () => {
-  let adminToken: string;
+  let apiToken: string;
   
   // Generate unique test data with timestamp
   const timestamp = Date.now();
@@ -68,16 +68,16 @@ describe('Option Group and Value Relationships Integration Tests', () => {
 
   beforeAll(async () => {
     // Get admin token for authenticated requests
-    adminToken = process.env.STRAPI_API_TOKEN as string;
+    apiToken = process.env.STRAPI_API_TOKEN as string;
 
-    if (!adminToken) {
+    if (!apiToken) {
       throw new Error('STRAPI_API_TOKEN environment variable is not set. Please ensure the test server is running and the token is generated.');
     }
   });
 
   // Cleanup after all tests
   afterAll(async () => {
-    await cleanupAll(testOptionValues, testOptionGroups, adminToken);
+    await cleanupAll(testOptionValues, testOptionGroups, apiToken);
   });
 
   // Test data factories
@@ -107,7 +107,7 @@ describe('Option Group and Value Relationships Integration Tests', () => {
       
       const response = await request(SERVER_URL)
         .post('/api/option-groups')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: optionGroupData })
         .expect(201);
       
@@ -135,7 +135,7 @@ describe('Option Group and Value Relationships Integration Tests', () => {
       for (const data of optionValuesData) {
         const response = await request(SERVER_URL)
           .post('/api/option-values')
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .send({ data })
           .expect(200);
         
@@ -144,13 +144,13 @@ describe('Option Group and Value Relationships Integration Tests', () => {
     });
 
     afterAll(async () => {
-      await cleanupAll(testOptionValues, [testOptionGroup], adminToken);
+      await cleanupAll(testOptionValues, [testOptionGroup], apiToken);
     });
 
     it('should retrieve option group with populated option values', async () => {
       const response = await request(SERVER_URL)
         .get(`/api/option-groups/${testOptionGroup.documentId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .query({ populate: 'optionValues' })
         .expect(200);
 
@@ -171,7 +171,7 @@ describe('Option Group and Value Relationships Integration Tests', () => {
     it('should retrieve option values by option group', async () => {
       const response = await request(SERVER_URL)
         .get(`/api/option-values/option-group/${testOptionGroup.documentId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .expect(200);
 
       expect(response.body.data).toBeDefined();
@@ -196,7 +196,7 @@ describe('Option Group and Value Relationships Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .post('/api/option-values')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: newOptionValueData })
         .expect(200);
       testOptionValues.push(response.body.data);
@@ -208,7 +208,7 @@ describe('Option Group and Value Relationships Integration Tests', () => {
       // Verify the option value is associated with the correct option group
       const verifyResponse = await request(SERVER_URL)
         .get(`/api/option-values/${response.body.data.documentId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .expect(200);
 
       expect(verifyResponse.body.data.optionGroup.documentId).toBe(testOptionGroup.documentId);
@@ -225,7 +225,7 @@ describe('Option Group and Value Relationships Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .post('/api/option-values')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: invalidOptionValueData })
         .expect(400);
 
@@ -244,7 +244,7 @@ describe('Option Group and Value Relationships Integration Tests', () => {
       
       const response = await request(SERVER_URL)
         .post('/api/option-groups')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: optionGroupData })
         .expect(201);
       
@@ -256,7 +256,7 @@ describe('Option Group and Value Relationships Integration Tests', () => {
       
       const valueResponse = await request(SERVER_URL)
         .post('/api/option-values')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: optionValueData })
         .expect(200);
       
@@ -267,7 +267,7 @@ describe('Option Group and Value Relationships Integration Tests', () => {
     it('should retrieve option value with populated option group', async () => {
       const response = await request(SERVER_URL)
         .get(`/api/option-values/${testOptionValue.documentId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .query({ populate: 'optionGroup' })
         .expect(200);
 
@@ -288,7 +288,7 @@ describe('Option Group and Value Relationships Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .put(`/api/option-values/${testOptionValue.documentId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: updateData })
         .expect(200);
 
@@ -301,7 +301,7 @@ describe('Option Group and Value Relationships Integration Tests', () => {
       // Verify the relationship is maintained
       const verifyResponse = await request(SERVER_URL)
         .get(`/api/option-values/${testOptionValue.documentId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .query({ populate: 'optionGroup' })
         .expect(200);
 
@@ -318,7 +318,7 @@ describe('Option Group and Value Relationships Integration Tests', () => {
       
       const newGroupResponse = await request(SERVER_URL)
         .post('/api/option-groups')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: newOptionGroupData })
         .expect(201);
       
@@ -333,7 +333,7 @@ describe('Option Group and Value Relationships Integration Tests', () => {
       
       const transferValueResponse = await request(SERVER_URL)
         .post('/api/option-values')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: transferOptionValueData })
         .expect(200);
       
@@ -347,7 +347,7 @@ describe('Option Group and Value Relationships Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .put(`/api/option-values/${transferOptionValue.documentId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: transferData })
         .expect(200);
 
@@ -357,7 +357,7 @@ describe('Option Group and Value Relationships Integration Tests', () => {
       // Verify the transfer was successful
       const verifyResponse = await request(SERVER_URL)
         .get(`/api/option-values/${transferOptionValue.documentId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .query({ populate: 'optionGroup' })
         .expect(200);
 
@@ -380,7 +380,7 @@ describe('Option Group and Value Relationships Integration Tests', () => {
       
       const parentResponse = await request(SERVER_URL)
         .post('/api/option-groups')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: parentGroupData })
         .expect(201);
       
@@ -403,7 +403,7 @@ describe('Option Group and Value Relationships Integration Tests', () => {
       for (const data of parentValuesData) {
         const response = await request(SERVER_URL)
           .post('/api/option-values')
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .send({ data })
           .expect(200);
         
@@ -412,14 +412,14 @@ describe('Option Group and Value Relationships Integration Tests', () => {
     });
 
     afterAll(async () => {
-      await cleanupAll(parentOptionValues, [parentOptionGroup], adminToken);
+      await cleanupAll(parentOptionValues, [parentOptionGroup], apiToken);
     });
 
     it('should inherit option group properties in option values', async () => {
       // Retrieve parent option group with its values
       const response = await request(SERVER_URL)
         .get(`/api/option-groups/${parentOptionGroup.documentId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .query({ populate: 'optionValues' })
         .expect(200);
 
@@ -447,7 +447,7 @@ describe('Option Group and Value Relationships Integration Tests', () => {
       
       const selectGroupResponse = await request(SERVER_URL)
         .post('/api/option-groups')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: selectGroupData })
         .expect(201);
       
@@ -462,7 +462,7 @@ describe('Option Group and Value Relationships Integration Tests', () => {
       
       const radioGroupResponse = await request(SERVER_URL)
         .post('/api/option-groups')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: radioGroupData })
         .expect(201);
       
@@ -477,7 +477,7 @@ describe('Option Group and Value Relationships Integration Tests', () => {
       
       const selectValueResponse = await request(SERVER_URL)
         .post('/api/option-values')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: selectValueData })
         .expect(200);
       
@@ -491,7 +491,7 @@ describe('Option Group and Value Relationships Integration Tests', () => {
       
       const radioValueResponse = await request(SERVER_URL)
         .post('/api/option-values')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: radioValueData })
         .expect(200);
       
@@ -501,7 +501,7 @@ describe('Option Group and Value Relationships Integration Tests', () => {
       // Verify that option values maintain their group's type
       const selectValueVerify = await request(SERVER_URL)
         .get(`/api/option-values/${selectValue.documentId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .query({ populate: 'optionGroup' })
         .expect(200);
 
@@ -509,7 +509,7 @@ describe('Option Group and Value Relationships Integration Tests', () => {
 
       const radioValueVerify = await request(SERVER_URL)
         .get(`/api/option-values/${radioValue.documentId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .query({ populate: 'optionGroup' })
         .expect(200);
 
@@ -530,7 +530,7 @@ describe('Option Group and Value Relationships Integration Tests', () => {
       
       const response = await request(SERVER_URL)
         .post('/api/option-groups')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: optionGroupData })
         .expect(201);
       
@@ -548,7 +548,7 @@ describe('Option Group and Value Relationships Integration Tests', () => {
       // Create first option value
       const firstResponse = await request(SERVER_URL)
         .post('/api/option-values')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: uniqueValueData })
         .expect(200);
       
@@ -563,7 +563,7 @@ describe('Option Group and Value Relationships Integration Tests', () => {
       
       const duplicateResponse = await request(SERVER_URL)
         .post('/api/option-values')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: duplicateValueData })
         .expect(400);
 
@@ -581,7 +581,7 @@ describe('Option Group and Value Relationships Integration Tests', () => {
       
       const anotherGroupResponse = await request(SERVER_URL)
         .post('/api/option-groups')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: anotherGroupData })
         .expect(201);
       
@@ -596,7 +596,7 @@ describe('Option Group and Value Relationships Integration Tests', () => {
       
       const response = await request(SERVER_URL)
         .post('/api/option-values')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: sameValueData })
         .expect(200);
       
@@ -633,7 +633,7 @@ describe('Option Group and Value Relationships Integration Tests', () => {
       for (const data of sortOrderData) {
         const response = await request(SERVER_URL)
           .post('/api/option-values')
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .send({ data })
           .expect(200);
         
@@ -644,7 +644,7 @@ describe('Option Group and Value Relationships Integration Tests', () => {
       // Verify sort order is maintained
       const groupResponse = await request(SERVER_URL)
         .get(`/api/option-groups/${testOptionGroup.documentId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .query({ populate: 'optionValues' })
         .expect(200);
 
@@ -677,7 +677,7 @@ describe('Option Group and Value Relationships Integration Tests', () => {
       
       const response = await request(SERVER_URL)
         .post('/api/option-groups')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: optionGroupData })
         .expect(201);
       
@@ -706,7 +706,7 @@ describe('Option Group and Value Relationships Integration Tests', () => {
       for (const data of optionValuesData) {
         const response = await request(SERVER_URL)
           .post('/api/option-values')
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .send({ data })
           .expect(200);
         
@@ -718,7 +718,7 @@ describe('Option Group and Value Relationships Integration Tests', () => {
       // Try to delete the option group (should fail)
       const deleteResponse = await request(SERVER_URL)
         .delete(`/api/option-groups/${testOptionGroup.documentId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .expect(400);
 
       expect(deleteResponse.body.error).toBeDefined();
@@ -727,7 +727,7 @@ describe('Option Group and Value Relationships Integration Tests', () => {
       // Verify the option group still exists
       const verifyResponse = await request(SERVER_URL)
         .get(`/api/option-groups/${testOptionGroup.documentId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .expect(200);
 
       expect(verifyResponse.body.data).toBeDefined();
@@ -739,14 +739,14 @@ describe('Option Group and Value Relationships Integration Tests', () => {
       for (const optionValue of testOptionValues) {
         await request(SERVER_URL)
           .delete(`/api/option-values/${optionValue.documentId}`)
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .expect(200);
       }
 
       // Now delete the option group (should succeed)
       const deleteResponse = await request(SERVER_URL)
         .delete(`/api/option-groups/${testOptionGroup.documentId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .expect(200);
 
       expect(deleteResponse.body).toBeDefined();
@@ -755,7 +755,7 @@ describe('Option Group and Value Relationships Integration Tests', () => {
       // Verify the option group is deleted
       await request(SERVER_URL)
         .get(`/api/option-groups/${testOptionGroup.documentId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .expect(404);
 
       // Remove from testOptionGroups array since it's deleted
@@ -772,7 +772,7 @@ describe('Option Group and Value Relationships Integration Tests', () => {
       
       const cascadeGroupResponse = await request(SERVER_URL)
         .post('/api/option-groups')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: cascadeGroupData })
         .expect(201);
       
@@ -797,7 +797,7 @@ describe('Option Group and Value Relationships Integration Tests', () => {
       for (const data of cascadeValuesData) {
         const response = await request(SERVER_URL)
           .post('/api/option-values')
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .send({ data })
           .expect(200);
         
@@ -809,7 +809,7 @@ describe('Option Group and Value Relationships Integration Tests', () => {
       for (const optionValue of cascadeValues) {
         const verifyResponse = await request(SERVER_URL)
           .get(`/api/option-values/${optionValue.documentId}`)
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .expect(200);
 
         expect(verifyResponse.body.data).toBeDefined();
@@ -820,20 +820,20 @@ describe('Option Group and Value Relationships Integration Tests', () => {
       for (const optionValue of cascadeValues) {
         await request(SERVER_URL)
           .delete(`/api/option-values/${optionValue.documentId}`)
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .expect(200);
       }
 
       // Now delete the option group
       await request(SERVER_URL)
         .delete(`/api/option-groups/${cascadeGroup.documentId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .expect(200);
 
       // Verify option group is deleted
       await request(SERVER_URL)
         .get(`/api/option-groups/${cascadeGroup.documentId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .expect(404);
 
       // Remove from testOptionGroups array since it's deleted
@@ -854,7 +854,7 @@ describe('Option Group and Value Relationships Integration Tests', () => {
       
       const response = await request(SERVER_URL)
         .post('/api/option-groups')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: optionGroupData })
         .expect(201);
       
@@ -874,7 +874,7 @@ describe('Option Group and Value Relationships Integration Tests', () => {
       for (const data of optionValuesData) {
         const response = await request(SERVER_URL)
           .post('/api/option-values')
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .send({ data })
           .expect(200);
         
@@ -888,7 +888,7 @@ describe('Option Group and Value Relationships Integration Tests', () => {
       
       const response = await request(SERVER_URL)
         .get(`/api/option-groups/${testOptionGroup.documentId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .query({ populate: 'optionValues' })
         .expect(200);
 
@@ -909,7 +909,7 @@ describe('Option Group and Value Relationships Integration Tests', () => {
       
       const response = await request(SERVER_URL)
         .get(`/api/option-values/option-group/${testOptionGroup.documentId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .expect(200);
 
       const endTime = Date.now();
@@ -938,7 +938,7 @@ describe('Option Group and Value Relationships Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .post('/api/option-values/bulk-create')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: bulkData })
         .expect(200);
 
@@ -957,7 +957,7 @@ describe('Option Group and Value Relationships Integration Tests', () => {
       for (const optionValue of response.body.created) {
         await request(SERVER_URL)
           .delete(`/api/option-values/${optionValue.documentId}`)
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .expect(200);
       }
     });
@@ -978,7 +978,7 @@ describe('Option Group and Value Relationships Integration Tests', () => {
       const promises = concurrentData.map(data =>
         request(SERVER_URL)
           .post('/api/option-values')
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .send({ data })
       );
 
@@ -1002,7 +1002,7 @@ describe('Option Group and Value Relationships Integration Tests', () => {
       
       const response = await request(SERVER_URL)
         .get(`/api/option-values/option-group/${testOptionGroup.documentId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .query({ 
           'pagination[page]': 1,
           'pagination[pageSize]': 5,

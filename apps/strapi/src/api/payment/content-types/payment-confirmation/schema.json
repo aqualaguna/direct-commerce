@@ -1,0 +1,85 @@
+{
+  "kind": "collectionType",
+  "collectionName": "payment_confirmations",
+  "info": {
+    "singularName": "payment-confirmation",
+    "pluralName": "payment-confirmations",
+    "displayName": "Payment Confirmation",
+    "description": "Payment confirmation records for manual payment approval workflow"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "payment": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::payment.payment",
+      "inversedBy": "paymentConfirmation",
+      "required": true
+    },
+    "confirmationType": {
+      "type": "enumeration",
+      "enum": [
+        "manual",
+        "automated"
+      ],
+      "required": true,
+      "default": "manual"
+    },
+    "confirmationNotes": {
+      "type": "text",
+      "description": "Admin confirmation notes and comments"
+    },
+    "confirmationMethod": {
+      "type": "enumeration",
+      "enum": [
+        "admin_dashboard",
+        "api_call",
+        "webhook",
+        "email_confirmation",
+        "phone_confirmation"
+      ],
+      "default": "admin_dashboard"
+    },
+    "confirmationEvidence": {
+      "type": "json",
+      "description": "Evidence of payment confirmation (receipt, screenshot, etc.)"
+    },
+    "automationRules": {
+      "type": "json",
+      "description": "Automation rules that triggered this confirmation"
+    },
+    "confirmationStatus": {
+      "type": "enumeration",
+      "enum": [ 
+        "pending",
+        "confirmed",
+        "failed",
+        "cancelled"
+      ],
+      "required": true,
+      "default": "pending"
+    },
+    "retryCount": {
+      "type": "integer",
+      "default": 0,
+      "description": "Number of retry attempts for automated confirmations"
+    },
+    "nextRetryAt": {
+      "type": "datetime",
+      "description": "Next retry attempt time for automated confirmations"
+    },
+    "confirmationHistory": {
+      "type": "json",
+      "description": "History of confirmation attempts and status changes"
+    },
+    "attachments": {
+      "type": "media",
+      "multiple": true,
+      "required": false,
+      "allowedTypes": ["images", "videos", "files"]
+    }
+  }
+}

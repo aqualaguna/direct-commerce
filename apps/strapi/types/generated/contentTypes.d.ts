@@ -458,149 +458,6 @@ export interface ApiAddressAddress extends Struct.CollectionTypeSchema {
   };
 }
 
-export interface ApiBasicPaymentMethodBasicPaymentMethod
-  extends Struct.CollectionTypeSchema {
-  collectionName: 'basic_payment_methods';
-  info: {
-    description: 'Basic payment methods for manual payments';
-    displayName: 'Basic Payment Method';
-    pluralName: 'basic-payment-methods';
-    singularName: 'basic-payment-method';
-  };
-  options: {
-    draftAndPublish: false;
-  };
-  attributes: {
-    code: Schema.Attribute.Enumeration<
-      [
-        'cash',
-        'bank_transfer',
-        'check',
-        'money_order',
-        'digital_wallet',
-        'crypto_currency',
-        'gift_card',
-        'loyalty_card',
-        'store_credit',
-        'subscription',
-        'reward_points',
-        'promotional_code',
-        'credit_card',
-        'debit_card',
-        'payment_app',
-        'qris',
-        'payment_gateway',
-        'manual_payment',
-        'other',
-      ]
-    > &
-      Schema.Attribute.Required &
-      Schema.Attribute.Unique;
-    createdAt: Schema.Attribute.DateTime;
-    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    description: Schema.Attribute.Text & Schema.Attribute.Required;
-    gatewayCode: Schema.Attribute.String;
-    instructions: Schema.Attribute.Text;
-    isActive: Schema.Attribute.Boolean &
-      Schema.Attribute.Required &
-      Schema.Attribute.DefaultTo<true>;
-    isAutomated: Schema.Attribute.Boolean &
-      Schema.Attribute.Required &
-      Schema.Attribute.DefaultTo<false>;
-    locale: Schema.Attribute.String & Schema.Attribute.Private;
-    localizations: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::basic-payment-method.basic-payment-method'
-    > &
-      Schema.Attribute.Private;
-    manualPayments: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::manual-payment.manual-payment'
-    >;
-    name: Schema.Attribute.String &
-      Schema.Attribute.Required &
-      Schema.Attribute.SetMinMaxLength<{
-        maxLength: 255;
-      }>;
-    publishedAt: Schema.Attribute.DateTime;
-    requiresConfirmation: Schema.Attribute.Boolean &
-      Schema.Attribute.Required &
-      Schema.Attribute.DefaultTo<false>;
-    updatedAt: Schema.Attribute.DateTime;
-    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-  };
-}
-
-export interface ApiCartItemCartItem extends Struct.CollectionTypeSchema {
-  collectionName: 'cart_items';
-  info: {
-    description: 'Individual items in shopping cart';
-    displayName: 'Cart Item';
-    pluralName: 'cart-items';
-    singularName: 'cart-item';
-  };
-  options: {
-    draftAndPublish: false;
-  };
-  attributes: {
-    addedAt: Schema.Attribute.DateTime & Schema.Attribute.Required;
-    cart: Schema.Attribute.Relation<'manyToOne', 'api::cart.cart'> &
-      Schema.Attribute.Required;
-    createdAt: Schema.Attribute.DateTime;
-    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    locale: Schema.Attribute.String & Schema.Attribute.Private;
-    localizations: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::cart-item.cart-item'
-    > &
-      Schema.Attribute.Private;
-    notes: Schema.Attribute.Text;
-    price: Schema.Attribute.Decimal &
-      Schema.Attribute.Required &
-      Schema.Attribute.SetMinMax<
-        {
-          min: 0;
-        },
-        number
-      >;
-    product: Schema.Attribute.Relation<'manyToOne', 'api::product.product'> &
-      Schema.Attribute.Required;
-    productListing: Schema.Attribute.Relation<
-      'manyToOne',
-      'api::product-listing.product-listing'
-    >;
-    publishedAt: Schema.Attribute.DateTime;
-    quantity: Schema.Attribute.Integer &
-      Schema.Attribute.Required &
-      Schema.Attribute.SetMinMax<
-        {
-          min: 1;
-        },
-        number
-      > &
-      Schema.Attribute.DefaultTo<1>;
-    selectedOptions: Schema.Attribute.JSON;
-    total: Schema.Attribute.Decimal &
-      Schema.Attribute.Required &
-      Schema.Attribute.SetMinMax<
-        {
-          min: 0;
-        },
-        number
-      >;
-    updatedAt: Schema.Attribute.DateTime;
-    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    variant: Schema.Attribute.Relation<
-      'manyToOne',
-      'api::product-listing-variant.product-listing-variant'
-    >;
-  };
-}
-
 export interface ApiCartCart extends Struct.CollectionTypeSchema {
   collectionName: 'carts';
   info: {
@@ -632,7 +489,7 @@ export interface ApiCartCart extends Struct.CollectionTypeSchema {
       Schema.Attribute.DefaultTo<0>;
     discountCode: Schema.Attribute.String;
     expiresAt: Schema.Attribute.DateTime & Schema.Attribute.Required;
-    items: Schema.Attribute.Relation<'oneToMany', 'api::cart-item.cart-item'>;
+    items: Schema.Attribute.Relation<'oneToMany', 'api::cart.cart-item'>;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<'oneToMany', 'api::cart.cart'> &
       Schema.Attribute.Private;
@@ -688,6 +545,74 @@ export interface ApiCartCart extends Struct.CollectionTypeSchema {
     user: Schema.Attribute.Relation<
       'manyToOne',
       'plugin::users-permissions.user'
+    >;
+  };
+}
+
+export interface ApiCartCartItem extends Struct.CollectionTypeSchema {
+  collectionName: 'cart_items';
+  info: {
+    description: 'Individual items in shopping cart';
+    displayName: 'Cart Item';
+    pluralName: 'cart-items';
+    singularName: 'cart-item';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    cart: Schema.Attribute.Relation<'manyToOne', 'api::cart.cart'> &
+      Schema.Attribute.Required;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    deletedAt: Schema.Attribute.DateTime;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::cart.cart-item'
+    > &
+      Schema.Attribute.Private;
+    notes: Schema.Attribute.Text;
+    price: Schema.Attribute.Decimal &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 0;
+        },
+        number
+      >;
+    product: Schema.Attribute.Relation<'manyToOne', 'api::product.product'> &
+      Schema.Attribute.Required;
+    productListing: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::product-listing.product-listing'
+    >;
+    publishedAt: Schema.Attribute.DateTime;
+    quantity: Schema.Attribute.Integer &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 1;
+        },
+        number
+      > &
+      Schema.Attribute.DefaultTo<1>;
+    selectedOptions: Schema.Attribute.JSON;
+    total: Schema.Attribute.Decimal &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 0;
+        },
+        number
+      >;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    variant: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::product-listing-variant.product-listing-variant'
     >;
   };
 }
@@ -851,14 +776,13 @@ export interface ApiCheckoutActivityCheckoutActivity
   };
 }
 
-export interface ApiCheckoutCheckoutSession
-  extends Struct.CollectionTypeSchema {
-  collectionName: 'checkout_sessions';
+export interface ApiCheckoutCheckout extends Struct.CollectionTypeSchema {
+  collectionName: 'checkouts';
   info: {
-    description: 'Multi-step checkout session management for guest and registered users';
-    displayName: 'Checkout Session';
-    pluralName: 'checkout-sessions';
-    singularName: 'checkout-session';
+    description: 'Multi-step checkout management for guest and registered users';
+    displayName: 'Checkout';
+    pluralName: 'checkouts';
+    singularName: 'checkout';
   };
   options: {
     draftAndPublish: false;
@@ -877,15 +801,11 @@ export interface ApiCheckoutCheckoutSession
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
-      'api::checkout.checkout-session'
+      'api::checkout.checkout'
     > &
       Schema.Attribute.Private;
     metadata: Schema.Attribute.JSON;
-    paymentMethod: Schema.Attribute.Relation<
-      'manyToOne',
-      'api::basic-payment-method.basic-payment-method'
-    > &
-      Schema.Attribute.Required;
+    order: Schema.Attribute.Relation<'oneToOne', 'api::order.order'>;
     publishedAt: Schema.Attribute.DateTime;
     sessionId: Schema.Attribute.String;
     shippingAddress: Schema.Attribute.Relation<
@@ -897,7 +817,7 @@ export interface ApiCheckoutCheckoutSession
         maxLength: 100;
       }>;
     status: Schema.Attribute.Enumeration<
-      ['active', 'completed', 'abandoned', 'expired']
+      ['active', 'completed', 'abandoned', 'locked', 'expired']
     > &
       Schema.Attribute.Required &
       Schema.Attribute.DefaultTo<'active'>;
@@ -1182,88 +1102,6 @@ export interface ApiInventoryInventory extends Struct.CollectionTypeSchema {
   };
 }
 
-export interface ApiManualPaymentManualPayment
-  extends Struct.CollectionTypeSchema {
-  collectionName: 'manual_payments';
-  info: {
-    description: 'Manual payment records for order processing';
-    displayName: 'Manual Payment';
-    pluralName: 'manual-payments';
-    singularName: 'manual-payment';
-  };
-  options: {
-    draftAndPublish: false;
-  };
-  attributes: {
-    adminNotes: Schema.Attribute.Text;
-    amount: Schema.Attribute.Decimal &
-      Schema.Attribute.Required &
-      Schema.Attribute.SetMinMax<
-        {
-          min: 0;
-        },
-        number
-      >;
-    confirmedAt: Schema.Attribute.DateTime;
-    confirmedBy: Schema.Attribute.Relation<
-      'manyToOne',
-      'plugin::users-permissions.user'
-    >;
-    createdAt: Schema.Attribute.DateTime;
-    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    currency: Schema.Attribute.String &
-      Schema.Attribute.Required &
-      Schema.Attribute.SetMinMaxLength<{
-        maxLength: 3;
-      }> &
-      Schema.Attribute.DefaultTo<'USD'>;
-    gatewayId: Schema.Attribute.String;
-    locale: Schema.Attribute.String & Schema.Attribute.Private;
-    localizations: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::manual-payment.manual-payment'
-    > &
-      Schema.Attribute.Private;
-    orderId: Schema.Attribute.String;
-    paymentComments: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::payment-comment.payment-comment'
-    >;
-    paymentConfirmations: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::payment-confirmation.payment-confirmation'
-    >;
-    paymentMethod: Schema.Attribute.Relation<
-      'manyToOne',
-      'api::basic-payment-method.basic-payment-method'
-    > &
-      Schema.Attribute.Required;
-    paymentNotes: Schema.Attribute.Text;
-    paymentReviews: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::payment-review.payment-review'
-    >;
-    paymentType: Schema.Attribute.Enumeration<['manual', 'automated']> &
-      Schema.Attribute.Required &
-      Schema.Attribute.DefaultTo<'manual'>;
-    publishedAt: Schema.Attribute.DateTime;
-    status: Schema.Attribute.Enumeration<
-      ['pending', 'confirmed', 'paid', 'rejected', 'cancelled']
-    > &
-      Schema.Attribute.Required &
-      Schema.Attribute.DefaultTo<'pending'>;
-    updatedAt: Schema.Attribute.DateTime;
-    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    user: Schema.Attribute.Relation<
-      'manyToOne',
-      'plugin::users-permissions.user'
-    > &
-      Schema.Attribute.Required;
-  };
-}
-
 export interface ApiOptionGroupOptionGroup extends Struct.CollectionTypeSchema {
   collectionName: 'option_groups';
   info: {
@@ -1366,96 +1204,167 @@ export interface ApiOptionValueOptionValue extends Struct.CollectionTypeSchema {
   };
 }
 
-export interface ApiOrderConfirmationOrderConfirmation
-  extends Struct.CollectionTypeSchema {
-  collectionName: 'order_confirmations';
+export interface ApiOrderOrder extends Struct.CollectionTypeSchema {
+  collectionName: 'orders';
   info: {
-    description: 'Order confirmations and receipt generation';
-    displayName: 'Order Confirmation';
-    pluralName: 'order-confirmations';
-    singularName: 'order-confirmation';
+    description: 'Ecommerce orders with comprehensive management';
+    displayName: 'Order';
+    pluralName: 'orders';
+    singularName: 'order';
   };
   options: {
     draftAndPublish: false;
   };
   attributes: {
-    confirmationNumber: Schema.Attribute.String &
+    actualDelivery: Schema.Attribute.DateTime;
+    adminNotes: Schema.Attribute.Text &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 2000;
+      }>;
+    billingAddress: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::address.address'
+    > &
+      Schema.Attribute.Required;
+    checkout: Schema.Attribute.Relation<'oneToOne', 'api::checkout.checkout'>;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    currency: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 3;
+      }> &
+      Schema.Attribute.DefaultTo<'USD'>;
+    customerNotes: Schema.Attribute.Text &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 1000;
+      }>;
+    discount: Schema.Attribute.Decimal &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 0;
+        },
+        number
+      > &
+      Schema.Attribute.DefaultTo<0>;
+    estimatedDelivery: Schema.Attribute.DateTime;
+    fraudScore: Schema.Attribute.Integer &
+      Schema.Attribute.SetMinMax<
+        {
+          max: 100;
+          min: 0;
+        },
+        number
+      >;
+    giftMessage: Schema.Attribute.Text &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 500;
+      }>;
+    isGift: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
+    items: Schema.Attribute.Relation<'oneToMany', 'api::order.order-item'>;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<'oneToMany', 'api::order.order'> &
+      Schema.Attribute.Private;
+    metadata: Schema.Attribute.JSON;
+    orderNumber: Schema.Attribute.String &
       Schema.Attribute.Required &
       Schema.Attribute.Unique &
       Schema.Attribute.SetMinMaxLength<{
         maxLength: 50;
+        minLength: 1;
       }>;
-    confirmationType: Schema.Attribute.Enumeration<
-      ['automatic', 'manual', 'payment_triggered']
+    orderSource: Schema.Attribute.Enumeration<
+      ['web', 'mobile', 'admin', 'api']
     > &
       Schema.Attribute.Required &
-      Schema.Attribute.DefaultTo<'automatic'>;
-    createdAt: Schema.Attribute.DateTime;
-    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    customMessage: Schema.Attribute.Text &
-      Schema.Attribute.SetMinMaxLength<{
-        maxLength: 1000;
-      }>;
-    emailAddress: Schema.Attribute.Email & Schema.Attribute.Required;
-    emailSent: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
-    emailSentAt: Schema.Attribute.DateTime;
-    emailTemplate: Schema.Attribute.String &
+      Schema.Attribute.DefaultTo<'web'>;
+    payments: Schema.Attribute.Relation<'oneToMany', 'api::payment.payment'>;
+    paymentStatus: Schema.Attribute.Enumeration<
+      ['pending', 'paid', 'failed', 'refunded', 'cancelled']
+    > &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'pending'>;
+    publishedAt: Schema.Attribute.DateTime;
+    shipping: Schema.Attribute.Decimal &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 0;
+        },
+        number
+      > &
+      Schema.Attribute.DefaultTo<0>;
+    shippingAddress: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::address.address'
+    > &
+      Schema.Attribute.Required;
+    shippingMethod: Schema.Attribute.String &
+      Schema.Attribute.Required &
       Schema.Attribute.SetMinMaxLength<{
         maxLength: 100;
       }>;
-    estimatedProcessingTime: Schema.Attribute.String &
-      Schema.Attribute.SetMinMaxLength<{
-        maxLength: 200;
-      }>;
-    locale: Schema.Attribute.String & Schema.Attribute.Private;
-    localizations: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::order-confirmation.order-confirmation'
+    status: Schema.Attribute.Enumeration<
+      [
+        'pending',
+        'confirmed',
+        'processing',
+        'shipped',
+        'delivered',
+        'cancelled',
+        'refunded',
+      ]
     > &
-      Schema.Attribute.Private;
-    nextSteps: Schema.Attribute.Text &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'pending'>;
+    statusHistory: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::order.order-status'
+    >;
+    subtotal: Schema.Attribute.Decimal &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 0;
+        },
+        number
+      > &
+      Schema.Attribute.DefaultTo<0>;
+    tax: Schema.Attribute.Decimal &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 0;
+        },
+        number
+      > &
+      Schema.Attribute.DefaultTo<0>;
+    total: Schema.Attribute.Decimal &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 0;
+        },
+        number
+      > &
+      Schema.Attribute.DefaultTo<0>;
+    trackingNumber: Schema.Attribute.String &
       Schema.Attribute.SetMinMaxLength<{
-        maxLength: 1000;
-      }>;
-    order: Schema.Attribute.Relation<'manyToOne', 'api::order.order'> &
-      Schema.Attribute.Required;
-    phoneNumber: Schema.Attribute.String &
-      Schema.Attribute.SetMinMaxLength<{
-        maxLength: 20;
-      }>;
-    printingQueue: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
-    promotionalContent: Schema.Attribute.Text &
-      Schema.Attribute.SetMinMaxLength<{
-        maxLength: 2000;
-      }>;
-    publishedAt: Schema.Attribute.DateTime;
-    receiptFormat: Schema.Attribute.Enumeration<['pdf', 'html', 'json']> &
-      Schema.Attribute.DefaultTo<'pdf'>;
-    receiptGenerated: Schema.Attribute.Boolean &
-      Schema.Attribute.DefaultTo<false>;
-    receiptGeneratedAt: Schema.Attribute.DateTime;
-    receiptUrl: Schema.Attribute.String &
-      Schema.Attribute.SetMinMaxLength<{
-        maxLength: 500;
-      }>;
-    smsNotificationSent: Schema.Attribute.Boolean &
-      Schema.Attribute.DefaultTo<false>;
-    smsNotificationSentAt: Schema.Attribute.DateTime;
-    socialSharingEnabled: Schema.Attribute.Boolean &
-      Schema.Attribute.DefaultTo<false>;
-    surveyLink: Schema.Attribute.String &
-      Schema.Attribute.SetMinMaxLength<{
-        maxLength: 500;
+        maxLength: 100;
       }>;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
+    user: Schema.Attribute.Relation<
+      'manyToOne',
+      'plugin::users-permissions.user'
+    >;
   };
 }
 
-export interface ApiOrderHistoryOrderHistory
-  extends Struct.CollectionTypeSchema {
+export interface ApiOrderOrderHistory extends Struct.CollectionTypeSchema {
   collectionName: 'order_histories';
   info: {
     description: 'Order history tracking and audit trail';
@@ -1475,8 +1384,7 @@ export interface ApiOrderHistoryOrderHistory
     changedBy: Schema.Attribute.Relation<
       'manyToOne',
       'plugin::users-permissions.user'
-    > &
-      Schema.Attribute.Required;
+    >;
     changeReason: Schema.Attribute.Text &
       Schema.Attribute.SetMinMaxLength<{
         maxLength: 500;
@@ -1527,7 +1435,7 @@ export interface ApiOrderHistoryOrderHistory
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
-      'api::order-history.order-history'
+      'api::order.order-history'
     > &
       Schema.Attribute.Private;
     metadata: Schema.Attribute.JSON;
@@ -1554,7 +1462,7 @@ export interface ApiOrderHistoryOrderHistory
   };
 }
 
-export interface ApiOrderItemOrderItem extends Struct.CollectionTypeSchema {
+export interface ApiOrderOrderItem extends Struct.CollectionTypeSchema {
   collectionName: 'order_items';
   info: {
     description: 'Individual items within an order';
@@ -1569,62 +1477,30 @@ export interface ApiOrderItemOrderItem extends Struct.CollectionTypeSchema {
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
-    customizations: Schema.Attribute.JSON;
-    digitalDeliveryStatus: Schema.Attribute.Enumeration<
-      ['pending', 'delivered', 'failed']
-    >;
-    dimensions: Schema.Attribute.JSON;
-    discountAmount: Schema.Attribute.Decimal &
-      Schema.Attribute.Required &
-      Schema.Attribute.SetMinMax<
-        {
-          min: 0;
-        },
-        number
-      > &
-      Schema.Attribute.DefaultTo<0>;
-    giftWrapping: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
     isDigital: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
-    linePrice: Schema.Attribute.Decimal &
-      Schema.Attribute.Required &
-      Schema.Attribute.SetMinMax<
-        {
-          min: 0;
-        },
-        number
-      >;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
-      'api::order-item.order-item'
+      'api::order.order-item'
     > &
       Schema.Attribute.Private;
+    metadata: Schema.Attribute.JSON;
     order: Schema.Attribute.Relation<'manyToOne', 'api::order.order'>;
-    originalPrice: Schema.Attribute.Decimal &
+    price: Schema.Attribute.Decimal &
+      Schema.Attribute.Required &
       Schema.Attribute.SetMinMax<
         {
           min: 0;
         },
         number
       >;
-    productDescription: Schema.Attribute.Text &
-      Schema.Attribute.SetMinMaxLength<{
-        maxLength: 2000;
-      }>;
+    product: Schema.Attribute.Relation<'manyToOne', 'api::product.product'> &
+      Schema.Attribute.Required;
     productListing: Schema.Attribute.Relation<
       'manyToOne',
       'api::product-listing.product-listing'
     > &
       Schema.Attribute.Required;
-    productListingVariant: Schema.Attribute.Relation<
-      'manyToOne',
-      'api::product-listing-variant.product-listing-variant'
-    >;
-    productName: Schema.Attribute.String &
-      Schema.Attribute.Required &
-      Schema.Attribute.SetMinMaxLength<{
-        maxLength: 255;
-      }>;
     publishedAt: Schema.Attribute.DateTime;
     quantity: Schema.Attribute.Integer &
       Schema.Attribute.Required &
@@ -1635,22 +1511,15 @@ export interface ApiOrderItemOrderItem extends Struct.CollectionTypeSchema {
         number
       > &
       Schema.Attribute.DefaultTo<1>;
-    returnEligible: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<true>;
-    sku: Schema.Attribute.String &
-      Schema.Attribute.Required &
-      Schema.Attribute.SetMinMaxLength<{
-        maxLength: 100;
-      }>;
-    taxAmount: Schema.Attribute.Decimal &
+    subtotal: Schema.Attribute.Decimal &
       Schema.Attribute.Required &
       Schema.Attribute.SetMinMax<
         {
           min: 0;
         },
         number
-      > &
-      Schema.Attribute.DefaultTo<0>;
-    unitPrice: Schema.Attribute.Decimal &
+      >;
+    tax: Schema.Attribute.Decimal &
       Schema.Attribute.Required &
       Schema.Attribute.SetMinMax<
         {
@@ -1661,94 +1530,14 @@ export interface ApiOrderItemOrderItem extends Struct.CollectionTypeSchema {
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
-    warrantyInfo: Schema.Attribute.Text &
-      Schema.Attribute.SetMinMaxLength<{
-        maxLength: 500;
-      }>;
-    weight: Schema.Attribute.Decimal &
-      Schema.Attribute.SetMinMax<
-        {
-          min: 0;
-        },
-        number
-      >;
-  };
-}
-
-export interface ApiOrderStatusUpdateOrderStatusUpdate
-  extends Struct.CollectionTypeSchema {
-  collectionName: 'order_status_updates';
-  info: {
-    description: 'Order status update records for tracking order lifecycle changes';
-    displayName: 'Order Status Update';
-    pluralName: 'order-status-updates';
-    singularName: 'order-status-update';
-  };
-  options: {
-    draftAndPublish: false;
-  };
-  attributes: {
-    actualDeliveryDate: Schema.Attribute.Date;
-    automationRule: Schema.Attribute.String;
-    createdAt: Schema.Attribute.DateTime;
-    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    estimatedDeliveryDate: Schema.Attribute.Date;
-    locale: Schema.Attribute.String & Schema.Attribute.Private;
-    localizations: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::order-status-update.order-status-update'
-    > &
-      Schema.Attribute.Private;
-    metadata: Schema.Attribute.JSON;
-    newStatus: Schema.Attribute.String & Schema.Attribute.Required;
-    notificationChannels: Schema.Attribute.JSON;
-    notificationSent: Schema.Attribute.Boolean &
-      Schema.Attribute.DefaultTo<false>;
-    orderId: Schema.Attribute.String;
-    paymentConfirmation: Schema.Attribute.Relation<
-      'oneToOne',
-      'api::payment-confirmation.payment-confirmation'
-    >;
-    previousStatus: Schema.Attribute.String & Schema.Attribute.Required;
-    publishedAt: Schema.Attribute.DateTime;
-    statusUpdateHistory: Schema.Attribute.JSON;
-    triggeredBy: Schema.Attribute.Enumeration<
-      [
-        'payment_confirmation',
-        'manual_update',
-        'system',
-        'customer_request',
-        'admin_action',
-        'automated_rule',
-      ]
-    > &
-      Schema.Attribute.Required &
-      Schema.Attribute.DefaultTo<'manual_update'>;
-    updatedAt: Schema.Attribute.DateTime;
-    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    updateNotes: Schema.Attribute.Text;
-    updateReason: Schema.Attribute.Enumeration<
-      [
-        'payment_received',
-        'payment_confirmed',
-        'payment_failed',
-        'order_cancelled',
-        'order_refunded',
-        'shipping_updated',
-        'customer_request',
-        'system_automation',
-        'admin_decision',
-        'fraud_detection',
-        'inventory_issue',
-        'other',
-      ]
+    variant: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::product-listing-variant.product-listing-variant'
     >;
   };
 }
 
-export interface ApiOrderStatusOrderStatus extends Struct.CollectionTypeSchema {
+export interface ApiOrderOrderStatus extends Struct.CollectionTypeSchema {
   collectionName: 'order_statuses';
   info: {
     description: 'Order status history and tracking';
@@ -1783,7 +1572,7 @@ export interface ApiOrderStatusOrderStatus extends Struct.CollectionTypeSchema {
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
-      'api::order-status.order-status'
+      'api::order.order-status'
     > &
       Schema.Attribute.Private;
     notes: Schema.Attribute.Text &
@@ -1836,8 +1625,7 @@ export interface ApiOrderStatusOrderStatus extends Struct.CollectionTypeSchema {
   };
 }
 
-export interface ApiOrderTrackingOrderTracking
-  extends Struct.CollectionTypeSchema {
+export interface ApiOrderOrderTracking extends Struct.CollectionTypeSchema {
   collectionName: 'order_trackings';
   info: {
     description: 'Order tracking and shipment updates';
@@ -1878,7 +1666,7 @@ export interface ApiOrderTrackingOrderTracking
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
-      'api::order-tracking.order-tracking'
+      'api::order.order-tracking'
     > &
       Schema.Attribute.Private;
     metadata: Schema.Attribute.JSON;
@@ -1947,185 +1735,12 @@ export interface ApiOrderTrackingOrderTracking
   };
 }
 
-export interface ApiOrderOrder extends Struct.CollectionTypeSchema {
-  collectionName: 'orders';
-  info: {
-    description: 'Ecommerce orders with comprehensive management';
-    displayName: 'Order';
-    pluralName: 'orders';
-    singularName: 'order';
-  };
-  options: {
-    draftAndPublish: false;
-  };
-  attributes: {
-    actualDelivery: Schema.Attribute.DateTime;
-    adminNotes: Schema.Attribute.Text &
-      Schema.Attribute.SetMinMaxLength<{
-        maxLength: 2000;
-      }>;
-    billingAddress: Schema.Attribute.Relation<
-      'manyToOne',
-      'api::address.address'
-    > &
-      Schema.Attribute.Required;
-    cart: Schema.Attribute.Relation<'oneToOne', 'api::cart.cart'>;
-    checkoutSession: Schema.Attribute.Relation<
-      'oneToOne',
-      'api::checkout.checkout-session'
-    >;
-    createdAt: Schema.Attribute.DateTime;
-    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    currency: Schema.Attribute.String &
-      Schema.Attribute.Required &
-      Schema.Attribute.SetMinMaxLength<{
-        maxLength: 3;
-      }> &
-      Schema.Attribute.DefaultTo<'USD'>;
-    customerNotes: Schema.Attribute.Text &
-      Schema.Attribute.SetMinMaxLength<{
-        maxLength: 1000;
-      }>;
-    discount: Schema.Attribute.Decimal &
-      Schema.Attribute.Required &
-      Schema.Attribute.SetMinMax<
-        {
-          min: 0;
-        },
-        number
-      > &
-      Schema.Attribute.DefaultTo<0>;
-    estimatedDelivery: Schema.Attribute.DateTime;
-    fraudScore: Schema.Attribute.Integer &
-      Schema.Attribute.SetMinMax<
-        {
-          max: 100;
-          min: 0;
-        },
-        number
-      >;
-    giftMessage: Schema.Attribute.Text &
-      Schema.Attribute.SetMinMaxLength<{
-        maxLength: 500;
-      }>;
-    isGift: Schema.Attribute.Boolean & Schema.Attribute.DefaultTo<false>;
-    items: Schema.Attribute.Relation<'oneToMany', 'api::order-item.order-item'>;
-    locale: Schema.Attribute.String & Schema.Attribute.Private;
-    localizations: Schema.Attribute.Relation<'oneToMany', 'api::order.order'> &
-      Schema.Attribute.Private;
-    manualPayment: Schema.Attribute.Relation<
-      'oneToOne',
-      'api::manual-payment.manual-payment'
-    >;
-    metadata: Schema.Attribute.JSON;
-    orderNumber: Schema.Attribute.String &
-      Schema.Attribute.Required &
-      Schema.Attribute.Unique &
-      Schema.Attribute.SetMinMaxLength<{
-        maxLength: 50;
-        minLength: 1;
-      }>;
-    orderSource: Schema.Attribute.Enumeration<
-      ['web', 'mobile', 'admin', 'api']
-    > &
-      Schema.Attribute.Required &
-      Schema.Attribute.DefaultTo<'web'>;
-    paymentMethod: Schema.Attribute.String &
-      Schema.Attribute.Required &
-      Schema.Attribute.SetMinMaxLength<{
-        maxLength: 100;
-      }>;
-    paymentStatus: Schema.Attribute.Enumeration<
-      ['pending', 'confirmed', 'paid', 'failed', 'refunded', 'cancelled']
-    > &
-      Schema.Attribute.Required &
-      Schema.Attribute.DefaultTo<'pending'>;
-    publishedAt: Schema.Attribute.DateTime;
-    referralCode: Schema.Attribute.String &
-      Schema.Attribute.SetMinMaxLength<{
-        maxLength: 50;
-      }>;
-    shipping: Schema.Attribute.Decimal &
-      Schema.Attribute.Required &
-      Schema.Attribute.SetMinMax<
-        {
-          min: 0;
-        },
-        number
-      > &
-      Schema.Attribute.DefaultTo<0>;
-    shippingAddress: Schema.Attribute.Relation<
-      'manyToOne',
-      'api::address.address'
-    > &
-      Schema.Attribute.Required;
-    shippingMethod: Schema.Attribute.String &
-      Schema.Attribute.Required &
-      Schema.Attribute.SetMinMaxLength<{
-        maxLength: 100;
-      }>;
-    status: Schema.Attribute.Enumeration<
-      [
-        'pending',
-        'confirmed',
-        'processing',
-        'shipped',
-        'delivered',
-        'cancelled',
-        'refunded',
-      ]
-    > &
-      Schema.Attribute.Required &
-      Schema.Attribute.DefaultTo<'pending'>;
-    subtotal: Schema.Attribute.Decimal &
-      Schema.Attribute.Required &
-      Schema.Attribute.SetMinMax<
-        {
-          min: 0;
-        },
-        number
-      > &
-      Schema.Attribute.DefaultTo<0>;
-    tags: Schema.Attribute.JSON;
-    tax: Schema.Attribute.Decimal &
-      Schema.Attribute.Required &
-      Schema.Attribute.SetMinMax<
-        {
-          min: 0;
-        },
-        number
-      > &
-      Schema.Attribute.DefaultTo<0>;
-    total: Schema.Attribute.Decimal &
-      Schema.Attribute.Required &
-      Schema.Attribute.SetMinMax<
-        {
-          min: 0;
-        },
-        number
-      > &
-      Schema.Attribute.DefaultTo<0>;
-    trackingNumber: Schema.Attribute.String &
-      Schema.Attribute.SetMinMaxLength<{
-        maxLength: 100;
-      }>;
-    updatedAt: Schema.Attribute.DateTime;
-    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    user: Schema.Attribute.Relation<
-      'manyToOne',
-      'plugin::users-permissions.user'
-    >;
-  };
-}
-
 export interface ApiPaymentCommentPaymentComment
   extends Struct.CollectionTypeSchema {
-  collectionName: 'payment_notes';
+  collectionName: 'payment_comments';
   info: {
-    description: 'Notes and comments for manual payments';
-    displayName: 'Payment Note';
+    description: 'Comments for payments';
+    displayName: 'Payment Comment';
     pluralName: 'payment-comments';
     singularName: 'payment-comment';
   };
@@ -2152,16 +1767,82 @@ export interface ApiPaymentCommentPaymentComment
       'api::payment-comment.payment-comment'
     > &
       Schema.Attribute.Private;
-    manualPayment: Schema.Attribute.Relation<
-      'manyToOne',
-      'api::manual-payment.manual-payment'
-    >;
     metadata: Schema.Attribute.JSON;
-    noteType: Schema.Attribute.Enumeration<
-      ['customer', 'admin', 'system', 'gateway']
+    payment: Schema.Attribute.Relation<'manyToOne', 'api::payment.payment'>;
+    publishedAt: Schema.Attribute.DateTime;
+    type: Schema.Attribute.Enumeration<
+      ['admin', 'system', 'gateway', 'internal', 'warning', 'info']
     > &
       Schema.Attribute.Required &
       Schema.Attribute.DefaultTo<'admin'>;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+  };
+}
+
+export interface ApiPaymentMethodPaymentMethod
+  extends Struct.CollectionTypeSchema {
+  collectionName: 'payment_methods';
+  info: {
+    description: 'Payment methods for manual and automated payments';
+    displayName: 'Payment Method';
+    pluralName: 'payment-methods';
+    singularName: 'payment-method';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    code: Schema.Attribute.Enumeration<
+      [
+        'cash',
+        'bank_transfer',
+        'check',
+        'money_order',
+        'digital_wallet',
+        'crypto_currency',
+        'gift_card',
+        'loyalty_card',
+        'store_credit',
+        'subscription',
+        'reward_points',
+        'promotional_code',
+        'credit_card',
+        'debit_card',
+        'payment_app',
+        'qris',
+        'payment_gateway',
+        'manual_payment',
+        'other',
+      ]
+    > &
+      Schema.Attribute.Required &
+      Schema.Attribute.Unique;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    description: Schema.Attribute.Text & Schema.Attribute.Required;
+    gatewayCode: Schema.Attribute.String;
+    instructions: Schema.Attribute.Text;
+    isActive: Schema.Attribute.Boolean &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<true>;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::payment-method.payment-method'
+    > &
+      Schema.Attribute.Private;
+    name: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 255;
+      }>;
+    payments: Schema.Attribute.Relation<'oneToMany', 'api::payment.payment'>;
+    paymentType: Schema.Attribute.Enumeration<['manual', 'automated']> &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'manual'>;
     publishedAt: Schema.Attribute.DateTime;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
@@ -2169,7 +1850,79 @@ export interface ApiPaymentCommentPaymentComment
   };
 }
 
-export interface ApiPaymentConfirmationPaymentConfirmation
+export interface ApiPaymentPayment extends Struct.CollectionTypeSchema {
+  collectionName: 'payments';
+  info: {
+    description: 'Payment records for order processing';
+    displayName: 'Payment';
+    pluralName: 'payments';
+    singularName: 'payment';
+  };
+  options: {
+    draftAndPublish: false;
+  };
+  attributes: {
+    adminNotes: Schema.Attribute.Text;
+    amount: Schema.Attribute.Decimal &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMax<
+        {
+          min: 0;
+        },
+        number
+      >;
+    createdAt: Schema.Attribute.DateTime;
+    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    currency: Schema.Attribute.String &
+      Schema.Attribute.Required &
+      Schema.Attribute.SetMinMaxLength<{
+        maxLength: 3;
+      }> &
+      Schema.Attribute.DefaultTo<'USD'>;
+    gatewayId: Schema.Attribute.String;
+    locale: Schema.Attribute.String & Schema.Attribute.Private;
+    localizations: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::payment.payment'
+    > &
+      Schema.Attribute.Private;
+    order: Schema.Attribute.Relation<'manyToOne', 'api::order.order'> &
+      Schema.Attribute.Required;
+    paymentComments: Schema.Attribute.Relation<
+      'oneToMany',
+      'api::payment-comment.payment-comment'
+    >;
+    paymentConfirmation: Schema.Attribute.Relation<
+      'oneToOne',
+      'api::payment.payment-confirmation'
+    >;
+    paymentMethod: Schema.Attribute.Relation<
+      'manyToOne',
+      'api::payment-method.payment-method'
+    > &
+      Schema.Attribute.Required;
+    paymentNotes: Schema.Attribute.Text;
+    paymentType: Schema.Attribute.Enumeration<['manual', 'automated']> &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'manual'>;
+    publishedAt: Schema.Attribute.DateTime;
+    status: Schema.Attribute.Enumeration<
+      ['pending', 'confirmed', 'expired', 'rejected', 'cancelled']
+    > &
+      Schema.Attribute.Required &
+      Schema.Attribute.DefaultTo<'pending'>;
+    updatedAt: Schema.Attribute.DateTime;
+    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
+      Schema.Attribute.Private;
+    user: Schema.Attribute.Relation<
+      'manyToOne',
+      'plugin::users-permissions.user'
+    >;
+  };
+}
+
+export interface ApiPaymentPaymentConfirmation
   extends Struct.CollectionTypeSchema {
   collectionName: 'payment_confirmations';
   info: {
@@ -2182,6 +1935,7 @@ export interface ApiPaymentConfirmationPaymentConfirmation
     draftAndPublish: false;
   };
   attributes: {
+    attachments: Schema.Attribute.Media<'images' | 'videos' | 'files', true>;
     automationRules: Schema.Attribute.JSON;
     confirmationEvidence: Schema.Attribute.JSON;
     confirmationHistory: Schema.Attribute.JSON;
@@ -2204,91 +1958,20 @@ export interface ApiPaymentConfirmationPaymentConfirmation
     confirmationType: Schema.Attribute.Enumeration<['manual', 'automated']> &
       Schema.Attribute.Required &
       Schema.Attribute.DefaultTo<'manual'>;
-    confirmedAt: Schema.Attribute.DateTime & Schema.Attribute.Required;
-    confirmedBy: Schema.Attribute.Relation<
-      'manyToOne',
-      'plugin::users-permissions.user'
-    > &
-      Schema.Attribute.Required;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
     locale: Schema.Attribute.String & Schema.Attribute.Private;
     localizations: Schema.Attribute.Relation<
       'oneToMany',
-      'api::payment-confirmation.payment-confirmation'
+      'api::payment.payment-confirmation'
     > &
       Schema.Attribute.Private;
-    manualPayment: Schema.Attribute.Relation<
-      'manyToOne',
-      'api::manual-payment.manual-payment'
-    > &
-      Schema.Attribute.Required;
     nextRetryAt: Schema.Attribute.DateTime;
-    orderStatusUpdate: Schema.Attribute.Relation<
-      'oneToOne',
-      'api::order-status-update.order-status-update'
-    >;
+    payment: Schema.Attribute.Relation<'oneToOne', 'api::payment.payment'> &
+      Schema.Attribute.Required;
     publishedAt: Schema.Attribute.DateTime;
     retryCount: Schema.Attribute.Integer & Schema.Attribute.DefaultTo<0>;
-    updatedAt: Schema.Attribute.DateTime;
-    updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-  };
-}
-
-export interface ApiPaymentReviewPaymentReview
-  extends Struct.CollectionTypeSchema {
-  collectionName: 'payment_reviews';
-  info: {
-    description: 'Payment review records for admin approval workflow';
-    displayName: 'Payment Review';
-    pluralName: 'payment-reviews';
-    singularName: 'payment-review';
-  };
-  options: {
-    draftAndPublish: false;
-  };
-  attributes: {
-    assignedTo: Schema.Attribute.Relation<
-      'manyToOne',
-      'plugin::users-permissions.user'
-    >;
-    createdAt: Schema.Attribute.DateTime;
-    createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
-      Schema.Attribute.Private;
-    dueDate: Schema.Attribute.DateTime;
-    locale: Schema.Attribute.String & Schema.Attribute.Private;
-    localizations: Schema.Attribute.Relation<
-      'oneToMany',
-      'api::payment-review.payment-review'
-    > &
-      Schema.Attribute.Private;
-    manualPayment: Schema.Attribute.Relation<
-      'manyToOne',
-      'api::manual-payment.manual-payment'
-    > &
-      Schema.Attribute.Required;
-    priority: Schema.Attribute.Enumeration<
-      ['low', 'normal', 'high', 'urgent']
-    > &
-      Schema.Attribute.DefaultTo<'normal'>;
-    publishedAt: Schema.Attribute.DateTime;
-    reviewDuration: Schema.Attribute.Integer;
-    reviewedAt: Schema.Attribute.DateTime;
-    reviewer: Schema.Attribute.Relation<
-      'manyToOne',
-      'plugin::users-permissions.user'
-    > &
-      Schema.Attribute.Required;
-    reviewHistory: Schema.Attribute.JSON;
-    reviewNotes: Schema.Attribute.Text;
-    status: Schema.Attribute.Enumeration<
-      ['pending', 'approved', 'rejected', 'requires_info']
-    > &
-      Schema.Attribute.Required &
-      Schema.Attribute.DefaultTo<'pending'>;
-    tags: Schema.Attribute.JSON;
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -2730,7 +2413,8 @@ export interface ApiStockReservationStockReservation
     > &
       Schema.Attribute.Private;
     metadata: Schema.Attribute.JSON;
-    orderId: Schema.Attribute.String & Schema.Attribute.Required;
+    order: Schema.Attribute.Relation<'manyToOne', 'api::order.order'> &
+      Schema.Attribute.Required;
     product: Schema.Attribute.Relation<'manyToOne', 'api::product.product'> &
       Schema.Attribute.Required;
     publishedAt: Schema.Attribute.DateTime;
@@ -2743,6 +2427,7 @@ export interface ApiStockReservationStockReservation
         number
       >;
     reason: Schema.Attribute.String;
+    sessionId: Schema.Attribute.String;
     status: Schema.Attribute.Enumeration<
       ['active', 'completed', 'expired', 'cancelled']
     > &
@@ -3618,29 +3303,26 @@ declare module '@strapi/strapi' {
       'admin::transfer-token-permission': AdminTransferTokenPermission;
       'admin::user': AdminUser;
       'api::address.address': ApiAddressAddress;
-      'api::basic-payment-method.basic-payment-method': ApiBasicPaymentMethodBasicPaymentMethod;
-      'api::cart-item.cart-item': ApiCartItemCartItem;
       'api::cart.cart': ApiCartCart;
+      'api::cart.cart-item': ApiCartCartItem;
       'api::category.category': ApiCategoryCategory;
       'api::checkout-activity.checkout-activity': ApiCheckoutActivityCheckoutActivity;
-      'api::checkout.checkout-session': ApiCheckoutCheckoutSession;
+      'api::checkout.checkout': ApiCheckoutCheckout;
       'api::engagement-metrics.engagement-metric': ApiEngagementMetricsEngagementMetric;
       'api::guest.guest': ApiGuestGuest;
       'api::inventory-history.inventory-history': ApiInventoryHistoryInventoryHistory;
       'api::inventory.inventory': ApiInventoryInventory;
-      'api::manual-payment.manual-payment': ApiManualPaymentManualPayment;
       'api::option-group.option-group': ApiOptionGroupOptionGroup;
       'api::option-value.option-value': ApiOptionValueOptionValue;
-      'api::order-confirmation.order-confirmation': ApiOrderConfirmationOrderConfirmation;
-      'api::order-history.order-history': ApiOrderHistoryOrderHistory;
-      'api::order-item.order-item': ApiOrderItemOrderItem;
-      'api::order-status-update.order-status-update': ApiOrderStatusUpdateOrderStatusUpdate;
-      'api::order-status.order-status': ApiOrderStatusOrderStatus;
-      'api::order-tracking.order-tracking': ApiOrderTrackingOrderTracking;
       'api::order.order': ApiOrderOrder;
+      'api::order.order-history': ApiOrderOrderHistory;
+      'api::order.order-item': ApiOrderOrderItem;
+      'api::order.order-status': ApiOrderOrderStatus;
+      'api::order.order-tracking': ApiOrderOrderTracking;
       'api::payment-comment.payment-comment': ApiPaymentCommentPaymentComment;
-      'api::payment-confirmation.payment-confirmation': ApiPaymentConfirmationPaymentConfirmation;
-      'api::payment-review.payment-review': ApiPaymentReviewPaymentReview;
+      'api::payment-method.payment-method': ApiPaymentMethodPaymentMethod;
+      'api::payment.payment': ApiPaymentPayment;
+      'api::payment.payment-confirmation': ApiPaymentPaymentConfirmation;
       'api::privacy-setting.privacy-setting': ApiPrivacySettingPrivacySetting;
       'api::product-listing-variant.product-listing-variant': ApiProductListingVariantProductListingVariant;
       'api::product-listing.product-listing': ApiProductListingProductListing;

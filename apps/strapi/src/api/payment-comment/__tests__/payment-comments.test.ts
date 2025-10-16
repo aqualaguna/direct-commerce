@@ -73,7 +73,7 @@ describe('Payment Notes System', () => {
           createdAt: new Date()
         }
 
-        mockStrapi.documents('api::manual-payment.manual-payment').findOne.mockResolvedValue(mockManualPayment)
+        mockStrapi.documents('api::payment.payment').findOne.mockResolvedValue(mockManualPayment)
         mockStrapi.documents('api::payment-comment.payment-comment').create.mockResolvedValue(mockPaymentNote)
 
 
@@ -94,7 +94,7 @@ describe('Payment Notes System', () => {
         // Assert
         expect(result.success).toBe(true)
         expect(result.data).toEqual(mockPaymentNote)
-        expect(mockStrapi.documents('api::manual-payment.manual-payment').findOne).toHaveBeenCalledWith({
+        expect(mockStrapi.documents('api::payment.payment').findOne).toHaveBeenCalledWith({
           documentId: 'payment-123'
         })
         expect(mockStrapi.documents('api::payment-comment.payment-comment').create).toHaveBeenCalledWith({
@@ -112,7 +112,7 @@ describe('Payment Notes System', () => {
 
       it('should return error when manual payment not found', async () => {
         // Arrange
-        mockStrapi.documents('api::manual-payment.manual-payment').findOne.mockResolvedValue(null)
+        mockStrapi.documents('api::payment.payment').findOne.mockResolvedValue(null)
 
         const noteData = {
           manualPaymentId: 'non-existent',

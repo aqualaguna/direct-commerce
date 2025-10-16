@@ -174,10 +174,10 @@ export async function convertGuestToUser(sessionId: string, userData: any): Prom
 /**
  * Get guest analytics
  */
-export async function getGuestAnalytics(adminToken: string): Promise<any> {
+export async function getGuestAnalytics(apiToken: string): Promise<any> {
   const response = await request(SERVER_URL)
     .post('/api/guests/analytics')
-    .set('Authorization', `Bearer ${adminToken}`)
+    .set('Authorization', `Bearer ${apiToken}`)
     .timeout(10000);
 
   if (response.status !== 200) {
@@ -194,7 +194,7 @@ export async function cleanupTestData(
   guests: any[],
   carts: any[],
   users: any[],
-  adminToken: string
+  apiToken: string
 ): Promise<void> {
   // Clean up guests
   for (const guest of guests) {
@@ -202,7 +202,7 @@ export async function cleanupTestData(
       try {
         await request(SERVER_URL)
           .delete(`/api/guests/${guest.documentId}`)
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .timeout(10000);
       } catch (error) {
         console.warn(`Failed to clean up guest ${guest.documentId}:`, error.message);
@@ -216,7 +216,7 @@ export async function cleanupTestData(
       try {
         await request(SERVER_URL)
           .delete(`/api/carts/${cart.documentId}`)
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .timeout(10000);
       } catch (error) {
         console.warn(`Failed to clean up cart ${cart.documentId}:`, error.message);
@@ -230,7 +230,7 @@ export async function cleanupTestData(
       try {
         await request(SERVER_URL)
           .delete(`/api/users/${user.id}`)
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .timeout(10000);
       } catch (error) {
         console.warn(`Failed to clean up user ${user.id}:`, error.message);

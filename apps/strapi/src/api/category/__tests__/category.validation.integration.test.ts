@@ -2,7 +2,7 @@ import request from 'supertest';
 
 describe('Category Validation Integration Tests', () => {
   const SERVER_URL = 'http://localhost:1337';
-  let adminToken: string;
+  let apiToken: string;
 
   // Generate unique test data with timestamp
   const timestamp = Date.now();
@@ -14,9 +14,9 @@ describe('Category Validation Integration Tests', () => {
 
   beforeAll(async () => {
     // Get admin token for authenticated requests
-    adminToken = process.env.STRAPI_API_TOKEN as string;
+    apiToken = process.env.STRAPI_API_TOKEN as string;
 
-    if (!adminToken) {
+    if (!apiToken) {
       console.warn('STRAPI_API_TOKEN not set, attempting to use public access');
       // For public endpoints, we can proceed without token
     }
@@ -29,8 +29,8 @@ describe('Category Validation Integration Tests', () => {
         .get('/api/categories')
         .timeout(10000);
       
-      if (adminToken) {
-        requestBuilder.set('Authorization', `Bearer ${adminToken}`);
+      if (apiToken) {
+        requestBuilder.set('Authorization', `Bearer ${apiToken}`);
       }
       
       const response = await requestBuilder;
@@ -46,8 +46,8 @@ describe('Category Validation Integration Tests', () => {
                 .delete(`/api/categories/${category.documentId}`)
                 .timeout(10000);
               
-              if (adminToken) {
-                deleteRequestBuilder.set('Authorization', `Bearer ${adminToken}`);
+              if (apiToken) {
+                deleteRequestBuilder.set('Authorization', `Bearer ${apiToken}`);
               }
               
               await deleteRequestBuilder;
@@ -73,8 +73,8 @@ describe('Category Validation Integration Tests', () => {
         .send({ data: invalidCategory })
         .timeout(10000);
       
-      if (adminToken) {
-        requestBuilder.set('Authorization', `Bearer ${adminToken}`);
+      if (apiToken) {
+        requestBuilder.set('Authorization', `Bearer ${apiToken}`);
       }
       
       const response = await requestBuilder;
@@ -90,8 +90,8 @@ describe('Category Validation Integration Tests', () => {
         .send({ data: { ...testCategory, slug: uniqueSlug } })
         .timeout(10000);
       
-      if (adminToken) {
-        requestBuilder1.set('Authorization', `Bearer ${adminToken}`);
+      if (apiToken) {
+        requestBuilder1.set('Authorization', `Bearer ${apiToken}`);
       }
       
       const response1 = await requestBuilder1;
@@ -111,8 +111,8 @@ describe('Category Validation Integration Tests', () => {
         .send({ data: duplicateCategory })
         .timeout(10000);
       
-      if (adminToken) {
-        requestBuilder2.set('Authorization', `Bearer ${adminToken}`);
+      if (apiToken) {
+        requestBuilder2.set('Authorization', `Bearer ${apiToken}`);
       }
       
       const response2 = await requestBuilder2;
@@ -125,8 +125,8 @@ describe('Category Validation Integration Tests', () => {
           .delete(`/api/categories/${firstCategoryId}`)
           .timeout(10000);
         
-        if (adminToken) {
-          deleteRequestBuilder.set('Authorization', `Bearer ${adminToken}`);
+        if (apiToken) {
+          deleteRequestBuilder.set('Authorization', `Bearer ${apiToken}`);
         }
         
         await deleteRequestBuilder;
@@ -148,8 +148,8 @@ describe('Category Validation Integration Tests', () => {
         .send({ data: invalidCategory })
         .timeout(10000);
       
-      if (adminToken) {
-        requestBuilder.set('Authorization', `Bearer ${adminToken}`);
+      if (apiToken) {
+        requestBuilder.set('Authorization', `Bearer ${apiToken}`);
       }
       
       const response = await requestBuilder;
@@ -164,8 +164,8 @@ describe('Category Validation Integration Tests', () => {
         .send({ data: { ...testCategory, name: `Parent Category ${timestamp}`, slug: `parent-category-${timestamp}` } })
         .timeout(10000);
       
-      if (adminToken) {
-        parentRequestBuilder.set('Authorization', `Bearer ${adminToken}`);
+      if (apiToken) {
+        parentRequestBuilder.set('Authorization', `Bearer ${apiToken}`);
       }
       
       const parentResponse = await parentRequestBuilder;
@@ -179,8 +179,8 @@ describe('Category Validation Integration Tests', () => {
         .send({ data: { ...testCategory, name: `Child Category ${timestamp}`, slug: `child-category-${timestamp}`, parent: parentCategoryId } })
         .timeout(10000);
       
-      if (adminToken) {
-        childRequestBuilder.set('Authorization', `Bearer ${adminToken}`);
+      if (apiToken) {
+        childRequestBuilder.set('Authorization', `Bearer ${apiToken}`);
       }
       
       const childResponse = await childRequestBuilder;
@@ -194,8 +194,8 @@ describe('Category Validation Integration Tests', () => {
         .send({ data: { parent: childCategoryId } })
         .timeout(10000);
       
-      if (adminToken) {
-        updateRequestBuilder.set('Authorization', `Bearer ${adminToken}`);
+      if (apiToken) {
+        updateRequestBuilder.set('Authorization', `Bearer ${apiToken}`);
       }
       
       const updateResponse = await updateRequestBuilder;
@@ -208,8 +208,8 @@ describe('Category Validation Integration Tests', () => {
           .delete(`/api/categories/${childCategoryId}`)
           .timeout(10000);
         
-        if (adminToken) {
-          deleteChildRequestBuilder.set('Authorization', `Bearer ${adminToken}`);
+        if (apiToken) {
+          deleteChildRequestBuilder.set('Authorization', `Bearer ${apiToken}`);
         }
         
         await deleteChildRequestBuilder;
@@ -218,8 +218,8 @@ describe('Category Validation Integration Tests', () => {
           .delete(`/api/categories/${parentCategoryId}`)
           .timeout(10000);
         
-        if (adminToken) {
-          deleteParentRequestBuilder.set('Authorization', `Bearer ${adminToken}`);
+        if (apiToken) {
+          deleteParentRequestBuilder.set('Authorization', `Bearer ${apiToken}`);
         }
         
         await deleteParentRequestBuilder;

@@ -15,7 +15,7 @@ import request from 'supertest';
 
 describe('Engagement Metrics Integration Tests', () => {
   const SERVER_URL = 'http://localhost:1337';
-  let adminToken: string;
+  let apiToken: string;
   let testUser: any;
   let testUserToken: string;
   let testUser2: any;
@@ -26,9 +26,9 @@ describe('Engagement Metrics Integration Tests', () => {
 
   beforeAll(async () => {
     // Get admin token for authenticated requests
-    adminToken = process.env.STRAPI_API_TOKEN as string;
+    apiToken = process.env.STRAPI_API_TOKEN as string;
 
-    if (!adminToken) {
+    if (!apiToken) {
       throw new Error('STRAPI_API_TOKEN environment variable is not set. Please ensure the test server is running and the token is generated.');
     }
 
@@ -130,7 +130,7 @@ describe('Engagement Metrics Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .post('/api/engagement-metrics')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: metricsData })
         .expect(201);
 
@@ -155,7 +155,7 @@ describe('Engagement Metrics Integration Tests', () => {
       for (const metric of metrics) {
         await request(SERVER_URL)
           .post('/api/engagement-metrics')
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .send({ data: metric })
           .expect(201);
       }
@@ -163,7 +163,7 @@ describe('Engagement Metrics Integration Tests', () => {
       // Calculate engagement score
       const scoreResponse = await request(SERVER_URL)
         .post('/api/engagement-metrics/calculate-score')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ 
           data: { 
             userId: testUser.id,
@@ -194,7 +194,7 @@ describe('Engagement Metrics Integration Tests', () => {
 
         await request(SERVER_URL)
           .post('/api/engagement-metrics')
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .send({ data: metricsData })
           .expect(201);
       }
@@ -202,7 +202,7 @@ describe('Engagement Metrics Integration Tests', () => {
       // Get engagement trends
       const trendsResponse = await request(SERVER_URL)
         .get(`/api/engagement-metrics/trends?userId=${testUser.id}&timePeriod=3days`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .expect(200);
 
       expect(trendsResponse.body.data).toBeDefined();
@@ -221,7 +221,7 @@ describe('Engagement Metrics Integration Tests', () => {
       for (const metric of segmentMetrics) {
         await request(SERVER_URL)
           .post('/api/engagement-metrics')
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .send({ data: metric })
           .expect(201);
       }
@@ -229,7 +229,7 @@ describe('Engagement Metrics Integration Tests', () => {
       // Calculate segment metrics
       const segmentResponse = await request(SERVER_URL)
         .post('/api/engagement-metrics/calculate-segments')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ 
           data: { 
             timePeriod: 'daily',
@@ -259,7 +259,7 @@ describe('Engagement Metrics Integration Tests', () => {
 
         await request(SERVER_URL)
           .post('/api/engagement-metrics')
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .send({ data: metricsData })
           .expect(201);
       }
@@ -267,7 +267,7 @@ describe('Engagement Metrics Integration Tests', () => {
       // Get aggregated metrics
       const aggregatedResponse = await request(SERVER_URL)
         .get('/api/engagement-metrics/aggregated?timePeriod=daily&date=' + new Date().toISOString().split('T')[0])
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .expect(200);
 
       expect(aggregatedResponse.body.data).toBeDefined();
@@ -282,7 +282,7 @@ describe('Engagement Metrics Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .post('/api/engagement-metrics/reports')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: reportData })
         .expect(201);
 
@@ -299,7 +299,7 @@ describe('Engagement Metrics Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .post('/api/engagement-metrics/user-reports')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: userReportData })
         .expect(201);
 
@@ -321,7 +321,7 @@ describe('Engagement Metrics Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .post('/api/engagement-metrics/comparative-reports')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: comparisonData })
         .expect(201);
 
@@ -346,7 +346,7 @@ describe('Engagement Metrics Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .post('/api/engagement-metrics/realtime')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: realtimeMetrics })
         .expect(201);
 
@@ -380,7 +380,7 @@ describe('Engagement Metrics Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .post('/api/engagement-metrics/dashboard')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: dashboardData })
         .expect(201);
 
@@ -403,7 +403,7 @@ describe('Engagement Metrics Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .post('/api/engagement-metrics/chart-data')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: chartData })
         .expect(201);
 
@@ -428,7 +428,7 @@ describe('Engagement Metrics Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .post('/api/engagement-metrics/kpi')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: kpiData })
         .expect(201);
 
@@ -448,7 +448,7 @@ describe('Engagement Metrics Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .post('/api/engagement-metrics/heatmap')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: heatmapData })
         .expect(201);
 
@@ -464,7 +464,7 @@ describe('Engagement Metrics Integration Tests', () => {
       const startTime = Date.now();
       
       // Create multiple metrics entries
-      const metricsPromises = [];
+      const metricsPromises: any[] = [];
       for (let i = 0; i < 100; i++) {
         const metricsData = createTestEngagementMetricsData({
           metricValue: Math.floor(Math.random() * 100) + 1,
@@ -474,7 +474,7 @@ describe('Engagement Metrics Integration Tests', () => {
         metricsPromises.push(
           request(SERVER_URL)
             .post('/api/engagement-metrics')
-            .set('Authorization', `Bearer ${adminToken}`)
+            .set('Authorization', `Bearer ${apiToken}`)
             .send({ data: metricsData })
         );
       }
@@ -493,7 +493,7 @@ describe('Engagement Metrics Integration Tests', () => {
     });
 
     it('should handle concurrent metrics updates', async () => {
-      const concurrentUpdates = [];
+      const concurrentUpdates: any[] = [];
       
       // Simulate concurrent updates to the same user's metrics
       for (let i = 0; i < 10; i++) {
@@ -505,7 +505,7 @@ describe('Engagement Metrics Integration Tests', () => {
         concurrentUpdates.push(
           request(SERVER_URL)
             .post('/api/engagement-metrics')
-            .set('Authorization', `Bearer ${adminToken}`)
+            .set('Authorization', `Bearer ${apiToken}`)
             .send({ data: updateData })
         );
       }
@@ -530,7 +530,7 @@ describe('Engagement Metrics Integration Tests', () => {
 
         await request(SERVER_URL)
           .post('/api/engagement-metrics')
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .send({ data: metricsData })
           .expect(201);
       }
@@ -539,7 +539,7 @@ describe('Engagement Metrics Integration Tests', () => {
       const startTime = Date.now();
       const queryResponse = await request(SERVER_URL)
         .get('/api/engagement-metrics?filters[timePeriod][$eq]=daily&filters[date][$eq]=' + new Date().toISOString().split('T')[0])
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .expect(200);
       const endTime = Date.now();
 
@@ -557,7 +557,7 @@ describe('Engagement Metrics Integration Tests', () => {
 
         await request(SERVER_URL)
           .post('/api/engagement-metrics')
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .send({ data: metricsData })
           .expect(201);
       }
@@ -565,12 +565,12 @@ describe('Engagement Metrics Integration Tests', () => {
       // Test pagination
       const page1Response = await request(SERVER_URL)
         .get('/api/engagement-metrics?pagination[page]=1&pagination[pageSize]=10')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .expect(200);
 
       const page2Response = await request(SERVER_URL)
         .get('/api/engagement-metrics?pagination[page]=2&pagination[pageSize]=10')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .expect(200);
 
       expect(page1Response.body.data).toBeDefined();
@@ -594,7 +594,7 @@ describe('Engagement Metrics Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .post('/api/engagement-metrics')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: metricsData })
         .expect(201);
 
@@ -615,7 +615,7 @@ describe('Engagement Metrics Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .post('/api/engagement-metrics/anomaly-detection')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: anomalyData })
         .expect(201);
 
@@ -640,7 +640,7 @@ describe('Engagement Metrics Integration Tests', () => {
 
         await request(SERVER_URL)
           .post('/api/engagement-metrics')
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .send({ data: metricsData })
           .expect(201);
       }
@@ -648,7 +648,7 @@ describe('Engagement Metrics Integration Tests', () => {
       // Validate consistency
       const consistencyResponse = await request(SERVER_URL)
         .post('/api/engagement-metrics/validate-consistency')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ 
           data: { 
             date: baseDate,
@@ -673,14 +673,14 @@ describe('Engagement Metrics Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .post('/api/engagement-metrics')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: integrityData })
         .expect(201);
 
       // Validate data integrity
       const integrityResponse = await request(SERVER_URL)
         .post('/api/engagement-metrics/validate-integrity')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ 
           data: { 
             documentId: response.body.data.id,
@@ -707,7 +707,7 @@ describe('Engagement Metrics Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .post('/api/engagement-metrics/reconcile')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: reconciliationData })
         .expect(201);
 
@@ -735,7 +735,7 @@ describe('Engagement Metrics Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .post('/api/engagement-metrics/anonymize')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: sensitiveData })
         .expect(201);
 
@@ -758,7 +758,7 @@ describe('Engagement Metrics Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .post('/api/engagement-metrics/gdpr-compliance')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: gdprData })
         .expect(201);
 
@@ -778,7 +778,7 @@ describe('Engagement Metrics Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .post('/api/engagement-metrics/retention-policy')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: retentionData })
         .expect(201);
 
@@ -801,7 +801,7 @@ describe('Engagement Metrics Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .post('/api/engagement-metrics/consent-management')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: consentData })
         .expect(201);
 
@@ -824,7 +824,7 @@ describe('Engagement Metrics Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .post('/api/engagement-metrics/mask-data')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: maskingData })
         .expect(201);
 
@@ -845,14 +845,14 @@ describe('Engagement Metrics Integration Tests', () => {
 
       await request(SERVER_URL)
         .post('/api/engagement-metrics')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: exportMetrics })
         .expect(201);
 
       // Export to CSV
       const exportResponse = await request(SERVER_URL)
         .post('/api/engagement-metrics/export')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ 
           data: { 
             format: 'csv',
@@ -871,7 +871,7 @@ describe('Engagement Metrics Integration Tests', () => {
     it('should export engagement metrics to JSON format', async () => {
       const exportResponse = await request(SERVER_URL)
         .post('/api/engagement-metrics/export')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ 
           data: { 
             format: 'json',
@@ -902,7 +902,7 @@ describe('Engagement Metrics Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .post('/api/engagement-metrics/integrate')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: integrationData })
         .expect(201);
 
@@ -923,7 +923,7 @@ describe('Engagement Metrics Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .post('/api/engagement-metrics/stream')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: streamingData })
         .expect(201);
 
@@ -947,7 +947,7 @@ describe('Engagement Metrics Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .post('/api/engagement-metrics/backup')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: backupData })
         .expect(201);
 
@@ -976,7 +976,7 @@ describe('Engagement Metrics Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .post('/api/engagement-metrics/migrate')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: migrationData })
         .expect(201);
 
@@ -999,7 +999,7 @@ describe('Engagement Metrics Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .post('/api/engagement-metrics')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: invalidData })
         .expect(400);
 
@@ -1014,7 +1014,7 @@ describe('Engagement Metrics Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .post('/api/engagement-metrics')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: missingUserData })
         .expect(400);
 
@@ -1030,7 +1030,7 @@ describe('Engagement Metrics Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .post('/api/engagement-metrics/calculate-score')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: errorData })
         .expect(400);
 
@@ -1045,7 +1045,7 @@ describe('Engagement Metrics Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .post('/api/engagement-metrics/export')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: exportData })
         .expect(400);
 
@@ -1060,7 +1060,7 @@ describe('Engagement Metrics Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .post('/api/engagement-metrics/integrate')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: integrationData })
         .expect(400);
 

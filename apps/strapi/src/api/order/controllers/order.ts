@@ -13,32 +13,6 @@ type StrapiContext = {
 };
 
 export default {
-  /**
-   * Create order from cart
-   */
-  async create(ctx) {
-    try {
-      const { cartId, checkoutSessionId, paymentIntentId, customerNotes, giftOptions, promoCode, source, metadata } = ctx.request.body;
-      const userId = ctx.state.user?.id;
-
-      const orderCreationService = strapi.service('api::order.order-creation');
-      const order = await orderCreationService.createOrderFromCart({
-        cartId,
-        checkoutSessionId,
-        paymentIntentId,
-        customerNotes,
-        giftOptions,
-        promoCode,
-        source: source || 'web',
-        metadata
-      }, userId);
-
-      return ctx.created(order);
-    } catch (error) {
-      strapi.log.error('Error creating order:', error);
-      return ctx.badRequest(error.message);
-    }
-  },
 
   /**
    * Get user orders
@@ -129,12 +103,12 @@ export default {
         documentId,
         populate: [
           'user',
-          'cart',
-          'checkoutSession',
+          'checkout',
           'items',
+          'items.product',
+          'items.variant',
           'items.productListing',
-          'items.productListingVariant',
-          'manualPayment'
+          'payments'
         ]
       });
 
@@ -153,150 +127,34 @@ export default {
       return ctx.internalServerError('Error retrieving order');
     }
   },
-
   /**
-   * Update order
+   * Cancel order
    */
-  async update(ctx) {
+  async cancelOrder(ctx) {
     try {
       const { documentId } = ctx.params;
-      const { data } = ctx.request.body;
       const userId = ctx.state.user?.id;
-
-      // Check if user can update this order
-      const existingOrder = await strapi.documents('api::order.order').findOne({
-        documentId,
-        populate: ['user']
+      // return dummy data
+      return ctx.send({
+        message: 'Order cancelled'
       });
-
-      if (!existingOrder) {
-        return ctx.notFound('Order not found');
-      }
-
-      if (existingOrder.user?.documentId !== userId && ctx.state.user?.role?.type !== 'admin') {
-        return ctx.forbidden('Access denied');
-      }
-
-      // Only allow certain fields to be updated
-      const allowedFields = ['customerNotes', 'adminNotes', 'tags', 'metadata'];
-      const updateData = {};
-
-      for (const field of allowedFields) {
-        if (data[field] !== undefined) {
-          updateData[field] = data[field];
-        }
-      }
-
-      const order = await strapi.documents('api::order.order').update({
-        documentId,
-        data: updateData,
-        populate: ['user', 'items']
-      });
-
-      return ctx.send(order);
     } catch (error) {
-      strapi.log.error('Error updating order:', error);
-      return ctx.badRequest('Error updating order');
+      strapi.log.error('Error canceling order:', error);
+      return ctx.internalServerError('Error canceling order');
     }
   },
-
   /**
-   * Delete order (admin only)
+   * Refund order
    */
-  async delete(ctx) {
+  async refundOrder(ctx) {
     try {
       const { documentId } = ctx.params;
-
-      // Only admins can delete orders
-      if (ctx.state.user?.role?.type !== 'admin') {
-        return ctx.forbidden('Access denied');
-      }
-
-      const order = await strapi.documents('api::order.order').findOne({
-        documentId,
-        populate: ['items']
-      });
-
-      if (!order) {
-        return ctx.notFound('Order not found');
-      }
-
-      // Delete order items first
-      if (order.items) {
-        for (const item of order.items) {
-          await strapi.documents('api::order-item.order-item').delete({
-            documentId: item.documentId
-          });
-        }
-      }
-
-      // Delete order
-      await strapi.documents('api::order.order').delete({
-        documentId
-      });
-
-      return ctx.send({ message: 'Order deleted successfully' });
+      const userId = ctx.state.user?.id;
     } catch (error) {
-      strapi.log.error('Error deleting order:', error);
-      return ctx.internalServerError('Error deleting order');
+      strapi.log.error('Error refunding order:', error);
+      return ctx.internalServerError('Error refunding order');
     }
   },
-
-  /**
-   * Update order status
-   */
-  async updateStatus(ctx) {
-    try {
-      const { documentId } = ctx.params;
-      const { status, reason, notes } = ctx.request.body;
-
-      // Only admins can update order status
-      if (ctx.state.user?.role?.type !== 'admin') {
-        return ctx.forbidden('Access denied');
-      }
-
-      const order = await strapi.documents('api::order.order').findOne({
-        documentId
-      });
-
-      if (!order) {
-        return ctx.notFound('Order not found');
-      }
-
-      // Validate status transition
-      const validTransitions = {
-        pending: ['confirmed', 'cancelled'],
-        confirmed: ['processing', 'cancelled'],
-        processing: ['shipped', 'cancelled'],
-        shipped: ['delivered', 'cancelled'],
-        delivered: ['refunded'],
-        cancelled: [],
-        refunded: []
-      };
-
-      const allowedTransitions = validTransitions[order.status] || [];
-      if (!allowedTransitions.includes(status)) {
-        return ctx.badRequest(`Invalid status transition from ${order.status} to ${status}`);
-      }
-
-      const updateData = {
-        status,
-        adminNotes: notes ? `${order.adminNotes || ''}\n[${new Date().toISOString()}] Status changed to ${status}: ${notes}`.trim() : order.adminNotes
-      };
-
-      const updatedOrder = await strapi.documents('api::order.order').update({
-        documentId,
-        data: updateData,
-        populate: ['user', 'items']
-      });
-
-      return ctx.send(updatedOrder);
-    } catch (error) {
-      strapi.log.error('Error updating order status:', error);
-      return ctx.badRequest('Error updating order status');
-    }
-  },
-
   /**
    * Get order statistics
    */

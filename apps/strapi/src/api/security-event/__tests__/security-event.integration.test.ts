@@ -15,7 +15,7 @@ import request from 'supertest';
 
 describe('Security Event Integration Tests', () => {
   const SERVER_URL = 'http://localhost:1337';
-  let adminToken: string;
+  let apiToken: string;
   let testUser: any;
   let testUserToken: string;
   
@@ -24,9 +24,9 @@ describe('Security Event Integration Tests', () => {
 
   beforeAll(async () => {
     // Get admin token for authenticated requests
-    adminToken = process.env.STRAPI_API_TOKEN as string;
+    apiToken = process.env.STRAPI_API_TOKEN as string;
 
-    if (!adminToken) {
+    if (!apiToken) {
       throw new Error('STRAPI_API_TOKEN environment variable is not set. Please ensure the test server is running and the token is generated.');
     }
 
@@ -51,7 +51,7 @@ describe('Security Event Integration Tests', () => {
     try {
       const response = await request(SERVER_URL)
         .get('/api/security-events')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .query({ pagination: { page: 1, pageSize: 1000 } });
 
       if (response.body.data && Array.isArray(response.body.data)) {
@@ -59,7 +59,7 @@ describe('Security Event Integration Tests', () => {
         for (const event of response.body.data) {
           await request(SERVER_URL)
             .delete(`/api/security-events/${event.documentId}`)
-            .set('Authorization', `Bearer ${adminToken}`);
+            .set('Authorization', `Bearer ${apiToken}`);
         }
       }
     } catch (error) {
@@ -74,7 +74,7 @@ describe('Security Event Integration Tests', () => {
       if (testUser?.id) {
         await request(SERVER_URL)
           .delete(`/api/users/${testUser.id}`)
-          .set('Authorization', `Bearer ${adminToken}`);
+          .set('Authorization', `Bearer ${apiToken}`);
       }
     } catch (error) {
       // Ignore cleanup errors
@@ -112,7 +112,7 @@ describe('Security Event Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .post('/api/security-events')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: eventData })
 
       expect(response.body.data).toBeDefined();
@@ -133,7 +133,7 @@ describe('Security Event Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .post('/api/security-events')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: eventData })
         .expect(200);
 
@@ -168,7 +168,7 @@ describe('Security Event Integration Tests', () => {
 
         const response = await request(SERVER_URL)
           .post('/api/security-events')
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .send({ data: eventData })
           .expect(200);
 
@@ -188,7 +188,7 @@ describe('Security Event Integration Tests', () => {
 
         const response = await request(SERVER_URL)
           .post('/api/security-events')
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .send({ data: eventData })
           .expect(200);
 
@@ -221,7 +221,7 @@ describe('Security Event Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .post('/api/security-events')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: eventData })
         .expect(200);
 
@@ -241,7 +241,7 @@ describe('Security Event Integration Tests', () => {
 
         const response = await request(SERVER_URL)
           .post('/api/security-events')
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .send({ data: eventData })
           .expect(200);
 
@@ -257,7 +257,7 @@ describe('Security Event Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .post('/api/security-events')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: eventData })
         .expect(200);
 
@@ -278,7 +278,7 @@ describe('Security Event Integration Tests', () => {
 
         await request(SERVER_URL)
           .post('/api/security-events')
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .send({ data: eventData })
           .expect(200);
       }
@@ -286,7 +286,7 @@ describe('Security Event Integration Tests', () => {
       // Retrieve events by type
       const response = await request(SERVER_URL)
         .get('/api/security-events')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .query({ 
           filters: { eventType: 'failed_login' },
           pagination: { page: 1, pageSize: 10 }
@@ -310,7 +310,7 @@ describe('Security Event Integration Tests', () => {
 
         await request(SERVER_URL)
           .post('/api/security-events')
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .send({ data: eventData })
           .expect(200);
       }
@@ -318,7 +318,7 @@ describe('Security Event Integration Tests', () => {
       // Retrieve high severity events
       const response = await request(SERVER_URL)
         .get('/api/security-events')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .query({ 
           filters: { severity: 'high' },
           pagination: { page: 1, pageSize: 10 }
@@ -343,20 +343,20 @@ describe('Security Event Integration Tests', () => {
 
       await request(SERVER_URL)
         .post('/api/security-events')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: eventData1 })
         .expect(200);
 
       await request(SERVER_URL)
         .post('/api/security-events')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: eventData2 })
         .expect(200);
 
       // Retrieve all events
       const response = await request(SERVER_URL)
         .get('/api/security-events')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .query({ 
           pagination: { page: 1, pageSize: 10 }
         })
@@ -374,14 +374,14 @@ describe('Security Event Integration Tests', () => {
 
       await request(SERVER_URL)
         .post('/api/security-events')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: eventData })
         .expect(200);
 
       // Retrieve events by user
       const response = await request(SERVER_URL)
         .get('/api/security-events')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .query({ 
           filters: { user: { id: testUser.id } },
           pagination: { page: 1, pageSize: 10 }
@@ -405,14 +405,14 @@ describe('Security Event Integration Tests', () => {
 
       await request(SERVER_URL)
         .post('/api/security-events')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: eventData })
         .expect(200);
 
       // Retrieve events by date range
       const response = await request(SERVER_URL)
         .get('/api/security-events')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .query({ 
           filters: { 
             timestamp: { 
@@ -441,7 +441,7 @@ describe('Security Event Integration Tests', () => {
 
         await request(SERVER_URL)
           .post('/api/security-events')
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .send({ data: eventData })
           .expect(200);
       }
@@ -449,7 +449,7 @@ describe('Security Event Integration Tests', () => {
       // Count events by type
       const response = await request(SERVER_URL)
         .get('/api/security-events')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .query({ 
           filters: { eventType },
           pagination: { page: 1, pageSize: 10 }
@@ -476,7 +476,7 @@ describe('Security Event Integration Tests', () => {
 
         await request(SERVER_URL)
           .post('/api/security-events')
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .send({ data: eventData })
           .expect(200);
       }
@@ -484,7 +484,7 @@ describe('Security Event Integration Tests', () => {
       // Retrieve events from same IP
       const response = await request(SERVER_URL)
         .get('/api/security-events')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .query({ 
           filters: { ipAddress },
           pagination: { page: 1, pageSize: 10 }
@@ -512,7 +512,7 @@ describe('Security Event Integration Tests', () => {
 
         await request(SERVER_URL)
           .post('/api/security-events')
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .send({ data: eventData })
           .expect(200);
       }
@@ -520,7 +520,7 @@ describe('Security Event Integration Tests', () => {
       // Retrieve all suspicious activity events
       const response = await request(SERVER_URL)
         .get('/api/security-events')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .query({ 
           filters: { 
             eventType: { $in: ['unusual_location', 'multiple_sessions', 'api_abuse'] }
@@ -544,7 +544,7 @@ describe('Security Event Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .post('/api/security-events')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: eventData })
         .expect(200);
 
@@ -568,7 +568,7 @@ describe('Security Event Integration Tests', () => {
 
         await request(SERVER_URL)
           .post('/api/security-events')
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .send({ data: eventData })
           .expect(200);
       }
@@ -579,7 +579,7 @@ describe('Security Event Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .get('/api/security-events')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .query({ 
           filters: { 
             user: { id: userId },
@@ -617,7 +617,7 @@ describe('Security Event Integration Tests', () => {
 
         await request(SERVER_URL)
           .post('/api/security-events')
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .send({ data: eventData })
           .expect(200);
       }
@@ -625,7 +625,7 @@ describe('Security Event Integration Tests', () => {
       // Retrieve all events for reporting
       const response = await request(SERVER_URL)
         .get('/api/security-events')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .query({ 
           pagination: { page: 1, pageSize: 100 }
         })
@@ -655,7 +655,7 @@ describe('Security Event Integration Tests', () => {
 
         await request(SERVER_URL)
           .post('/api/security-events')
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .send({ data: eventData })
           .expect(200);
       }
@@ -663,7 +663,7 @@ describe('Security Event Integration Tests', () => {
       // Retrieve compliance-related events
       const response = await request(SERVER_URL)
         .get('/api/security-events')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .query({ 
           filters: { 
             eventType: { $in: ['data_access', 'permission_change', 'account_deletion'] }
@@ -697,13 +697,13 @@ describe('Security Event Integration Tests', () => {
 
       await request(SERVER_URL)
         .post('/api/security-events')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: recentEventData })
         .expect(200);
 
       await request(SERVER_URL)
         .post('/api/security-events')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: oldEventData })
         .expect(200);
 
@@ -712,7 +712,7 @@ describe('Security Event Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .get('/api/security-events')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .query({ 
           filters: { 
             timestamp: { $gte: retentionDate.toISOString() }
@@ -742,7 +742,7 @@ describe('Security Event Integration Tests', () => {
         bulkOperations.push(
           request(SERVER_URL)
             .post('/api/security-events')
-            .set('Authorization', `Bearer ${adminToken}`)
+            .set('Authorization', `Bearer ${apiToken}`)
             .send({ data: eventData })
         );
       }
@@ -765,7 +765,7 @@ describe('Security Event Integration Tests', () => {
 
       const createResponse = await request(SERVER_URL)
         .post('/api/security-events')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: eventData })
         .expect(200);
 
@@ -783,7 +783,7 @@ describe('Security Event Integration Tests', () => {
         updateOperations.push(
           request(SERVER_URL)
             .put(`/api/security-events/${eventId}`)
-            .set('Authorization', `Bearer ${adminToken}`)
+            .set('Authorization', `Bearer ${apiToken}`)
             .send({ data: updateData })
         );
       }
@@ -807,7 +807,7 @@ describe('Security Event Integration Tests', () => {
 
         await request(SERVER_URL)
           .post('/api/security-events')
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .send({ data: eventData })
           .expect(200);
       }
@@ -815,7 +815,7 @@ describe('Security Event Integration Tests', () => {
       // Query with complex filters
       const response = await request(SERVER_URL)
         .get('/api/security-events')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .query({ 
           filters: { 
             eventType: { $in: ['failed_login', 'suspicious_activity'] },
@@ -840,7 +840,7 @@ describe('Security Event Integration Tests', () => {
 
       await request(SERVER_URL)
         .post('/api/security-events')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: eventData })
         .expect(400);
     });
@@ -852,7 +852,7 @@ describe('Security Event Integration Tests', () => {
 
       await request(SERVER_URL)
         .post('/api/security-events')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: eventData })
         .expect(400);
     });
@@ -865,7 +865,7 @@ describe('Security Event Integration Tests', () => {
 
       await request(SERVER_URL)
         .post('/api/security-events')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: eventData })
         .expect(400);
     });
@@ -877,7 +877,7 @@ describe('Security Event Integration Tests', () => {
 
       await request(SERVER_URL)
         .post('/api/security-events')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: eventData })
         .expect(400);
     });
@@ -886,14 +886,14 @@ describe('Security Event Integration Tests', () => {
     it('should handle non-existent security event retrieval', async () => {
       await request(SERVER_URL)
         .get('/api/security-events/99999')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .expect(404);
     });
 
     it('should handle non-existent security event deletion', async () => {
       await request(SERVER_URL)
         .delete('/api/security-events/99999')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .expect(404);
     });
 
@@ -904,7 +904,7 @@ describe('Security Event Integration Tests', () => {
 
       await request(SERVER_URL)
         .post('/api/security-events')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: eventData })
         .expect(400);
     });
@@ -916,7 +916,7 @@ describe('Security Event Integration Tests', () => {
 
       await request(SERVER_URL)
         .post('/api/security-events')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: eventData })
         .expect(400);
     });

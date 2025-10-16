@@ -21,6 +21,7 @@ interface ReservationOptions {
   orderId: string;
   customerId?: string;
   expirationMinutes?: number;
+  sessionId?: string;
 }
 
 interface HistoryRecordData {
@@ -251,8 +252,9 @@ export default factories.createCoreService(
           data: {
             product: { documentId: productId },
             quantity,
-            orderId: options.orderId,
-            customerId: options.customerId,
+            order: options.orderId,
+            customer: options.customerId,
+            sessionId: options.sessionId,
             status: 'active',
             expiresAt,
             metadata: { expirationMinutes },
@@ -337,7 +339,7 @@ export default factories.createCoreService(
           'api::stock-reservation.stock-reservation'
         ).findOne({
           documentId: reservationId,
-          populate: { product: true },
+          populate: { product: true, order: true },
         });
 
         if (!reservation) {
@@ -398,7 +400,7 @@ export default factories.createCoreService(
           reservedAfter: newReserved,
           reason,
           source: 'system',
-          orderId: reservation.orderId,
+          orderId: reservation.order.documentId,
           changedBy: undefined,
         });
 
@@ -422,7 +424,7 @@ export default factories.createCoreService(
           'api::stock-reservation.stock-reservation'
         ).findOne({
           documentId: reservationId,
-          populate: { product: true },
+          populate: { product: true, order: true },
         });
 
         if (!reservation) {
@@ -440,7 +442,7 @@ export default factories.createCoreService(
           {
             reason,
             source: 'order',
-            orderId: reservation.orderId,
+            orderId: reservation.order.documentId,
           }
         );
 
@@ -478,7 +480,7 @@ export default factories.createCoreService(
             status: 'active',
             expiresAt: { $lt: now },
           },
-          populate: { product: true },
+          populate: { product: true, order: true },
         });
 
         const results: Array<{
@@ -507,7 +509,7 @@ export default factories.createCoreService(
 
             results.push({
               reservationId: reservation.documentId,
-              orderId: reservation.orderId,
+              orderId: reservation.order.documentId,
               quantity: reservation.quantity,
               status: 'expired',
             });

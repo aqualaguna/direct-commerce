@@ -1,0 +1,79 @@
+{
+  "kind": "collectionType",
+  "collectionName": "payment_methods",
+  "info": {
+    "singularName": "payment-method",
+    "pluralName": "payment-methods",
+    "displayName": "Payment Method",
+    "description": "Payment methods for manual and automated payments"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true,
+      "maxLength": 255
+    },
+    "code": {
+      "type": "enumeration",
+      "enum": [
+        "cash",
+        "bank_transfer",
+        "check",
+        "money_order",
+        "digital_wallet",
+        "crypto_currency",
+        "gift_card",
+        "loyalty_card",
+        "store_credit",
+        "subscription",
+        "reward_points",
+        "promotional_code",
+        "credit_card",
+        "debit_card",
+        "payment_app",
+        "qris",
+        "payment_gateway",
+        "manual_payment",
+        "other"
+      ],
+      "required": true,
+      "unique": true
+    },
+    "paymentType": {
+      "type": "enumeration",
+      "enum": [
+        "manual",
+        "automated"
+      ],
+      "required": true,
+      "default": "manual"
+    },
+    "description": {
+      "type": "text",
+      "required": true
+    },
+    "isActive": {
+      "type": "boolean",
+      "required": true,
+      "default": true
+    },
+    "gatewayCode": {
+      "type": "string",
+      "description": "For future automated payment gateways (stripe, paypal, etc.)"
+    },
+    "instructions": {
+      "type": "text",
+      "description": "Payment instructions for customers"
+    },
+    "payments": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::payment.payment",
+      "mappedBy": "paymentMethod"
+    }
+  }
+}

@@ -16,7 +16,7 @@ import request from 'supertest';
 
 describe('Category Integration Tests - Overview', () => {
   const SERVER_URL = 'http://localhost:1337';
-  let adminToken: string;
+  let apiToken: string;
 
   // Generate unique test data with timestamp
   const timestamp = Date.now();
@@ -28,9 +28,9 @@ describe('Category Integration Tests - Overview', () => {
 
   beforeAll(async () => {
     // Get admin token for authenticated requests
-    adminToken = process.env.STRAPI_API_TOKEN as string;
+    apiToken = process.env.STRAPI_API_TOKEN as string;
 
-    if (!adminToken) {
+    if (!apiToken) {
       throw new Error('STRAPI_API_TOKEN environment variable is not set. Please ensure the test server is running and the token is generated.');
     }
   });
@@ -40,7 +40,7 @@ describe('Category Integration Tests - Overview', () => {
     try {
       const response = await request(SERVER_URL)
         .get('/api/categories')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
 
       if (response.status === 200 && response.body.data) {
@@ -51,7 +51,7 @@ describe('Category Integration Tests - Overview', () => {
             try {
               await request(SERVER_URL)
                 .delete(`/api/categories/${category.documentId}`)
-                .set('Authorization', `Bearer ${adminToken}`)
+                .set('Authorization', `Bearer ${apiToken}`)
                 .timeout(10000);
             } catch (error) {
               console.warn(`Failed to delete category ${category.documentId}:`, error);
@@ -68,7 +68,7 @@ describe('Category Integration Tests - Overview', () => {
     it('should be able to connect to the category API', async () => {
       const response = await request(SERVER_URL)
         .get('/api/categories')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
 
       expect(response.status).toBe(200);
@@ -88,7 +88,7 @@ describe('Category Integration Tests - Overview', () => {
     it('should handle invalid category ID gracefully', async () => {
       const response = await request(SERVER_URL)
         .get('/api/categories/invalid-id')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
 
       expect(response.status).toBe(404);
@@ -104,7 +104,7 @@ describe('Category Integration Tests - Overview', () => {
         try {
           await request(SERVER_URL)
             .delete(`/api/categories/${testCategoryId}`)
-            .set('Authorization', `Bearer ${adminToken}`)
+            .set('Authorization', `Bearer ${apiToken}`)
             .timeout(10000);
         } catch (error) {
           console.warn(`Failed to delete category ${testCategoryId}:`, error);
@@ -117,7 +117,7 @@ describe('Category Integration Tests - Overview', () => {
       // Create
       const createResponse = await request(SERVER_URL)
         .post('/api/categories')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: testCategory })
         .timeout(10000);
 
@@ -128,7 +128,7 @@ describe('Category Integration Tests - Overview', () => {
       // Read
       const readResponse = await request(SERVER_URL)
         .get(`/api/categories/${testCategoryId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
 
       expect(readResponse.status).toBe(200);
@@ -137,7 +137,7 @@ describe('Category Integration Tests - Overview', () => {
       // Update
       const updateResponse = await request(SERVER_URL)
         .put(`/api/categories/${testCategoryId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: { name: `Updated ${testCategory.name}` } })
         .timeout(10000);
 
@@ -147,7 +147,7 @@ describe('Category Integration Tests - Overview', () => {
       // Delete
       const deleteResponse = await request(SERVER_URL)
         .delete(`/api/categories/${testCategoryId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
 
       expect(deleteResponse.status).toBe(200);
@@ -158,7 +158,7 @@ describe('Category Integration Tests - Overview', () => {
       // Create parent category
       const parentResponse = await request(SERVER_URL)
         .post('/api/categories')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: { ...testCategory, name: `Parent ${testCategory.name}`, slug: `parent-${testCategory.slug}` } })
         .timeout(10000);
 
@@ -168,7 +168,7 @@ describe('Category Integration Tests - Overview', () => {
       // Create child category
       const childResponse = await request(SERVER_URL)
         .post('/api/categories')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ 
           data: { 
             ...testCategory, 
@@ -185,7 +185,7 @@ describe('Category Integration Tests - Overview', () => {
       // Verify hierarchy
       const hierarchyResponse = await request(SERVER_URL)
         .get(`/api/categories/${testCategoryId}?populate=parent`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
 
       expect(hierarchyResponse.status).toBe(200);
@@ -195,11 +195,11 @@ describe('Category Integration Tests - Overview', () => {
       // Clean up
       await request(SERVER_URL)
         .delete(`/api/categories/${testCategoryId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
       await request(SERVER_URL)
         .delete(`/api/categories/${parentId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
       testCategoryId = '';
     });

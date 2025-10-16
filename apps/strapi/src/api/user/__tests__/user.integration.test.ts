@@ -14,7 +14,7 @@ import { retryApiRequest } from '../../../utils/test-helpers';
 
 describe('User Integration Tests', () => {
   const SERVER_URL = 'http://localhost:1337';
-  let adminToken: string;
+  let apiToken: string;
   
   // Generate unique test data with timestamp
   const timestamp = Date.now();
@@ -24,9 +24,9 @@ describe('User Integration Tests', () => {
 
   beforeAll(async () => {
     // Get admin token for authenticated requests
-    adminToken = process.env.STRAPI_API_TOKEN as string;
+    apiToken = process.env.STRAPI_API_TOKEN as string;
 
-    if (!adminToken) {
+    if (!apiToken) {
       throw new Error('STRAPI_API_TOKEN environment variable is not set. Please ensure the test server is running and the token is generated.');
     }
   });
@@ -43,7 +43,7 @@ describe('User Integration Tests', () => {
       try {
         await request(SERVER_URL)
           .delete(`/api/users/${user.id}`)
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .timeout(10000)
           .expect(200);
       } catch (error) {
@@ -701,7 +701,7 @@ describe('User Integration Tests', () => {
     it('should search users by username', async () => {
       const response = await request(SERVER_URL)
         .get(`/api/users?filters[username][$containsi]=searchuser1${timestamp}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
       
       expect(response.status).toBe(200);
@@ -714,7 +714,7 @@ describe('User Integration Tests', () => {
     it('should search users by email', async () => {
       const response = await request(SERVER_URL)
         .get(`/api/users?filters[email][$containsi]=searchuser2${timestamp}@example.com`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
 
       expect(response.status).toBe(200);
@@ -727,7 +727,7 @@ describe('User Integration Tests', () => {
     it('should paginate users', async () => {
       const response = await request(SERVER_URL)
         .get('/api/users?pagination[page]=1&pagination[pageSize]=2')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
 
       expect(response.status).toBe(200);

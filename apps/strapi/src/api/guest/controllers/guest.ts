@@ -191,5 +191,36 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
             strapi.log.error('Error getting guest analytics:', error)
             return ctx.internalServerError('Failed to get guest analytics')
         }
+    },
+    /**
+     * Delete guest
+     */
+    async delete(ctx: Context) {
+        try {
+            const { sessionId } = ctx.params
+
+            if (!sessionId) {
+                return ctx.badRequest('Session ID is required')
+            }
+
+            const guest = await strapi.service('api::guest.guest').getGuest(sessionId)
+
+            if (!guest) {
+                return ctx.notFound('Guest not found')
+            }
+            await strapi.documents('api::guest.guest').delete({
+                documentId: guest.documentId,
+            })
+
+            return {
+                data: guest,
+                meta: {
+                    message: 'Guest deleted successfully'
+                }
+            }
+        } catch (error) {
+            strapi.log.error('Error deleting guest:', error)
+            return ctx.internalServerError('Failed to delete guest')
+        }
     }
 })

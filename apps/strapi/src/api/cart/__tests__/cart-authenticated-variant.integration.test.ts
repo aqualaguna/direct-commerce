@@ -18,7 +18,7 @@ import request from 'supertest';
 
 describe('Cart Integration Tests - Authenticated Users with Product Listing Variants', () => {
   const SERVER_URL = 'http://localhost:1337';
-  let adminToken: string;
+  let apiToken: string;
   let testUser: any;
   let testProduct: any;
   let testProduct2: any;
@@ -66,7 +66,7 @@ describe('Cart Integration Tests - Authenticated Users with Product Listing Vari
     try {
       await request(SERVER_URL)
         .delete(`/api/${type}/${documentId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
     } catch (error) {
       console.warn(`Failed to cleanup ${type} ${documentId}:`, error);
@@ -75,9 +75,9 @@ describe('Cart Integration Tests - Authenticated Users with Product Listing Vari
 
   beforeAll(async () => {
     // Get admin token for authenticated requests
-    adminToken = process.env.STRAPI_API_TOKEN as string;
+    apiToken = process.env.STRAPI_API_TOKEN as string;
 
-    if (!adminToken) {
+    if (!apiToken) {
       throw new Error('STRAPI_API_TOKEN environment variable is not set. Please ensure the test server is running and the token is generated.');
     }
 
@@ -111,7 +111,7 @@ describe('Cart Integration Tests - Authenticated Users with Product Listing Vari
 
     const productResponse = await request(SERVER_URL)
       .post('/api/products')
-      .set('Authorization', `Bearer ${adminToken}`)
+      .set('Authorization', `Bearer ${apiToken}`)
       .send({ data: productData })
       .timeout(10000);
 
@@ -131,7 +131,7 @@ describe('Cart Integration Tests - Authenticated Users with Product Listing Vari
 
     const productResponse2 = await request(SERVER_URL)
       .post('/api/products')
-      .set('Authorization', `Bearer ${adminToken}`)
+      .set('Authorization', `Bearer ${apiToken}`)
       .send({ data: productData2 })
       .timeout(10000);
 
@@ -153,7 +153,7 @@ describe('Cart Integration Tests - Authenticated Users with Product Listing Vari
 
     const categoryResponse = await request(SERVER_URL)
       .post('/api/categories')
-      .set('Authorization', `Bearer ${adminToken}`)
+      .set('Authorization', `Bearer ${apiToken}`)
       .send({ data: categoryData })
       .timeout(10000);
 
@@ -176,7 +176,7 @@ describe('Cart Integration Tests - Authenticated Users with Product Listing Vari
 
     const optionGroupResponse = await request(SERVER_URL)
       .post('/api/option-groups')
-      .set('Authorization', `Bearer ${adminToken}`)
+      .set('Authorization', `Bearer ${apiToken}`)
       .send({ data: optionGroupData })
       .timeout(10000);
 
@@ -205,12 +205,12 @@ describe('Cart Integration Tests - Authenticated Users with Product Listing Vari
 
     const optionValueResponse = await request(SERVER_URL)
       .post('/api/option-values')
-      .set('Authorization', `Bearer ${adminToken}`)
+      .set('Authorization', `Bearer ${apiToken}`)
       .send({ data: optionValueData })
       .timeout(10000);
     const optionValueResponse2 = await request(SERVER_URL)
       .post('/api/option-values')
-      .set('Authorization', `Bearer ${adminToken}`)
+      .set('Authorization', `Bearer ${apiToken}`)
       .send({ data: optionValueData2 })
       .timeout(10000);
 
@@ -238,7 +238,7 @@ describe('Cart Integration Tests - Authenticated Users with Product Listing Vari
 
     const productListingResponse = await request(SERVER_URL)
       .post('/api/product-listings')
-      .set('Authorization', `Bearer ${adminToken}`)
+      .set('Authorization', `Bearer ${apiToken}`)
       .send({ data: productListingData })
       .timeout(10000);
 
@@ -270,7 +270,7 @@ describe('Cart Integration Tests - Authenticated Users with Product Listing Vari
     
     const variantResponse2 = await request(SERVER_URL)
       .post('/api/product-listing-variants')
-      .set('Authorization', `Bearer ${adminToken}`)
+      .set('Authorization', `Bearer ${apiToken}`)
       .send({ data: variantData2 })
       .timeout(10000);
 
@@ -283,7 +283,7 @@ describe('Cart Integration Tests - Authenticated Users with Product Listing Vari
 
     const variantResponse = await request(SERVER_URL)
       .post('/api/product-listing-variants')
-      .set('Authorization', `Bearer ${adminToken}`)
+      .set('Authorization', `Bearer ${apiToken}`)
       .send({ data: variantData })
       .timeout(10000);
 
@@ -319,7 +319,7 @@ describe('Cart Integration Tests - Authenticated Users with Product Listing Vari
         try {
           await request(SERVER_URL)
             .delete(`/api/users/${user.id}`)
-            .set('Authorization', `Bearer ${adminToken}`)
+            .set('Authorization', `Bearer ${apiToken}`)
             .timeout(10000);
         } catch (error) {
           console.warn(`Failed to clean up user ${user.id}:`, error.message);

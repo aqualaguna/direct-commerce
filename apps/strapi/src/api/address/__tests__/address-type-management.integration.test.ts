@@ -13,7 +13,8 @@ import {
   createTestBillingAddressData,
   createAndTrackAddress,
   initializeTestEnvironment,
-  cleanupTestEnvironment
+  cleanupTestEnvironment,
+  apiToken
 } from './test-setup';
 
 describe('Address Type Management Integration Tests', () => {
@@ -413,10 +414,10 @@ describe('Address Type Management Integration Tests', () => {
         }));
       });
 
-      it('should return address analytics', async () => {
+      it('should return address analytics with API token', async () => {
         const response = await request(SERVER_URL)
           .post('/api/addresses/analytics')
-          .set('Authorization', `Bearer ${userToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .timeout(10000);
 
         expect(response.status).toBe(200);

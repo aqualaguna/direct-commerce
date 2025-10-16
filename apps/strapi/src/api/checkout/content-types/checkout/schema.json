@@ -1,0 +1,74 @@
+{
+  "kind": "collectionType",
+  "collectionName": "checkouts",
+  "info": {
+    "singularName": "checkout",
+    "pluralName": "checkouts",
+    "displayName": "Checkout",
+    "description": "Multi-step checkout management for guest and registered users"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "order": {
+      "type": "relation", 
+      "relation": "oneToOne",
+      "target": "api::order.order",
+      "required": false
+    },
+    "sessionId": {
+      "type": "string",
+      "required": false
+    },
+    "user": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": [
+        "active",
+        "completed",
+        "abandoned",
+        "locked",
+        "expired"
+      ],
+      "default": "active",
+      "required": true
+    },
+    "shippingAddress": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::address.address"
+    },
+    "billingAddress": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::address.address"
+    },
+    "shippingMethod": {
+      "type": "string",
+      "required": false,
+      "maxLength": 100
+    },
+    "expiresAt": {
+      "type": "datetime",
+      "required": true
+    },
+    "abandonedAt": {
+      "type": "datetime",
+      "required": false
+    },
+    "completedAt": {
+      "type": "datetime",
+      "required": false
+    },
+    "metadata": {
+      "type": "json",
+      "required": false
+    }
+  }
+}

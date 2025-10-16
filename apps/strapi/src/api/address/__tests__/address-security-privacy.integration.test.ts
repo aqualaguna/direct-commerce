@@ -10,7 +10,7 @@ import {
   SERVER_URL,
   userToken,
   testUser,
-  adminToken,
+  apiToken,
   createTestAddressData,
   createAndTrackAddress,
   getTestAddress,
@@ -276,7 +276,7 @@ describe('Address Privacy and Security Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .put(`/api/addresses/${testAddress.documentId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: updateData })
         .timeout(10000);
       expect(response.status).toBe(200);
@@ -306,7 +306,7 @@ describe('Address Privacy and Security Integration Tests', () => {
         // Delete the user
         const response = await request(SERVER_URL)
           .delete(`/api/users/${tempUser.id}`)
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .timeout(10000);
         expect(response.status).toBe(200);
         // wait for 2 second
@@ -314,7 +314,7 @@ describe('Address Privacy and Security Integration Tests', () => {
         // Address should be automatically cleaned up or marked as orphaned
         const getResponse = await request(SERVER_URL)
           .get(`/api/addresses/${tempAddress.documentId}`)
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .timeout(10000);
         expect(getResponse.status).toBe(404);
     });
@@ -347,7 +347,7 @@ describe('Address Privacy and Security Integration Tests', () => {
       // Check modification logs (may not be implemented yet)
       const auditResponse = await request(SERVER_URL)
         .get(`/api/addresses/${testAddress.documentId}/audit-logs`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
 
       expect([200, 404, 403]).toContain(auditResponse.status);
@@ -371,7 +371,7 @@ describe('Address Privacy and Security Integration Tests', () => {
       // Check export audit logs (may not be implemented yet)
       const auditResponse = await request(SERVER_URL)
         .get('/api/addresses/audit-logs?action=export')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
 
       expect([200, 404, 403]).toContain(auditResponse.status);

@@ -14,7 +14,7 @@ import request from 'supertest';
 
 describe('Product Listing and Variant Relationships Integration Tests', () => {
   const SERVER_URL = 'http://localhost:1337';
-  let adminToken: string;
+  let apiToken: string;
   let testProducts: any[] = [];
   let testCategory: any;
   let testProductListing: any;
@@ -27,9 +27,9 @@ describe('Product Listing and Variant Relationships Integration Tests', () => {
 
   beforeAll(async () => {
     // Get admin token for authenticated requests
-    adminToken = process.env.STRAPI_API_TOKEN as string;
+    apiToken = process.env.STRAPI_API_TOKEN as string;
 
-    if (!adminToken) {
+    if (!apiToken) {
       throw new Error('STRAPI_API_TOKEN environment variable is not set. Please ensure the test server is running and the token is generated.');
     }
      // Create test category for product listing
@@ -43,7 +43,7 @@ describe('Product Listing and Variant Relationships Integration Tests', () => {
 
     const categoryResponse = await request(SERVER_URL)
       .post('/api/categories')
-      .set('Authorization', `Bearer ${adminToken}`)
+      .set('Authorization', `Bearer ${apiToken}`)
       .send({ data: categoryData })
       .expect(200)
       .timeout(10000);
@@ -77,7 +77,7 @@ describe('Product Listing and Variant Relationships Integration Tests', () => {
     for (const data of productData) {
       const productResponse = await request(SERVER_URL)
         .post('/api/products')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data })
         .expect(200)
         .timeout(10000);
@@ -98,7 +98,7 @@ describe('Product Listing and Variant Relationships Integration Tests', () => {
 
     const optionGroupResponse = await request(SERVER_URL)
       .post('/api/option-groups')
-      .set('Authorization', `Bearer ${adminToken}`)
+      .set('Authorization', `Bearer ${apiToken}`)
       .send({ data: optionGroupData })
       .expect(201)
       .timeout(10000);
@@ -125,7 +125,7 @@ describe('Product Listing and Variant Relationships Integration Tests', () => {
     for (const data of optionValueData) {
       const response = await request(SERVER_URL)
         .post('/api/option-values')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data })
         .expect(200)
         .timeout(10000);
@@ -147,7 +147,7 @@ describe('Product Listing and Variant Relationships Integration Tests', () => {
     };
     const productListingResponse = await request(SERVER_URL)
       .post('/api/product-listings')
-      .set('Authorization', `Bearer ${adminToken}`)
+      .set('Authorization', `Bearer ${apiToken}`)
       .send({ data: productListingData })
       .expect(200)
       .timeout(10000);
@@ -163,7 +163,7 @@ describe('Product Listing and Variant Relationships Integration Tests', () => {
       try {
         await request(SERVER_URL)
           .delete(`/api/product-listing-variants/${variant.documentId}`)
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .timeout(10000);
       } catch (error) {
         console.warn('Failed to clean up test variant:', error.message);
@@ -174,7 +174,7 @@ describe('Product Listing and Variant Relationships Integration Tests', () => {
       try {
         await request(SERVER_URL)
           .delete(`/api/option-values/${optionValue.documentId}`)
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .timeout(10000);
       } catch (error) {
         console.warn('Failed to clean up test option value:', error.message);
@@ -185,7 +185,7 @@ describe('Product Listing and Variant Relationships Integration Tests', () => {
       try {
         await request(SERVER_URL)
           .delete(`/api/option-groups/${testOptionGroup.documentId}`)
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .timeout(10000);
       } catch (error) {
         console.warn('Failed to clean up test option group:', error.message);
@@ -196,7 +196,7 @@ describe('Product Listing and Variant Relationships Integration Tests', () => {
       try {
         await request(SERVER_URL)
           .delete(`/api/product-listings/${testProductListing.documentId}`)
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .timeout(10000);
       } catch (error) {
         console.warn('Failed to clean up test product listing:', error.message);
@@ -208,7 +208,7 @@ describe('Product Listing and Variant Relationships Integration Tests', () => {
         try {
           await request(SERVER_URL)
             .delete(`/api/products/${testProduct.documentId}`)
-            .set('Authorization', `Bearer ${adminToken}`)
+            .set('Authorization', `Bearer ${apiToken}`)
             .timeout(10000);
         } catch (error) {
           console.warn('Failed to clean up test product:', error.message);
@@ -220,7 +220,7 @@ describe('Product Listing and Variant Relationships Integration Tests', () => {
       try {
         await request(SERVER_URL)
           .delete(`/api/categories/${testCategory.documentId}`)
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .timeout(10000);
       } catch (error) {
         console.warn('Failed to clean up test category:', error.message);
@@ -258,7 +258,7 @@ describe('Product Listing and Variant Relationships Integration Tests', () => {
       for (const data of variantData) {
         const response = await request(SERVER_URL)
           .post('/api/product-listing-variants')
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .send({ data })
           .expect(200)
           .timeout(10000);
@@ -275,7 +275,7 @@ describe('Product Listing and Variant Relationships Integration Tests', () => {
     it('should retrieve product listing with all associated variants', async () => {
       const response = await request(SERVER_URL)
         .get(`/api/product-listings/${testProductListing.documentId}/with-variants`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .expect(200)
         .timeout(10000);
 
@@ -300,7 +300,7 @@ describe('Product Listing and Variant Relationships Integration Tests', () => {
 
       await request(SERVER_URL)
         .put(`/api/product-listings/${testProductListing.documentId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: updateData })
         .expect(200)
         .timeout(10000);
@@ -309,7 +309,7 @@ describe('Product Listing and Variant Relationships Integration Tests', () => {
       for (const variant of testVariants) {
         const response = await request(SERVER_URL)
           .get(`/api/product-listing-variants/${variant.documentId}`)
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .expect(200)
           .timeout(10000);
         // Variants should maintain their original pricing, not inherit from product listing
@@ -324,7 +324,7 @@ describe('Product Listing and Variant Relationships Integration Tests', () => {
       for (const variant of testVariants) {
         const response = await request(SERVER_URL)
           .get(`/api/product-listing-variants/${variant.documentId}`)
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .expect(200)
           .timeout(10000);
 
@@ -340,7 +340,7 @@ describe('Product Listing and Variant Relationships Integration Tests', () => {
         const variant = testVariants[i];
         const response = await request(SERVER_URL)
           .get(`/api/product-listing-variants/${variant.documentId}`)
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .expect(200)
           .timeout(10000);
 
@@ -367,7 +367,7 @@ describe('Product Listing and Variant Relationships Integration Tests', () => {
 
       const draftResponse = await request(SERVER_URL)
         .post('/api/product-listings')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: draftProductListingData })
         .expect(200)
         .timeout(10000);
@@ -386,7 +386,7 @@ describe('Product Listing and Variant Relationships Integration Tests', () => {
 
       const variantResponse = await request(SERVER_URL)
         .post('/api/product-listing-variants')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: variantData })
         .expect(200)
         .timeout(10000);
@@ -396,12 +396,12 @@ describe('Product Listing and Variant Relationships Integration Tests', () => {
       // Clean up
       await request(SERVER_URL)
         .delete(`/api/product-listing-variants/${variantResponse.body.data.documentId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
 
       await request(SERVER_URL)
         .delete(`/api/product-listings/${draftProductListing.documentId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
     });
 
@@ -409,7 +409,7 @@ describe('Product Listing and Variant Relationships Integration Tests', () => {
       const variant = testVariants[0];
       const response = await request(SERVER_URL)
         .get(`/api/product-listing-variants/${variant.documentId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         // .expect(200)
         .timeout(10000);
       // Variant should have access to product listing's category through the relationship
@@ -422,7 +422,7 @@ describe('Product Listing and Variant Relationships Integration Tests', () => {
       const variant = testVariants[0];
       const response = await request(SERVER_URL)
         .get(`/api/product-listing-variants/${variant.documentId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .expect(200)
         .timeout(10000);
 
@@ -447,7 +447,7 @@ describe('Product Listing and Variant Relationships Integration Tests', () => {
       };
       const productResponse = await request(SERVER_URL)
         .post('/api/products')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: productData })
         .expect(200)
         .timeout(10000);
@@ -465,7 +465,7 @@ describe('Product Listing and Variant Relationships Integration Tests', () => {
 
       const response1 = await request(SERVER_URL)
         .post('/api/product-listing-variants')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: variantData1 })
         .expect(400)
         .timeout(10000);
@@ -482,7 +482,7 @@ describe('Product Listing and Variant Relationships Integration Tests', () => {
 
       const optionValueResponse = await request(SERVER_URL)
         .post('/api/option-values')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: optionValueData })
         .expect(200)
         .timeout(10000);
@@ -501,7 +501,7 @@ describe('Product Listing and Variant Relationships Integration Tests', () => {
 
       const response2 = await request(SERVER_URL)
         .post('/api/product-listing-variants')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: variantData2 })
         .expect(400)
         .timeout(10000);
@@ -522,7 +522,7 @@ describe('Product Listing and Variant Relationships Integration Tests', () => {
 
       await request(SERVER_URL)
         .post('/api/product-listing-variants')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: variantData })
         .expect(400)
         .timeout(10000);
@@ -538,7 +538,7 @@ describe('Product Listing and Variant Relationships Integration Tests', () => {
 
       await request(SERVER_URL)
         .post('/api/product-listing-variants')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: variantData })
         .expect(400)
         .timeout(10000);
@@ -554,7 +554,7 @@ describe('Product Listing and Variant Relationships Integration Tests', () => {
 
       await request(SERVER_URL)
         .post('/api/product-listing-variants')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: variantData })
         .expect(400)
         .timeout(10000);
@@ -581,7 +581,7 @@ describe('Product Listing and Variant Relationships Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .post('/api/product-listings')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: productListingData })
         .timeout(10000);
 
@@ -606,7 +606,7 @@ describe('Product Listing and Variant Relationships Integration Tests', () => {
       for (const data of variantData) {
         const variantResponse = await request(SERVER_URL)
           .post('/api/product-listing-variants')
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .send({ data })
           .expect(200)
           .timeout(10000);
@@ -619,7 +619,7 @@ describe('Product Listing and Variant Relationships Integration Tests', () => {
       for (const variant of testVariantsForCleanup) {
         await request(SERVER_URL)
           .get(`/api/product-listing-variants/${variant.documentId}`)
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .expect(200)
           .timeout(10000);
       }
@@ -627,7 +627,7 @@ describe('Product Listing and Variant Relationships Integration Tests', () => {
       // Delete the product listing
       await request(SERVER_URL)
         .delete(`/api/product-listings/${testProductListingForCleanup.documentId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .expect(200)
         .timeout(10000);
 
@@ -635,7 +635,7 @@ describe('Product Listing and Variant Relationships Integration Tests', () => {
       for (const variant of testVariantsForCleanup) {
         await request(SERVER_URL)
           .get(`/api/product-listing-variants/${variant.documentId}`)
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .expect(404)
           .timeout(10000);
       }
@@ -653,7 +653,7 @@ describe('Product Listing and Variant Relationships Integration Tests', () => {
 
       const variantResponse = await request(SERVER_URL)
         .post('/api/product-listing-variants')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: variantData })
         .timeout(10000);
 
@@ -662,21 +662,21 @@ describe('Product Listing and Variant Relationships Integration Tests', () => {
       // Delete the variant
       await request(SERVER_URL)
         .delete(`/api/product-listing-variants/${variantToDelete.documentId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .expect(200)
         .timeout(10000);
 
       // Verify product listing still exists
       await request(SERVER_URL)
         .get(`/api/product-listings/${testProductListing.documentId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .expect(200)
         .timeout(10000);
 
       // Verify variant is deleted
       await request(SERVER_URL)
         .get(`/api/product-listing-variants/${variantToDelete.documentId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .expect(404)
         .timeout(10000);
     });

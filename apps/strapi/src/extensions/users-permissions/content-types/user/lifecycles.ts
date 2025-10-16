@@ -92,7 +92,7 @@ export default {
                             // Delete all cart items first
                             if (cart.items && cart.items.length > 0) {
                                 for (const item of cart.items) {
-                                    await strapi.documents('api::cart-item.cart-item').delete({
+                                    await strapi.documents('api::cart.cart-item').delete({
                                         documentId: item.documentId
                                     });
                                 }

@@ -25,7 +25,7 @@ import {
 } from './test-setup';
 
 describe('Guest Integration Tests', () => {
-  let adminToken: string;
+  let apiToken: string;
   let testProduct: any;
   let testProductListing: any;
   let testCart: any;
@@ -40,9 +40,9 @@ describe('Guest Integration Tests', () => {
 
   beforeAll(async () => {
     // Get admin token for authenticated requests
-    adminToken = process.env.STRAPI_API_TOKEN as string;
+    apiToken = process.env.STRAPI_API_TOKEN as string;
 
-    if (!adminToken) {
+    if (!apiToken) {
       throw new Error('STRAPI_API_TOKEN environment variable is not set. Please ensure the test server is running and the token is generated.');
     }
 
@@ -57,7 +57,7 @@ describe('Guest Integration Tests', () => {
 
     const productResponse = await request(SERVER_URL)
       .post('/api/products')
-      .set('Authorization', `Bearer ${adminToken}`)
+      .set('Authorization', `Bearer ${apiToken}`)
       .send({ data: productData })
       .timeout(10000);
 
@@ -80,7 +80,7 @@ describe('Guest Integration Tests', () => {
 
     const productListingResponse = await request(SERVER_URL)
       .post('/api/product-listings')
-      .set('Authorization', `Bearer ${adminToken}`)
+      .set('Authorization', `Bearer ${apiToken}`)
       .send({ data: productListingData })
       .timeout(10000);
 
@@ -93,14 +93,14 @@ describe('Guest Integration Tests', () => {
 
   afterAll(async () => {
     // Use the test utilities for cleanup
-    await cleanupTestData(createdGuests, createdCarts, createdUsers, adminToken);
+    await cleanupTestData(createdGuests, createdCarts, createdUsers, apiToken);
 
     // Clean up test product listing
     if (testProductListing?.documentId) {
       try {
         await request(SERVER_URL)
           .delete(`/api/product-listings/${testProductListing.documentId}`)
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .expect(200)
           .timeout(10000);
       } catch (error) {
@@ -113,7 +113,7 @@ describe('Guest Integration Tests', () => {
       try {
         await request(SERVER_URL)
           .delete(`/api/products/${testProduct.documentId}`)
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .expect(200)
           .timeout(10000);
       } catch (error) {
@@ -752,7 +752,7 @@ describe('Guest Integration Tests', () => {
     });
 
     it('should get guest analytics', async () => {
-      const analytics = await getGuestAnalytics(adminToken);
+      const analytics = await getGuestAnalytics(apiToken);
 
       expect(analytics).toBeDefined();
       expect(analytics).toHaveProperty('totalGuest');

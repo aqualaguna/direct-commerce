@@ -13,7 +13,7 @@ export const SERVER_URL = 'http://localhost:1337';
 // Global test state
 export let userToken: string;
 export let testUser: any;
-export let adminToken: string;
+export let apiToken: string;
 
 // Generate unique test data with timestamp
 export const timestamp = Date.now();
@@ -27,9 +27,9 @@ export const createdGuestAddresses: any[] = [];
  * Initialize test environment and create test user
  */
 export const initializeTestEnvironment = async () => {
-  adminToken = process.env.STRAPI_API_TOKEN as string;
+  apiToken = process.env.STRAPI_API_TOKEN as string;
 
-  if (!adminToken) {
+  if (!apiToken) {
     throw new Error('STRAPI_API_TOKEN environment variable is not set. Please ensure the test server is running and the token is generated.');
   }
 
@@ -94,7 +94,7 @@ export const cleanupTestEnvironment = async () => {
     try {
       await request(SERVER_URL)
         .delete(`/api/users/${user.id}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
     } catch (error) {
       // Failed to delete user during cleanup - this is expected in some test scenarios

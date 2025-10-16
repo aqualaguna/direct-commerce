@@ -16,7 +16,7 @@ import request from 'supertest';
 
 describe('Product Listing Variant Integration Tests', () => {
   const SERVER_URL = 'http://localhost:1337';
-  let adminToken: string;
+  let apiToken: string;
   let testProduct: any;
   let testCategory: any;
   let testProductListing: any;
@@ -54,7 +54,7 @@ describe('Product Listing Variant Integration Tests', () => {
     try {
       await request(SERVER_URL)
         .delete(`/api/${type}/${documentId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
     } catch (error) {
       console.warn(`Failed to cleanup ${type} ${documentId}:`, error);
@@ -63,9 +63,9 @@ describe('Product Listing Variant Integration Tests', () => {
 
   beforeAll(async () => {
     // Get admin token for authenticated requests
-    adminToken = process.env.STRAPI_API_TOKEN as string;
+    apiToken = process.env.STRAPI_API_TOKEN as string;
 
-    if (!adminToken) {
+    if (!apiToken) {
       throw new Error('STRAPI_API_TOKEN environment variable is not set. Please ensure the test server is running and the token is generated.');
     }
 
@@ -80,7 +80,7 @@ describe('Product Listing Variant Integration Tests', () => {
 
     const productResponse = await request(SERVER_URL)
       .post('/api/products')
-      .set('Authorization', `Bearer ${adminToken}`)
+      .set('Authorization', `Bearer ${apiToken}`)
       .send({ data: productData })
       .timeout(10000);
 
@@ -102,7 +102,7 @@ describe('Product Listing Variant Integration Tests', () => {
 
     const categoryResponse = await request(SERVER_URL)
       .post('/api/categories')
-      .set('Authorization', `Bearer ${adminToken}`)
+      .set('Authorization', `Bearer ${apiToken}`)
       .send({ data: categoryData })
       .timeout(10000);
 
@@ -127,7 +127,7 @@ describe('Product Listing Variant Integration Tests', () => {
 
     const productListingResponse = await request(SERVER_URL)
       .post('/api/product-listings')
-      .set('Authorization', `Bearer ${adminToken}`)
+      .set('Authorization', `Bearer ${apiToken}`)
       .send({ data: productListingData })
       .timeout(10000);
     if (![200, 201].includes(productListingResponse.status)) {
@@ -148,7 +148,7 @@ describe('Product Listing Variant Integration Tests', () => {
 
     const optionGroupResponse = await request(SERVER_URL)
       .post('/api/option-groups')
-      .set('Authorization', `Bearer ${adminToken}`)
+      .set('Authorization', `Bearer ${apiToken}`)
       .send({ data: optionGroupData })
       .timeout(10000);
 
@@ -170,7 +170,7 @@ describe('Product Listing Variant Integration Tests', () => {
 
     const optionValueResponse = await request(SERVER_URL)
       .post('/api/option-values')
-      .set('Authorization', `Bearer ${adminToken}`)
+      .set('Authorization', `Bearer ${apiToken}`)
       .send({ data: optionValueData })
       .timeout(10000);
 
@@ -184,7 +184,7 @@ describe('Product Listing Variant Integration Tests', () => {
     // Associate the option group with the product listing
     const associateResponse = await request(SERVER_URL)
       .put(`/api/product-listings/${testProductListing.documentId}`)
-      .set('Authorization', `Bearer ${adminToken}`)
+      .set('Authorization', `Bearer ${apiToken}`)
       .send({ 
         data: { 
           optionGroups: [testOptionGroup.documentId] 
@@ -229,7 +229,7 @@ describe('Product Listing Variant Integration Tests', () => {
       };
       const response = await request(SERVER_URL)
         .post('/api/product-listing-variants')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: variantData })
         .timeout(10000);
       expect([200, 201]).toContain(response.status);
@@ -253,7 +253,7 @@ describe('Product Listing Variant Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .get(`/api/product-listing-variants/${testProductListingVariant.documentId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
       
       expect(response.status).toBe(200);
@@ -276,7 +276,7 @@ describe('Product Listing Variant Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .put(`/api/product-listing-variants/${testProductListingVariant.documentId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: updateData })
         .expect(200)
         .timeout(10000);
@@ -299,7 +299,7 @@ describe('Product Listing Variant Integration Tests', () => {
 
       const deleteResponse = await request(SERVER_URL)
         .delete(`/api/product-listing-variants/${documentId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .expect(200)
         .timeout(10000);
 
@@ -309,7 +309,7 @@ describe('Product Listing Variant Integration Tests', () => {
       // Verify deletion by attempting to retrieve
       await request(SERVER_URL)
         .get(`/api/product-listing-variants/${documentId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .expect(404)
         .timeout(10000);
 
@@ -331,7 +331,7 @@ describe('Product Listing Variant Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .post('/api/product-listing-variants')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: invalidData })
         .expect(400)
         .timeout(10000);
@@ -347,7 +347,7 @@ describe('Product Listing Variant Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .post('/api/product-listing-variants')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: invalidData })
         .expect(400)
         .timeout(10000);
@@ -364,7 +364,7 @@ describe('Product Listing Variant Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .post('/api/product-listing-variants')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: invalidData })
         .expect(400)
         .timeout(10000);
@@ -382,7 +382,7 @@ describe('Product Listing Variant Integration Tests', () => {
 
       const unrelatedOptionGroupResponse = await request(SERVER_URL)
         .post('/api/option-groups')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: unrelatedOptionGroupData })
         .timeout(10000);
 
@@ -400,7 +400,7 @@ describe('Product Listing Variant Integration Tests', () => {
 
       const unrelatedOptionValueResponse = await request(SERVER_URL)
         .post('/api/option-values')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: unrelatedOptionValueData })
         .timeout(10000);
 
@@ -417,7 +417,7 @@ describe('Product Listing Variant Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .post('/api/product-listing-variants')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: invalidData })
         // .expect(400)
         .timeout(10000);
@@ -452,7 +452,7 @@ describe('Product Listing Variant Integration Tests', () => {
       for (const data of variantData) {
         const response = await request(SERVER_URL)
           .post('/api/product-listing-variants')
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .send({ data })
           .timeout(10000);
 
@@ -469,7 +469,7 @@ describe('Product Listing Variant Integration Tests', () => {
         try {
           await request(SERVER_URL)
             .delete(`/api/product-listing-variants/${variant.documentId}`)
-            .set('Authorization', `Bearer ${adminToken}`)
+            .set('Authorization', `Bearer ${apiToken}`)
             .timeout(10000);
           
           // Remove from tracking
@@ -486,7 +486,7 @@ describe('Product Listing Variant Integration Tests', () => {
     it('should filter variants by active status', async () => {
       const response = await request(SERVER_URL)
         .get('/api/product-listing-variants')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .expect(200)
         .timeout(10000);
 
@@ -504,7 +504,7 @@ describe('Product Listing Variant Integration Tests', () => {
     it('should sort variants by price ascending', async () => {
       const response = await request(SERVER_URL)
         .get('/api/product-listing-variants')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .query({ sort: 'basePrice:asc' })
         .expect(200)
         .timeout(10000);
@@ -523,7 +523,7 @@ describe('Product Listing Variant Integration Tests', () => {
     it('should sort variants by price descending', async () => {
       const response = await request(SERVER_URL)
         .get('/api/product-listing-variants')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .query({ sort: 'basePrice:desc' })
         .expect(200)
         .timeout(10000);
@@ -542,7 +542,7 @@ describe('Product Listing Variant Integration Tests', () => {
     it('should apply pagination to variants', async () => {
       const response = await request(SERVER_URL)
         .get('/api/product-listing-variants')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .query({ page: 1, pageSize: 2 })
         .expect(200)
         .timeout(10000);
@@ -564,7 +564,7 @@ describe('Product Listing Variant Integration Tests', () => {
       
       const response = await request(SERVER_URL)
         .get('/api/product-listing-variants')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .query({ pageSize: 100 })
         .expect(200)
         .timeout(30000);
@@ -585,7 +585,7 @@ describe('Product Listing Variant Integration Tests', () => {
         promises.push(
           request(SERVER_URL)
             .get('/api/product-listing-variants')
-            .set('Authorization', `Bearer ${adminToken}`)
+            .set('Authorization', `Bearer ${apiToken}`)
             .query({ page: 1, pageSize: 10 })
             .timeout(10000)
         );
@@ -621,7 +621,7 @@ describe('Product Listing Variant Integration Tests', () => {
       for (const data of variantData) {
         const response = await request(SERVER_URL)
           .post('/api/product-listing-variants')
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .send({ data })
           .timeout(10000);
         
@@ -642,7 +642,7 @@ describe('Product Listing Variant Integration Tests', () => {
 
       const bulkResponse = await request(SERVER_URL)
         .post('/api/product-listing-variants/bulk-update-prices')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send(bulkUpdateData)
         .expect(200)
         .timeout(10000);
@@ -655,7 +655,7 @@ describe('Product Listing Variant Integration Tests', () => {
         try {
           await request(SERVER_URL)
             .delete(`/api/product-listing-variants/${variant.documentId}`)
-            .set('Authorization', `Bearer ${adminToken}`)
+            .set('Authorization', `Bearer ${apiToken}`)
             .timeout(10000);
           
           // Remove from tracking
@@ -684,7 +684,7 @@ describe('Product Listing Variant Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .post('/api/product-listing-variants')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: variantData })
         .timeout(10000);
       expect(response.status).toBe(200);
@@ -698,7 +698,7 @@ describe('Product Listing Variant Integration Tests', () => {
         try {
           await request(SERVER_URL)
             .delete(`/api/product-listing-variants/${testVariant.documentId}`)
-            .set('Authorization', `Bearer ${adminToken}`)
+            .set('Authorization', `Bearer ${apiToken}`)
             .timeout(10000);
           
           // Remove from tracking
@@ -715,7 +715,7 @@ describe('Product Listing Variant Integration Tests', () => {
     it('should verify variant to product listing relationship', async () => {
       const response = await request(SERVER_URL)
         .get(`/api/product-listing-variants/${testVariant.documentId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .expect(200)
         .timeout(10000);
 
@@ -728,7 +728,7 @@ describe('Product Listing Variant Integration Tests', () => {
     it('should verify variant to option values relationship', async () => {
       const response = await request(SERVER_URL)
         .get(`/api/product-listing-variants/${testVariant.documentId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .expect(200)
         .timeout(10000);
       expect(response.body.data).toBeDefined();
@@ -739,7 +739,7 @@ describe('Product Listing Variant Integration Tests', () => {
     it('should verify product listing to variants relationship', async () => {
       const response = await request(SERVER_URL)
         .get(`/api/product-listings/${testProductListing.documentId}/with-variants`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .expect(200)
         .timeout(10000);
       expect(response.body).toBeDefined();

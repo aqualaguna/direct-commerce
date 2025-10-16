@@ -22,18 +22,19 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
   async createGuest(data: GuestData) {
     try {
       // Validate email format
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-      if (data.email && !emailRegex.test(data.email)) {
-        throw new Error('Invalid email format')
-      }
+      if (data.email) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+        if(!emailRegex.test(data.email)) {
+          throw new Error('Invalid email format')
+        }
+        // Check if email already exists for a registered user
+        const existingUser = await strapi.documents('plugin::users-permissions.user').findFirst({
+          filters: { email: data.email }
+        })
 
-      // Check if email already exists for a registered user
-      const existingUser = await strapi.documents('plugin::users-permissions.user').findFirst({
-        filters: { email: data.email }
-      })
-
-      if (existingUser) {
-        throw new Error('Email already registered. Please login instead.')
+        if (existingUser) {
+          throw new Error('Email already registered. Please login instead.')
+        }
       }
       // Create guest
       const guest = await strapi.documents('api::guest.guest').create({

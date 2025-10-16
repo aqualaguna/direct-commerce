@@ -28,6 +28,15 @@ export default {
       }
     },
     {
+      method: 'DELETE',
+      path: '/guests/:sessionId',
+      handler: 'guest.delete',
+      config: {
+        policies: ['global::is-admin'],
+        description: 'Delete guest data',
+      }
+    },
+    {
       method: 'POST',
       path: '/guests/:sessionId/convert',
       handler: 'guest.convertToUser',

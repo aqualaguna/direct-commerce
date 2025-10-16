@@ -1,21 +1,21 @@
 {
   "kind": "collectionType",
-  "collectionName": "payment_notes",
+  "collectionName": "payment_comments",
   "info": {
     "singularName": "payment-comment",
     "pluralName": "payment-comments",
-    "displayName": "Payment Note",
-    "description": "Notes and comments for manual payments"
+    "displayName": "Payment Comment",
+    "description": "Comments for payments"
   },
   "options": {
     "draftAndPublish": false
   },
   "pluginOptions": {},
   "attributes": {
-    "manualPayment": {
+    "payment": {
       "type": "relation",
       "relation": "manyToOne",
-      "target": "api::manual-payment.manual-payment",
+      "target": "api::payment.payment",
       "inversedBy": "paymentComments"
     },
     "author": {
@@ -23,13 +23,15 @@
       "relation": "manyToOne",
       "target": "plugin::users-permissions.user"
     },
-    "noteType": {
+    "type": {
       "type": "enumeration",
       "enum": [
-        "customer",
         "admin",
         "system",
-        "gateway"
+        "gateway",
+        "internal",
+        "warning",
+        "info"
       ],
       "required": true,
       "default": "admin"
@@ -41,18 +43,11 @@
     },
     "isInternal": {
       "type": "boolean",
-      "default": false,
-      "description": "Admin-only notes not visible to customers"
+      "default": false
     },
     "metadata": {
       "type": "json",
-      "description": "Additional metadata for the note"
-    },
-    "createdAt": {
-      "type": "datetime"
-    },
-    "updatedAt": {
-      "type": "datetime"
+      "description": "Additional metadata for the comment"
     }
   }
 }

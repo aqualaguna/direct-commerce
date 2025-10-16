@@ -71,15 +71,15 @@ export interface TestProductListingVariantData {
 
 export class TestDataFactories {
   private serverUrl: string;
-  private adminToken: string;
+  private apiToken: string;
   private timestamp: number;
 
-  constructor(serverUrl: string = 'http://localhost:1337', adminToken?: string) {
+  constructor(serverUrl: string = 'http://localhost:1337', apiToken?: string) {
     this.serverUrl = serverUrl;
-    this.adminToken = adminToken || process.env.STRAPI_API_TOKEN as string;
+    this.apiToken = apiToken || process.env.STRAPI_API_TOKEN as string;
     this.timestamp = Date.now();
 
-    if (!this.adminToken) {
+    if (!this.apiToken) {
       throw new Error('Admin token is required for test data factories');
     }
   }
@@ -99,7 +99,7 @@ export class TestDataFactories {
 
     const response = await request(this.serverUrl)
       .post('/api/products')
-      .set('Authorization', `Bearer ${this.adminToken}`)
+      .set('Authorization', `Bearer ${this.apiToken}`)
       .send({ data: productData })
       .timeout(10000);
 
@@ -124,7 +124,7 @@ export class TestDataFactories {
 
     const response = await request(this.serverUrl)
       .post('/api/categories')
-      .set('Authorization', `Bearer ${this.adminToken}`)
+      .set('Authorization', `Bearer ${this.apiToken}`)
       .send({ data: categoryData })
       .timeout(10000);
 
@@ -161,7 +161,7 @@ export class TestDataFactories {
 
     const response = await request(this.serverUrl)
       .post('/api/product-listings')
-      .set('Authorization', `Bearer ${this.adminToken}`)
+      .set('Authorization', `Bearer ${this.apiToken}`)
       .send({ data: productListingData })
       .timeout(10000);
 
@@ -187,7 +187,7 @@ export class TestDataFactories {
 
     const response = await request(this.serverUrl)
       .post('/api/option-groups')
-      .set('Authorization', `Bearer ${this.adminToken}`)
+      .set('Authorization', `Bearer ${this.apiToken}`)
       .send({ data: optionGroupData })
       .timeout(10000);
 
@@ -220,7 +220,7 @@ export class TestDataFactories {
 
     const response = await request(this.serverUrl)
       .post('/api/option-values')
-      .set('Authorization', `Bearer ${this.adminToken}`)
+      .set('Authorization', `Bearer ${this.apiToken}`)
       .send({ data: optionValueData })
       .timeout(10000);
 
@@ -260,7 +260,7 @@ export class TestDataFactories {
 
     const response = await request(this.serverUrl)
       .post('/api/product-listing-variants')
-      .set('Authorization', `Bearer ${this.adminToken}`)
+      .set('Authorization', `Bearer ${this.apiToken}`)
       .send({ data: variantData })
       .timeout(10000);
 
@@ -395,7 +395,7 @@ export class TestDataFactories {
           try {
             await request(this.serverUrl)
               .delete(`/api/${entityType}/${entity.documentId}`)
-              .set('Authorization', `Bearer ${this.adminToken}`)
+              .set('Authorization', `Bearer ${this.apiToken}`)
               .timeout(10000);
           } catch (error) {
             console.warn(`Failed to clean up ${entityType}:`, error.message);
@@ -413,7 +413,7 @@ export class TestDataFactories {
       try {
         await request(this.serverUrl)
           .delete(`/api/${entityType}/${entity.documentId}`)
-          .set('Authorization', `Bearer ${this.adminToken}`)
+          .set('Authorization', `Bearer ${this.apiToken}`)
           .timeout(10000);
       } catch (error) {
         console.warn(`Failed to clean up ${entityType}:`, error.message);

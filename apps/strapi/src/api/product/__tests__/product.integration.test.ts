@@ -2,7 +2,7 @@ import request from 'supertest';
 
 describe('Product Integration Tests', () => {
   const SERVER_URL = 'http://localhost:1337';
-  let adminToken: string;
+  let apiToken: string;
   
   // Generate unique test data with timestamp
   const timestamp = Date.now();
@@ -21,9 +21,9 @@ describe('Product Integration Tests', () => {
 
   beforeAll(async () => {
     // Get admin token for authenticated requests
-    adminToken = process.env.STRAPI_API_TOKEN as string;
+    apiToken = process.env.STRAPI_API_TOKEN as string;
 
-    if (!adminToken) {
+    if (!apiToken) {
       throw new Error('STRAPI_API_TOKEN environment variable is not set. Please ensure the test server is running and the token is generated.');
     }
   });
@@ -33,7 +33,7 @@ describe('Product Integration Tests', () => {
     try {
       const response = await request(SERVER_URL)
         .get('/api/products')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
 
       if (response.status === 200 && response.body.data) {
@@ -44,7 +44,7 @@ describe('Product Integration Tests', () => {
             try {
               await request(SERVER_URL)
                 .delete(`/api/products/${product.documentId}`)
-                .set('Authorization', `Bearer ${adminToken}`)
+                .set('Authorization', `Bearer ${apiToken}`)
                 .timeout(10000);
             } catch (error) {
               console.warn(`Failed to delete product ${product.documentId}:`, error);
@@ -61,7 +61,7 @@ describe('Product Integration Tests', () => {
     it('should be able to connect to the product API', async () => {
       const response = await request(SERVER_URL)
         .get('/api/products')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
       expect(response.status).toBe(200);
       expect(response.body.data).toBeDefined();
@@ -80,7 +80,7 @@ describe('Product Integration Tests', () => {
     it('should handle invalid product ID gracefully', async () => {
       const response = await request(SERVER_URL)
         .get('/api/products/invalid-id')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
 
       expect(response.status).toBe(404);
@@ -93,7 +93,7 @@ describe('Product Integration Tests', () => {
     it('should create a new product', async () => {
       const response = await request(SERVER_URL)
         .post('/api/products')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: testProduct })
         .timeout(10000);
       expect([200, 201]).toContain(response.status);
@@ -108,7 +108,7 @@ describe('Product Integration Tests', () => {
       expect(createdProductId).toBeDefined();
       const response = await request(SERVER_URL)
         .get(`/api/products/${createdProductId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
       expect(response.status).toBe(200);
       expect(response.body.data).toBeDefined();
@@ -127,7 +127,7 @@ describe('Product Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .put(`/api/products/${createdProductId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: updateData })
         .timeout(10000);
       
@@ -138,7 +138,7 @@ describe('Product Integration Tests', () => {
     it('should list products', async () => {
       const response = await request(SERVER_URL)
         .get('/api/products')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
       
       expect(response.status).toBe(200);
@@ -151,7 +151,7 @@ describe('Product Integration Tests', () => {
     it('should delete the product', async () => {
       const response = await request(SERVER_URL)
         .delete(`/api/products/${createdProductId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
       
       expect(response.status).toBe(200);
@@ -160,7 +160,7 @@ describe('Product Integration Tests', () => {
     it('should return 404 for deleted product', async () => {
       const response = await request(SERVER_URL)
         .get(`/api/products/${createdProductId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
       
       expect(response.status).toBe(404);
@@ -175,7 +175,7 @@ describe('Product Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .post('/api/products')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: invalidProduct })
         .timeout(10000);
       
@@ -186,7 +186,7 @@ describe('Product Integration Tests', () => {
       // First, create a product
       const response1 = await request(SERVER_URL)
         .post('/api/products')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: testProduct })
         .timeout(10000);
       
@@ -201,7 +201,7 @@ describe('Product Integration Tests', () => {
 
       const response2 = await request(SERVER_URL)
         .post('/api/products')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: duplicateProduct })
         .timeout(10000);
       
@@ -210,7 +210,7 @@ describe('Product Integration Tests', () => {
       // Clean up
       await request(SERVER_URL)
         .delete(`/api/products/${firstProductId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
     });
 
@@ -227,7 +227,7 @@ describe('Product Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .post('/api/products')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: invalidProduct })
         .timeout(10000);
       
@@ -248,7 +248,7 @@ describe('Product Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .post('/api/products')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: invalidProduct })
         .timeout(10000);
       
@@ -264,7 +264,7 @@ describe('Product Integration Tests', () => {
       // Create a draft product for each test
       const response = await request(SERVER_URL)
         .post('/api/products')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: { ...testProduct, status: 'draft' } })
         .timeout(10000);
       
@@ -278,7 +278,7 @@ describe('Product Integration Tests', () => {
         try {
           await request(SERVER_URL)
             .delete(`/api/products/${draftProductId}`)
-            .set('Authorization', `Bearer ${adminToken}`)
+            .set('Authorization', `Bearer ${apiToken}`)
             .timeout(10000);
         } catch (error) {
           console.warn(`Failed to delete product ${draftProductId}:`, error);
@@ -294,7 +294,7 @@ describe('Product Integration Tests', () => {
       // Since we're using admin token, we should be able to retrieve draft products
       const response = await request(SERVER_URL)
         .get(`/api/products/${draftProductId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
       
       expect(response.status).toBe(200);
@@ -304,7 +304,7 @@ describe('Product Integration Tests', () => {
     it('should update product status', async () => {
       const updateResponse = await request(SERVER_URL)
         .put(`/api/products/${draftProductId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: { status: 'active' } })
         .timeout(10000);
       
@@ -327,7 +327,7 @@ describe('Product Integration Tests', () => {
       for (const product of products) {
         const response = await request(SERVER_URL)
           .post('/api/products')
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .send({ data: product })
           .timeout(10000);
         
@@ -343,7 +343,7 @@ describe('Product Integration Tests', () => {
         try {
           await request(SERVER_URL)
             .delete(`/api/products/${productId}`)
-            .set('Authorization', `Bearer ${adminToken}`)
+            .set('Authorization', `Bearer ${apiToken}`)
             .timeout(10000);
         } catch (error) {
           console.warn(`Failed to delete product ${productId}:`, error);
@@ -354,7 +354,7 @@ describe('Product Integration Tests', () => {
     it('should filter products by status', async () => {
       const response = await request(SERVER_URL)
         .get('/api/products?status=draft')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
       
       expect(response.status).toBe(200);
@@ -365,7 +365,7 @@ describe('Product Integration Tests', () => {
     it('should search products by name', async () => {
       const response = await request(SERVER_URL)
         .get('/api/products?filters[name][$containsi]=Electronics')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
       
       expect(response.status).toBe(200);
@@ -376,7 +376,7 @@ describe('Product Integration Tests', () => {
     it('should paginate products', async () => {
       const response = await request(SERVER_URL)
         .get('/api/products?page=1&pageSize=2')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
       
       expect(response.status).toBe(200);
@@ -426,7 +426,7 @@ describe('Product Integration Tests', () => {
       for (const product of products) {
         const response = await request(SERVER_URL)
           .post('/api/products')
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .send({ data: product })
           .timeout(10000);
         
@@ -442,7 +442,7 @@ describe('Product Integration Tests', () => {
         try {
           await request(SERVER_URL)
             .delete(`/api/products/${productId}`)
-            .set('Authorization', `Bearer ${adminToken}`)
+            .set('Authorization', `Bearer ${apiToken}`)
             .timeout(10000);
         } catch (error) {
           console.warn(`Failed to delete product ${productId}:`, error);
@@ -453,7 +453,7 @@ describe('Product Integration Tests', () => {
     it('should filter products by weight range', async () => {
       const response = await request(SERVER_URL)
         .get('/api/products?weight_min=1.0&weight_max=3.0')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
       
       expect(response.status).toBe(200);
@@ -478,7 +478,7 @@ describe('Product Integration Tests', () => {
     it('should filter products by exact dimension values', async () => {
       const response = await request(SERVER_URL)
         .get('/api/products?weight=2.5&length=10.0')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
       
       expect(response.status).toBe(200);
@@ -489,7 +489,7 @@ describe('Product Integration Tests', () => {
     it('should search products with dimension filters', async () => {
       const response = await request(SERVER_URL)
         .get('/api/products?q=Product&weight_max=3.0&length_min=5.0')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
       
       expect(response.status).toBe(200);
@@ -508,7 +508,7 @@ describe('Product Integration Tests', () => {
         try {
           await request(SERVER_URL)
             .delete(`/api/products/${inventoryTestProductId}`)
-            .set('Authorization', `Bearer ${adminToken}`)
+            .set('Authorization', `Bearer ${apiToken}`)
             .timeout(10000);
         } catch (error) {
           console.warn(`Failed to delete inventory test product ${inventoryTestProductId}:`, error);
@@ -527,7 +527,7 @@ describe('Product Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .post('/api/products')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: productWithInventory })
         .timeout(10000);
 
@@ -541,7 +541,7 @@ describe('Product Integration Tests', () => {
       // Verify inventory record was created by checking the inventoryRecord relation
       const getResponse = await request(SERVER_URL)
         .get(`/api/products/${inventoryTestProductId}?populate=inventoryRecord`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
 
       expect(getResponse.status).toBe(200);
@@ -559,7 +559,7 @@ describe('Product Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .post('/api/products')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: productWithoutInventory })
         .timeout(10000);
 
@@ -571,7 +571,7 @@ describe('Product Integration Tests', () => {
       // Verify inventory was initialized to 0
       const getResponse = await request(SERVER_URL)
         .get(`/api/products/${inventoryTestProductId}?populate=inventoryRecord`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
 
       expect(getResponse.status).toBe(200);
@@ -590,7 +590,7 @@ describe('Product Integration Tests', () => {
 
       const createResponse = await request(SERVER_URL)
         .post('/api/products')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: initialProduct })
         .timeout(10000);
 
@@ -604,7 +604,7 @@ describe('Product Integration Tests', () => {
 
       const updateResponse = await request(SERVER_URL)
         .put(`/api/products/${inventoryTestProductId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: updateData })
         .timeout(10000);
 
@@ -615,7 +615,7 @@ describe('Product Integration Tests', () => {
       // Verify the inventory was updated through inventoryRecord relation
       const getResponse = await request(SERVER_URL)
         .get(`/api/products/${inventoryTestProductId}?populate=inventoryRecord`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
 
       expect(getResponse.status).toBe(200);
@@ -634,7 +634,7 @@ describe('Product Integration Tests', () => {
 
       const createResponse = await request(SERVER_URL)
         .post('/api/products')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: productWithInventory })
         .timeout(10000);
 
@@ -648,7 +648,7 @@ describe('Product Integration Tests', () => {
 
       const updateResponse = await request(SERVER_URL)
         .put(`/api/products/${inventoryTestProductId}`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: updateData })
         .timeout(10000);
       // The product update should still succeed even if inventory update fails
@@ -667,7 +667,7 @@ describe('Product Integration Tests', () => {
 
       const response = await request(SERVER_URL)
         .post('/api/products')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: productData })
         .timeout(10000);
 
@@ -691,7 +691,7 @@ describe('Product Integration Tests', () => {
 
       const createResponse = await request(SERVER_URL)
         .post('/api/products')
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .send({ data: productData })
         .timeout(10000);
 
@@ -701,7 +701,7 @@ describe('Product Integration Tests', () => {
       // Verify initial inventory through inventoryRecord relation
       const initialGetResponse = await request(SERVER_URL)
         .get(`/api/products/${inventoryTestProductId}?populate=inventoryRecord`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
 
       expect(initialGetResponse.status).toBe(200);
@@ -712,7 +712,7 @@ describe('Product Integration Tests', () => {
       for (const newInventory of updates) {
         const updateResponse = await request(SERVER_URL)
           .put(`/api/products/${inventoryTestProductId}`)
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .send({ data: { inventory: newInventory } })
           .timeout(10000);
 
@@ -724,7 +724,7 @@ describe('Product Integration Tests', () => {
       // Final verification through inventoryRecord relation
       const finalResponse = await request(SERVER_URL)
         .get(`/api/products/${inventoryTestProductId}?populate=inventoryRecord`)
-        .set('Authorization', `Bearer ${adminToken}`)
+        .set('Authorization', `Bearer ${apiToken}`)
         .timeout(10000);
 
       expect(finalResponse.status).toBe(200);
@@ -760,7 +760,7 @@ describe('Product Integration Tests', () => {
       for (const productData of bulkProducts) {
         const response = await request(SERVER_URL)
           .post('/api/products')
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .send({ data: productData })
           .timeout(10000);
 
@@ -774,7 +774,7 @@ describe('Product Integration Tests', () => {
       for (let i = 0; i < createdProductIds.length; i++) {
         const getResponse = await request(SERVER_URL)
           .get(`/api/products/${createdProductIds[i]}?populate=inventoryRecord`)
-          .set('Authorization', `Bearer ${adminToken}`)
+          .set('Authorization', `Bearer ${apiToken}`)
           .timeout(10000);
 
         expect(getResponse.status).toBe(200);
@@ -787,7 +787,7 @@ describe('Product Integration Tests', () => {
         try {
           await request(SERVER_URL)
             .delete(`/api/products/${productId}`)
-            .set('Authorization', `Bearer ${adminToken}`)
+            .set('Authorization', `Bearer ${apiToken}`)
             .timeout(10000);
         } catch (error) {
           console.warn(`Failed to delete bulk test product ${productId}:`, error);

@@ -1,15 +1,6 @@
 export default {
   routes: [
     {
-      method: 'POST',
-      path: '/orders',
-      handler: 'order.create',
-      config: {
-        policies: ['global::is-authenticated'],
-        middlewares: []
-      }
-    },
-    {
       method: 'GET',
       path: '/orders',
       handler: 'order.find',
@@ -28,29 +19,20 @@ export default {
       }
     },
     {
-      method: 'PUT',
-      path: '/orders/:documentId',
-      handler: 'order.update',
+      method: 'POST',
+      path: '/orders/:documentId/cancel',
+      handler: 'order.cancelOrder',
       config: {
         policies: ['global::is-authenticated'],
         middlewares: []
       }
     },
     {
-      method: 'DELETE',
-      path: '/orders/:documentId',
-      handler: 'order.delete',
-      config: {
-        policies: ['global::is-admin'],
-        middlewares: []
-      }
-    },
-    {
       method: 'POST',
-      path: '/orders/:documentId/status',
-      handler: 'order.updateStatus',
+      path: '/orders/:documentId/refund',
+      handler: 'order.refundOrder',
       config: {
-        policies: ['global::is-admin'],
+        policies: ['global::is-authenticated'],
         middlewares: []
       }
     },
@@ -59,7 +41,7 @@ export default {
       path: '/orders/stats',
       handler: 'order.getStats',
       config: {
-        policies: ['global::is-authenticated'],
+        policies: ['global::is-admin'],
         middlewares: []
       }
     },

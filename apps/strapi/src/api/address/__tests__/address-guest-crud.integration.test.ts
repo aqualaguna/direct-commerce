@@ -729,15 +729,13 @@ describe('Address Guest CRUD Operations Integration Tests', () => {
     });
 
     describe('Guest Address Analytics', () => {
-        it('should get address analytics for guest', async () => {
+        it('should return 403 for guest analytics access (API token only)', async () => {
             const response = await request(SERVER_URL)
                 .post('/api/addresses/analytics')
                 .query({ sessionId: guestSessionId })
                 .timeout(10000);
 
-            expect(response.status).toBe(200);
-            expect(response.body.data).toBeDefined();
-            expect(response.body.meta.message).toContain('analytics retrieved successfully');
+            expect(response.status).toBe(403);
         });
     });
 

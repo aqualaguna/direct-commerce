@@ -3,20 +3,20 @@
  */
 
 import { factories } from '@strapi/strapi';
-import { AddressOwnerType } from '../utils/types';
+import { UserType } from '../../../../config/constant';
 
 export default factories.createCoreService('api::address.address', ({ strapi }) => ({
   /**
    * Find addresses by user  and type
    */
-  async findByUserAndType(ownerType: AddressOwnerType, userId: string, type: 'shipping' | 'billing' | 'both') {
+  async findByUserAndType(userType: UserType, userId: string, type: 'shipping' | 'billing' | 'both') {
     try {
       const filters: any = {
         type: type === 'both' ? { $in: ['shipping', 'billing', 'both'] } : type
       };
-      if (ownerType === AddressOwnerType.USER) {
+      if (userType === UserType.AUTHENTICATED) {
         filters.user = { id: userId };
-      } else if (ownerType === AddressOwnerType.GUEST) {
+      } else if (userType === UserType.GUEST) {
         filters.sessionId = userId;
       }
       const addresses = await strapi.documents('api::address.address').findMany({
@@ -35,15 +35,15 @@ export default factories.createCoreService('api::address.address', ({ strapi }) 
   /**
    * Get default address for user by type
    */
-  async getDefaultAddress(userId: string, ownerType: AddressOwnerType, type: 'shipping' | 'billing' | 'both') {
+  async getDefaultAddress(userId: string, userType: UserType, type: 'shipping' | 'billing' | 'both') {
     try {
       const filters: any = {
         isDefault: true,
         type: type === 'both' ? { $in: ['shipping', 'billing', 'both'] } : type
       };
-      if (ownerType === AddressOwnerType.USER) {
+      if (userType === UserType.AUTHENTICATED) {
         filters.user = { id: userId };
-      } else if (ownerType === AddressOwnerType.GUEST) {
+      } else if (userType === UserType.GUEST) {
         filters.sessionId = userId;
       }
       const addresses = await strapi.documents('api::address.address').findMany({
@@ -62,7 +62,7 @@ export default factories.createCoreService('api::address.address', ({ strapi }) 
   /**
    * Set address as default for its type
    */
-  async setAsDefault(documentId: string, userId: string, ownerType: AddressOwnerType) {
+  async setAsDefault(documentId: string, userId: string, userType: UserType) {
     try {
       // Get the address to determine its type
       const address = await strapi.documents('api::address.address').findOne({
@@ -74,10 +74,10 @@ export default factories.createCoreService('api::address.address', ({ strapi }) 
         throw new Error('Address not found');
       }
 
-      if (ownerType === AddressOwnerType.USER && address.user.id !== userId) {
+      if (userType === UserType.AUTHENTICATED && address.user.id !== userId) {
         throw new Error('Unauthorized to modify this address');
       }
-      if (ownerType  === AddressOwnerType.GUEST && address.sessionId !== userId) {
+      if (userType === UserType.GUEST && address.sessionId !== userId) {
         throw new Error('Unauthorized to modify this address');
       }
       const where: any =  {
@@ -85,9 +85,9 @@ export default factories.createCoreService('api::address.address', ({ strapi }) 
         type: address.type,
         documentId: { $ne: documentId }
       }
-      if (ownerType === AddressOwnerType.USER) {
+      if (userType === UserType.AUTHENTICATED) {
         where.user = userId;
-      } else if (ownerType === AddressOwnerType.GUEST) {
+      } else if (userType === UserType.GUEST) {
         where.sessionId = userId;
         where.user = {$null: true};
       }
@@ -123,10 +123,10 @@ export default factories.createCoreService('api::address.address', ({ strapi }) 
   /**
    * Create address with default handling
    */
-  async createAddress(data: any, userId: string, ownerType: AddressOwnerType) {
+  async createAddress(data: any, userId: string, userType: UserType) {
     try {
       // If this is the first address of its type, make it default
-      const existingAddresses = await this.findByUserAndType(ownerType, userId, data.type);
+      const existingAddresses = await this.findByUserAndType(userType, userId, data.type);
       
       if (existingAddresses.length === 0) {
         data.isDefault = true;
@@ -137,7 +137,7 @@ export default factories.createCoreService('api::address.address', ({ strapi }) 
           isDefault: true,
           type: data.type
         }
-        if (ownerType === AddressOwnerType.GUEST) {
+        if (userType === UserType.GUEST) {
           where.sessionId = userId;
           where.user = {$null: true};
         }
@@ -150,7 +150,7 @@ export default factories.createCoreService('api::address.address', ({ strapi }) 
       }
 
       // Add user to the data
-      data[ownerType === AddressOwnerType.USER ? 'user' : 'sessionId'] = userId;
+      data[userType === UserType.AUTHENTICATED ? 'user' : 'sessionId'] = userId;
       const address = await strapi.documents('api::address.address').create({
         data,
         populate: ['user']
@@ -166,7 +166,7 @@ export default factories.createCoreService('api::address.address', ({ strapi }) 
   /**
    * Update address with default handling
    */
-  async updateAddress(documentId: string, data: any, userId: string, ownerType: AddressOwnerType, isApiTokenRequest: boolean = false) {
+  async updateAddress(documentId: string, data: any, userId: string, userType: UserType) {
     try {
       // Get the current address
       const currentAddress = await strapi.documents('api::address.address').findOne({
@@ -177,13 +177,11 @@ export default factories.createCoreService('api::address.address', ({ strapi }) 
       if (!currentAddress) {
         throw new Error('Address not found');
       }
-      if (!isApiTokenRequest) {
-        if (ownerType === AddressOwnerType.USER && (currentAddress.user.id !== userId || (data.user && data.user !== userId))) {
-          throw new Error('Unauthorized to modify this address');
-        }
-        if (ownerType === AddressOwnerType.GUEST && currentAddress.sessionId !== userId) {  
-          throw new Error('Unauthorized to modify this address');
-        }
+      if (userType === UserType.AUTHENTICATED && (currentAddress.user.id !== userId || (data.user && data.user !== userId))) {
+        throw new Error('Unauthorized to modify this address');
+      }
+      if (userType === UserType.GUEST && currentAddress.sessionId !== userId) {  
+        throw new Error('Unauthorized to modify this address');
       }
 
       // Handle default address logic
@@ -195,11 +193,11 @@ export default factories.createCoreService('api::address.address', ({ strapi }) 
           type: currentAddress.type,
           documentId: { $ne: documentId }
         }
-        if (ownerType === AddressOwnerType.GUEST) {
+        if (userType === UserType.GUEST) {
           where.sessionId = userId;
           where.user = {$null: true};
         }
-        if(isApiTokenRequest) {
+        if(userType === UserType.API_TOKEN) {
           if(currentAddress.user) {
             where.user = currentAddress.user.id;
           } else {
@@ -231,7 +229,7 @@ export default factories.createCoreService('api::address.address', ({ strapi }) 
   /**
    * Delete address with default handling
    */
-  async deleteAddress(documentId: string, userId: string, ownerType: AddressOwnerType) {
+  async deleteAddress(documentId: string, userId: string, userType: UserType) {
     try {
       // Get the address to check if it's default
       const address = await strapi.documents('api::address.address').findOne({
@@ -243,10 +241,11 @@ export default factories.createCoreService('api::address.address', ({ strapi }) 
         throw new Error('Address not found');
       }
 
-      if (ownerType === AddressOwnerType.USER && address.user.id !== userId) {
+      if (userType === UserType.AUTHENTICATED && address.user.id !== userId) {
         throw new Error('Unauthorized to delete this address');
       }
-      if (ownerType === AddressOwnerType.GUEST && address.sessionId !== userId) {
+      
+      if (userType === UserType.GUEST && address.sessionId !== userId) {
         throw new Error('Unauthorized to delete this address');
       }
 
@@ -262,9 +261,17 @@ export default factories.createCoreService('api::address.address', ({ strapi }) 
           type: address.type,
           documentId: { $ne: documentId }
         }
-        if (ownerType === AddressOwnerType.GUEST) {
+        if (userType === UserType.GUEST) {
           filters.sessionId = userId;
           filters.user = {$null: true};
+        }
+        if (userType === UserType.API_TOKEN) {
+          if (address.user) {
+            filters.user = address.user.id;
+          } else {
+            filters.sessionId = address.sessionId;
+            filters.user = {$null: true};
+          }
         }
         const nextDefault = await strapi.documents('api::address.address').findFirst({
           filters
@@ -290,12 +297,12 @@ export default factories.createCoreService('api::address.address', ({ strapi }) 
   /**
    * Search addresses by user with filters
    */
-  async searchAddresses(userId: string, ownerType: AddressOwnerType, filters: any = {}) {
+  async searchAddresses(userId: string, userType: UserType, filters: any = {}) {
     try {
       const queryFilters = {
         ...filters,
-        user: ownerType === AddressOwnerType.USER ? { id: userId } : {$null: true},
-        sessionId: ownerType === AddressOwnerType.GUEST ? userId : {$null: true},
+        user: userType === UserType.AUTHENTICATED ? { id: userId } : {$null: true},
+        sessionId: userType === UserType.GUEST ? userId : {$null: true},
       };
 
       const addresses = await strapi.documents('api::address.address').findMany({
@@ -314,14 +321,14 @@ export default factories.createCoreService('api::address.address', ({ strapi }) 
   /**
    * Get address book for user with organization features
    */
-  async getAddressBook(userId: string, ownerType: AddressOwnerType, options: any = {}) {
+  async getAddressBook(userId: string, userType: UserType, options: any = {}) {
     try {
       const { start = 0, limit = 25, sort = 'createdAt:desc' } = options;
 
       const addresses = await strapi.documents('api::address.address').findMany({
         filters: {
-          user: ownerType === AddressOwnerType.USER ? { id: userId } : {$null: true},
-          sessionId: ownerType === AddressOwnerType.GUEST ? userId : {$null: true}
+          user: userType === UserType.AUTHENTICATED ? { id: userId } : {$null: true},
+          sessionId: userType === UserType.GUEST ? userId : {$null: true}
         },
         sort,
         limit,
@@ -354,12 +361,12 @@ export default factories.createCoreService('api::address.address', ({ strapi }) 
   /**
    * Export addresses for user
    */
-  async exportAddresses(userId: string, ownerType: AddressOwnerType, format: 'json' | 'csv' = 'json') {
+  async exportAddresses(userId: string, userType: UserType, format: 'json' | 'csv' = 'json') {
     try {
       const addresses = await strapi.documents('api::address.address').findMany({
         filters: {
-          user: ownerType === AddressOwnerType.USER ? { id: userId } : {$null: true},
-          sessionId: ownerType === AddressOwnerType.GUEST ? userId : {$null: true}
+          user: userType === UserType.AUTHENTICATED ? { id: userId } : {$null: true},
+          sessionId: userType === UserType.GUEST ? userId : {$null: true}
         },
         sort: { isDefault: 'desc', createdAt: 'desc' },
         populate: ['user']
@@ -384,7 +391,7 @@ export default factories.createCoreService('api::address.address', ({ strapi }) 
   /**
    * Import addresses for user
    */
-  async importAddresses(userId: string, addresses: any[], ownerType: AddressOwnerType) {
+  async importAddresses(userId: string, addresses: any[], userType: UserType) {
     try {
       const results = {
         success: 0,
@@ -408,7 +415,7 @@ export default factories.createCoreService('api::address.address', ({ strapi }) 
           }
 
           // Create address
-          await this.createAddress(validation.formattedAddress || addressData, userId, ownerType);
+          await this.createAddress(validation.formattedAddress || addressData, userId, userType);
           results.success++;
         } catch (error) {
           results.errors++;
@@ -427,49 +434,90 @@ export default factories.createCoreService('api::address.address', ({ strapi }) 
   },
 
   /**
-   * Get address analytics for user
+   * Get address analytics for dashboard (all addresses)
    */
-  async getAddressAnalytics(userId: string, ownerType: AddressOwnerType) {
+  async getAddressAnalytics() {
     try {
-      const addresses = await strapi.entityService.findMany('api::address.address', {
-        filters: {
-          user: ownerType === AddressOwnerType.USER ? { id: userId } : {$null: true},
-          sessionId: ownerType === AddressOwnerType.GUEST ? userId : {$null: true}
-        },
+      // Get total count
+      const totalAddresses = await strapi.documents('api::address.address').count({});
+
+      // Get counts by type using SQL aggregation
+      const [shippingCount, billingCount, bothCount, defaultCount] = await Promise.all([
+        strapi.documents('api::address.address').count({
+          filters: { type: { $in: ['shipping', 'both'] } }
+        }),
+        strapi.documents('api::address.address').count({
+          filters: { type: { $in: ['billing', 'both'] } }
+        }),
+        strapi.documents('api::address.address').count({
+          filters: { type: 'both' }
+        }),
+        strapi.documents('api::address.address').count({
+          filters: { isDefault: true }
+        })
+      ]);
+
+      // Get recently added addresses (limit to 5)
+      const recentlyAdded = await strapi.documents('api::address.address').findMany({
+        sort: { createdAt: 'desc' },
+        limit: 5,
         populate: ['user']
       });
 
-      // Calculate analytics
-      const analytics = {
-        totalAddresses: addresses.length,
-        byType: {
-          shipping: addresses.filter(addr => ['shipping', 'both'].includes(addr.type)).length,
-          billing: addresses.filter(addr => ['billing', 'both'].includes(addr.type)).length,
-          both: addresses.filter(addr => addr.type === 'both').length
-        },
-        byCountry: {} as any,
-        byState: {} as any,
-        byCity: {} as any,
-        defaultAddresses: addresses.filter(addr => addr.isDefault).length,
-        recentlyAdded: addresses
-          .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-          .slice(0, 5)
-      };
+      // Get country, state, city counts using raw SQL for better performance
+      const countryStats = await strapi.db.connection.raw(`
+        SELECT country, COUNT(*) as count 
+        FROM addresses 
+        WHERE country IS NOT NULL 
+        GROUP BY country 
+        ORDER BY count DESC
+      `);
 
-      // Count by country, state, city
-      addresses.forEach(addr => {
-        if (addr.country) {
-          analytics.byCountry[addr.country] = (analytics.byCountry[addr.country] || 0) + 1;
-        }
-        if (addr.state) {
-          analytics.byState[addr.state] = (analytics.byState[addr.state] || 0) + 1;
-        }
-        if (addr.city) {
-          analytics.byCity[addr.city] = (analytics.byCity[addr.city] || 0) + 1;
-        }
+      const stateStats = await strapi.db.connection.raw(`
+        SELECT state, COUNT(*) as count 
+        FROM addresses 
+        WHERE state IS NOT NULL 
+        GROUP BY state 
+        ORDER BY count DESC
+      `);
+
+      const cityStats = await strapi.db.connection.raw(`
+        SELECT city, COUNT(*) as count 
+        FROM addresses 
+        WHERE city IS NOT NULL 
+        GROUP BY city 
+        ORDER BY count DESC
+      `);
+
+      // Convert raw results to objects
+      const byCountry: any = {};
+      countryStats.rows?.forEach((row: any) => {
+        byCountry[row.country] = parseInt(row.count);
       });
 
-      return analytics;
+      const byState: any = {};
+      stateStats.rows?.forEach((row: any) => {
+        byState[row.state] = parseInt(row.count);
+      });
+
+      const byCity: any = {};
+      cityStats.rows?.forEach((row: any) => {
+        byCity[row.city] = parseInt(row.count);
+      });
+
+      return {
+        totalAddresses,
+        byType: {
+          shipping: shippingCount,
+          billing: billingCount,
+          both: bothCount
+        },
+        byCountry,
+        byState,
+        byCity,
+        defaultAddresses: defaultCount,
+        recentlyAdded
+      };
     } catch (error) {
       strapi.log.error('Error getting address analytics:', error);
       throw error;
