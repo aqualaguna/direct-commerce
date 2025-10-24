@@ -12,6 +12,7 @@ interface PaymentCommentData {
   content: string
   isInternal?: boolean
   metadata?: any
+  attachments?: string[]
 }
 
 interface PaymentCommentResult {
@@ -64,9 +65,10 @@ export default ({ strapi }: { strapi: any }) => ({
           type: data.type || 'admin',
           content: data.content,
           isInternal: data.isInternal || false,
-          metadata: data.metadata || {}
+          metadata: data.metadata || {},
+          attachments: data.attachments || []
         },
-        populate: ['payment', 'author']
+        populate: ['payment', 'author', 'attachments']
       })
 
       // Send notification if comment is not internal
@@ -92,55 +94,43 @@ export default ({ strapi }: { strapi: any }) => ({
    */
   async getPaymentComments(filters: PaymentCommentFilters = {}): Promise<PaymentCommentResult> {
     try {
-      const queryFilters: any = {}
+      const queryFilters: any = {...filters}
+      delete queryFilters.page
+      delete queryFilters.pageSize
 
-      if (filters.paymentId) {
-        queryFilters.payment = filters.paymentId
-      }
+      // delete undefined or null values
+      Object.keys(queryFilters).forEach(key => {
+        if (queryFilters[key] === undefined || queryFilters[key] === null) {
+          delete queryFilters[key]
+        }
+      })
 
-      if (filters.type) {
-        queryFilters.type = filters.type
-      }
-
-      if (filters.authorId) {
-        queryFilters.author = filters.authorId
-      }
-
-      if (filters.isInternal !== undefined) {
-        queryFilters.isInternal = filters.isInternal
-      }
+     
 
       const pagination = {
         page: Math.max(1, filters.page || 1),
         pageSize: Math.min(Math.max(1, filters.pageSize || 25), 100)
       }
+      console.log(queryFilters)
 
       const paymentcomment = await strapi.documents('api::payment-comment.payment-comment').findMany({
         filters: queryFilters,
         sort: 'createdAt:desc',
         limit: pagination.pageSize,
         start: (pagination.page - 1) * pagination.pageSize,
-        populate: ['payment', 'author']
+        populate: ['payment', 'author', 'attachments']
       })
 
-      // Apply search filter if provided
-      let filteredcomment = paymentcomment
-      if (filters.search) {
-        const searchTerm = filters.search.toLowerCase()
-        filteredcomment = paymentcomment.filter((comment: any) =>
-          comment.content.toLowerCase().includes(searchTerm) ||
-          (comment.author?.username && comment.author.username.toLowerCase().includes(searchTerm))
-        )
-      }
+     
 
       return {
         success: true,
         data: {
-          comments: filteredcomment,
+          comments: paymentcomment,
           pagination: {
             page: pagination.page,
             pageSize: pagination.pageSize,
-            total: filteredcomment.length
+            total: paymentcomment.length
           }
         }
       }
@@ -160,7 +150,7 @@ export default ({ strapi }: { strapi: any }) => ({
     try {
       const PaymentComment = await strapi.documents('api::payment-comment.payment-comment').findOne({
         documentId: commentId,
-        populate: ['payment', 'author']
+        populate: ['payment', 'author', 'attachments']
       })
 
       if (!PaymentComment) {
@@ -204,11 +194,12 @@ export default ({ strapi }: { strapi: any }) => ({
       if (data.type !== undefined) updateData.type = data.type
       if (data.isInternal !== undefined) updateData.isInternal = data.isInternal
       if (data.metadata !== undefined) updateData.metadata = data.metadata
+      if (data.attachments !== undefined) updateData.attachments = data.attachments
 
       const updatedComment = await strapi.documents('api::payment-comment.payment-comment').update({
         documentId: commentId,
         data: updateData,
-        populate: ['payment', 'author']
+        populate: ['payment', 'author', 'attachments']
       })
 
       return {
@@ -263,7 +254,7 @@ export default ({ strapi }: { strapi: any }) => ({
   async getCommentsByPayment(paymentId: string, includeInternal: boolean = false): Promise<PaymentCommentResult> {
     try {
       const filters: any = {
-        payment: paymentId
+        payment: {documentId: paymentId}
       }
 
       if (!includeInternal) {
@@ -273,7 +264,7 @@ export default ({ strapi }: { strapi: any }) => ({
       const comment = await strapi.documents('api::payment-comment.payment-comment').findMany({
         filters,
         sort: 'createdAt:desc',
-        populate: ['author']
+        populate: ['author', 'payment', 'attachments']
       })
 
       return {
@@ -285,41 +276,6 @@ export default ({ strapi }: { strapi: any }) => ({
       return {
         success: false,
         error: 'Failed to get comment by payment'
-      }
-    }
-  },
-
-  /**
-   * Search payment comments
-   */
-  async searchPaymentComments(searchTerm: string, filters: PaymentCommentFilters = {}): Promise<PaymentCommentResult> {
-    try {
-      const allcomment = await this.getPaymentComments(filters)
-      
-      if (!allcomment.success) {
-        return allcomment
-      }
-
-      const searchLower = searchTerm.toLowerCase()
-      const filteredcomment = allcomment.data.comments.filter((comment: any) =>
-        comment.content.toLowerCase().includes(searchLower) ||
-        (comment.author?.username && comment.author.username.toLowerCase().includes(searchLower)) ||
-        comment.type.toLowerCase().includes(searchLower)
-      )
-
-      return {
-        success: true,
-        data: {
-          comments: filteredcomment,
-          searchTerm,
-          total: filteredcomment.length
-        }
-      }
-    } catch (error) {
-      strapi.log.error('Error searching payment comments:', error)
-      return {
-        success: false,
-        error: 'Failed to search payment comments'
       }
     }
   },

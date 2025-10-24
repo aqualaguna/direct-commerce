@@ -8,11 +8,13 @@ export default (policyContext, config, { strapi }) => {
 
   if (sessionId) {
     policyContext.state.userType = UserType.GUEST;
+    policyContext.state.userId = sessionId;
     return true;
   }
 
   if (user) {
     policyContext.state.userType = UserType.AUTHENTICATED;
+    policyContext.state.userId = user.id;
     return true;
   }
 

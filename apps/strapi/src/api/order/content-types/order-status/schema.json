@@ -24,10 +24,11 @@
         "pending",
         "confirmed",
         "processing",
-        "shipped",
+        "shipping",
         "delivered",
         "cancelled",
-        "refunded"
+        "refunded",
+        "returned"
       ],
       "required": true
     },

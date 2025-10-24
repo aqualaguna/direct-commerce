@@ -107,7 +107,7 @@ export default {
   /**
    * Record status change event
    */
-  async recordStatusChange(orderId: string, previousStatus: string, newStatus: string, userId: string, reason?: string) {
+  async recordStatusChange(orderId: string, previousStatus: string, newStatus: string, userId: string, reason?: string, source?: string) {
     const event: HistoryEvent = {
       orderId,
       eventType: 'status_changed',
@@ -115,7 +115,7 @@ export default {
       newValue: { status: newStatus },
       changedBy: userId,
       changeReason: reason,
-      changeSource: 'admin',
+      changeSource: source as any || 'system',
       affectedFields: ['status'],
       isCustomerVisible: true,
       priority: newStatus === 'cancelled' || newStatus === 'refunded' ? 'high' : 'normal'

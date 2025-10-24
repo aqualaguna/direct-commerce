@@ -6,7 +6,6 @@ export default {
       handler: 'order.find',
       config: {
         policies: ['global::is-authenticated'],
-        middlewares: []
       }
     },
     {
@@ -15,7 +14,14 @@ export default {
       handler: 'order.findOne',
       config: {
         policies: ['global::is-authenticated'],
-        middlewares: []
+      }
+    },
+    {
+      method: 'GET',
+      path: '/orders/byStatus/:status',
+      handler: 'order.findByStatus',
+      config: {
+        policies: ['global::is-authenticated'],
       }
     },
     {
@@ -24,7 +30,6 @@ export default {
       handler: 'order.cancelOrder',
       config: {
         policies: ['global::is-authenticated'],
-        middlewares: []
       }
     },
     {
@@ -33,26 +38,8 @@ export default {
       handler: 'order.refundOrder',
       config: {
         policies: ['global::is-authenticated'],
-        middlewares: []
       }
     },
-    {
-      method: 'GET',
-      path: '/orders/stats',
-      handler: 'order.getStats',
-      config: {
-        policies: ['global::is-admin'],
-        middlewares: []
-      }
-    },
-    {
-      method: 'GET',
-      path: '/orders/search',
-      handler: 'order.search',
-      config: {
-        policies: ['global::is-authenticated'],
-        middlewares: []
-      }
-    }
+   
   ]
 };

@@ -1,4 +1,5 @@
 import { Core } from "@strapi/strapi"
+import { UserType } from "../../../../config/constant";
 
 
 export default ({ strapi }: { strapi: Core.Strapi }) => ({
@@ -28,6 +29,9 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
                 if (!result.success) {
                     throw new Error(result.error)
                 }
+                // create order history
+                const orderHistoryService = strapi.service('api::order.order-history');
+                await orderHistoryService.recordPaymentUpdate(orderId, null, payment, isGuest ? null : userId, 'payment_gateway');
                 await commit();
                 // get latest payment
                 const latestPayment = await strapi.documents('api::payment.payment').findOne({
@@ -47,7 +51,7 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
             throw error
         }
     },
-    async confirmManualPayment(paymentId: string, data: any) {
+    async confirmManualPayment(paymentId: string, data: any, userType: UserType, userId: string) {
         try {
             const payment = await strapi.documents('api::payment.payment').findOne({
                 documentId: paymentId,
@@ -73,7 +77,7 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
             const paymentConfirmationService = strapi.service('api::payment.payment-confirmation');
             const result = await paymentConfirmationService.confirmPaymentManually(
                 payment.paymentConfirmation.documentId,
-                data.confirmedBy,
+                userType === UserType.API_TOKEN ? 'api_token' : userId,
                 data.confirmationNotes,
                 data.confirmationEvidence,
                 data.attachments

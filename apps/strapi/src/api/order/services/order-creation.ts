@@ -11,7 +11,8 @@ export default {
    */
   async generateOrderNumber(): Promise<string> {
     const prefix = 'ORD';
-    const timestamp = Date.now().toString().slice(-8);
+    // timestamp format YYMMDD
+    const timestamp = new Date().getFullYear().toString().slice(-2) + new Date().getMonth().toString().padStart(2, '0') + new Date().getDate().toString().padStart(2, '0');
     const random = Math.random().toString(36).substring(2, 6).toUpperCase();
     const orderNumber = `${prefix}${timestamp}${random}`;
 

@@ -94,7 +94,7 @@ export default {
         documentId: orderId,
         data: { 
           trackingNumber,
-          status: 'shipped'
+          status: 'shipping'
         }
       });
 
@@ -168,7 +168,7 @@ export default {
 
         // Record history event
         const orderHistoryService = strapi.service('api::order.order-history');
-        await orderHistoryService.recordStatusChange(tracking.order.documentId, 'shipped', 'delivered', 'system', 'Package delivered');
+        await orderHistoryService.recordStatusChange(tracking.order.documentId, 'shipping', 'delivered', 'system', 'Package delivered');
       }
 
       // Send notifications

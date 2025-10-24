@@ -24,6 +24,10 @@
       "relation": "manyToOne",
       "target": "plugin::users-permissions.user"
     },
+    "sessionId": {
+      "type": "string",
+      "required": false
+    },
     "checkout": {
       "type": "relation",
       "relation": "oneToOne",
@@ -35,8 +39,9 @@
         "pending",
         "confirmed",
         "processing",
-        "shipped",
+        "shipping",
         "delivered",
+        "returned",
         "cancelled",
         "refunded"
       ],

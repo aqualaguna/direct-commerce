@@ -62,7 +62,8 @@
         "payment_gateway",
         "shipping_carrier",
         "fraud_detection",
-        "webhook"
+        "webhook",
+        "api_token"
       ],
       "required": true
     },

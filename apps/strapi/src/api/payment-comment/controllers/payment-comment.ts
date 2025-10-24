@@ -6,6 +6,7 @@
  */
 
 import { Core } from "@strapi/strapi"
+import { UserType } from "../../../../config/constant"
 
 export default ({ strapi }: { strapi: Core.Strapi }) => ({
   /**
@@ -14,14 +15,26 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
   async find(ctx: any) {
     try {
       const { query } = ctx
+      const { user } = ctx.state
+
+      // Validate query parameters
+      const validationService = strapi.service('api::payment-comment.validation')
+      const queryValidation = await validationService.validateQueryParams(query)
+      
+      if (!queryValidation.isValid) {
+        return ctx.badRequest(queryValidation.errors.join(', '))
+      }
+
+      // Sanitize and normalize filters
+      const sanitizedFilters = validationService.sanitizeFilters(query)
       const filters = {
-        manualPaymentId: query.manualPaymentId,
-        type: query.type,
-        authorId: query.authorId,
-        isInternal: query.isInternal === 'true',
-        search: query.search,
-        page: parseInt(query.page) || 1,
-        pageSize: parseInt(query.pageSize) || 25
+        ...((query.filters as Record<string, any>) || {}),
+        type: sanitizedFilters.type,
+        ...(sanitizedFilters.paymentId && { payment: { documentId: sanitizedFilters.paymentId } }),
+        ...(sanitizedFilters.authorId && { author: { documentId: sanitizedFilters.authorId } }),
+        isInternal: sanitizedFilters.isInternal,
+        page: sanitizedFilters.page || 1,
+        pageSize: sanitizedFilters.pageSize || 25,
       }
 
       const paymentCommentService = strapi.service('api::payment-comment.payment-comment')
@@ -39,10 +52,15 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
           commentType: item.type
         }))
       }
-      return responseData
+      return {
+        data: responseData,
+        meta: {
+          message: 'Payment comment retrieved successfully'
+        }
+      }
     } catch (error) {
       strapi.log.error('Error in payment comment find:', error)
-      ctx.throw(500, 'Internal server error')
+      return ctx.internalServerError('Failed to get payment comments', { error: error.message })
     }
   },
 
@@ -53,8 +71,12 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
     try {
       const { documentId } = ctx.params
 
-      if (!documentId) {
-        return ctx.badRequest('Payment comment ID is required')
+      // Validate comment ID
+      const validationService = strapi.service('api::payment-comment.validation')
+      const idValidation = await validationService.validateCommentId(documentId)
+      
+      if (!idValidation.isValid) {
+        return ctx.badRequest(idValidation.errors.join(', '))
       }
 
       const paymentCommentService = strapi.service('api::payment-comment.payment-comment')
@@ -67,10 +89,15 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
         return ctx.badRequest(result.error)
       }
 
-      return result.data
+      return {
+        data: result.data,
+        meta: {
+          message: 'Payment comment retrieved successfully'
+        }
+      }
     } catch (error) {
       strapi.log.error('Error in payment comment findOne:', error)
-      ctx.throw(500, 'Internal server error')
+      return ctx.internalServerError('Failed to get payment comment', { error: error.message })
     }
   },
 
@@ -82,21 +109,36 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
       const { data } = ctx.request.body
       const { user } = ctx.state
 
-      if (!user) {
-        return ctx.unauthorized('Authentication required')
+      // Validate request body
+      const validationService = strapi.service('api::payment-comment.validation')
+      const bodyValidation = await validationService.validateRequestBody(data)
+      
+      if (!bodyValidation.isValid) {
+        return ctx.badRequest(bodyValidation.errors.join(', '))
       }
 
-      if (!data) {
-        return ctx.badRequest('Payment Comment data is required')
+      // Sanitize and validate comment data
+      const sanitizedData = validationService.sanitizeCommentData(data)
+      const commentValidation = await validationService.validateCreateComment(sanitizedData, user.id)
+      
+      if (!commentValidation.isValid) {
+        return ctx.badRequest(commentValidation.errors.join(', '))
+      }
+
+      // Validate payment exists
+      const paymentValidation = await validationService.validatePaymentExists(sanitizedData.payment)
+      if (!paymentValidation.isValid) {
+        return ctx.badRequest(paymentValidation.errors.join(', '))
       }
 
       const commentData = {
-        paymentId: data.payment,
+        paymentId: sanitizedData.payment,
         authorId: user.id,
-        type: data.type || 'admin',
-        content: data.content,
-        isInternal: data.isInternal || false,
-        metadata: data.metadata || {}
+        type: sanitizedData.type || 'admin',
+        content: sanitizedData.content,
+        isInternal: sanitizedData.isInternal || false,
+        metadata: sanitizedData.metadata || {},
+        attachments: sanitizedData.attachments || []
       }
 
       const paymentCommentService = strapi.service('api::payment-comment.payment-comment')
@@ -120,7 +162,7 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
       }
     } catch (error) {
       strapi.log.error('Error in payment comment create:', error)
-      ctx.throw(500, 'Internal server error')
+      return ctx.internalServerError('Failed to create payment comment', { error: error.message })
     }
   },
 
@@ -133,16 +175,24 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
       const { data } = ctx.request.body
       const { user } = ctx.state
 
-      if (!user) {
-        return ctx.unauthorized('Authentication required')
+      // Validate comment ID
+      const validationService = strapi.service('api::payment-comment.validation')
+      const idValidation = await validationService.validateCommentId(documentId)
+      
+      if (!idValidation.isValid) {
+        return ctx.badRequest(idValidation.errors.join(', '))
       }
 
-      if (!documentId) {
-        return ctx.badRequest('Payment comment ID is required')
+      // Validate request body
+      const bodyValidation = await validationService.validateRequestBody(data)
+      if (!bodyValidation.isValid) {
+        return ctx.badRequest(bodyValidation.errors.join(', '))
       }
 
-      if (!data) {
-        return ctx.badRequest('Update data is required')
+      // Validate update data
+      const updateValidation = await validationService.validateUpdateComment(data)
+      if (!updateValidation.isValid) {
+        return ctx.badRequest(updateValidation.errors.join(', '))
       }
 
       const PaymentCommentService = strapi.service('api::payment-comment.payment-comment')
@@ -160,10 +210,15 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
         updatedFields: Object.keys(data)
       })
 
-      return result.data
+      return {
+        data: result.data,
+        meta: {
+          message: 'Payment comment updated successfully'
+        }
+      }
     } catch (error) {
       strapi.log.error('Error in payment comment update:', error)
-      ctx.throw(500, 'Internal server error')
+      return ctx.internalServerError('Failed to update payment comment', { error: error.message })
     }
   },
 
@@ -175,12 +230,12 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
       const { documentId } = ctx.params
       const { user } = ctx.state
 
-      if (!user) {
-        return ctx.unauthorized('Authentication required')
-      }
-
-      if (!documentId) {
-        return ctx.badRequest('Payment comment ID is required')
+      // Validate comment ID
+      const validationService = strapi.service('api::payment-comment.validation')
+      const idValidation = await validationService.validateCommentId(documentId)
+      
+      if (!idValidation.isValid) {
+        return ctx.badRequest(idValidation.errors.join(', '))
       }
 
       const PaymentCommentService = strapi.service('api::payment-comment.payment-comment')
@@ -196,10 +251,15 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
       // Create audit log
       await PaymentCommentService.createAuditLog('delete', documentId, user.id)
 
-      return result.data
+      return {
+        data: result.data,
+        meta: {
+          message: 'Payment comment deleted successfully'
+        }
+      }
     } catch (error) {
       strapi.log.error('Error in payment comment delete:', error)
-      ctx.throw(500, 'Internal server error')
+      return ctx.internalServerError('Failed to delete payment comment', { error: error.message })
     }
   },
 
@@ -210,14 +270,34 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
     try {
       const { paymentId } = ctx.params
       const { query } = ctx
-      const { user } = ctx.state
+      const { user, userType } = ctx.state
 
-      if (!paymentId) {
-        return ctx.badRequest('Payment ID is required')
+      // Validate payment ID
+      const validationService = strapi.service('api::payment-comment.validation')
+      const paymentIdValidation = await validationService.validatePaymentId(paymentId)
+      
+      if (!paymentIdValidation.isValid) {
+        return ctx.badRequest(paymentIdValidation.errors.join(', '))
       }
 
-      // Only admins can see internal comments
-      const includeInternal = user.role?.type === 'admin' && query.includeInternal === 'true'
+      // Validate query parameters
+      const queryValidation = await validationService.validateQueryParams(query)
+      if (!queryValidation.isValid) {
+        return ctx.badRequest(queryValidation.errors.join(', '))
+      }
+
+      // Validate payment access
+      const accessValidation = await validationService.validatePaymentAccess(paymentId, user.id, user.role?.type)
+      if (!accessValidation.isValid) {
+        return ctx.forbidden(accessValidation.errors.join(', '))
+      }
+
+      // Validate internal comment access
+      const includeInternal = query.includeInternal === 'true'
+      const internalAccessValidation = await validationService.validateInternalCommentAccess(user.role?.type, includeInternal)
+      if (!internalAccessValidation.isValid) {
+        return ctx.forbidden(internalAccessValidation.errors.join(', '))
+      }
 
       const PaymentCommentService = strapi.service('api::payment-comment.payment-comment')
       const result = await PaymentCommentService.getCommentsByPayment(paymentId, includeInternal)
@@ -226,48 +306,15 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
         return ctx.badRequest(result.error)
       }
 
-      return result.data
+      return {
+        data: result.data,
+        meta: {
+          message: 'Payment comment retrieved successfully'
+        }
+      }
     } catch (error) {
       strapi.log.error('Error in getCommentsByPayment:', error)
-      ctx.throw(500, 'Internal server error')
-    }
-  },
-
-  /**
-   * Search payment comments
-   */
-  async search(ctx: any) {
-    try {
-      const { query } = ctx
-      const { user } = ctx.state
-
-      if (!user) {
-        return ctx.unauthorized('Authentication required')
-      }
-
-      const searchTerm = query.q || query.search
-      if (!searchTerm) {
-        return ctx.badRequest('Search term is required')
-      }
-
-      const filters = {
-        paymentId: query.paymentId,
-        type: query.type,
-        authorId: query.authorId,
-        isInternal: user.role?.type === 'admin' ? query.isInternal === 'true' : false
-      }
-
-      const PaymentCommentService = strapi.service('api::payment-comment.payment-comment')
-      const result = await PaymentCommentService.searchPaymentComments(searchTerm, filters)
-
-      if (!result.success) {
-        return ctx.badRequest(result.error)
-      }
-
-      return result.data
-    } catch (error) {
-      strapi.log.error('Error in payment comment search:', error)
-      ctx.throw(500, 'Internal server error')
+      return ctx.internalServerError('Failed to get payment comments', { error: error.message })
     }
   },
 
@@ -277,18 +324,24 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
   async getStatistics(ctx: any) {
     try {
       const { query } = ctx
-      const { user } = ctx.state
 
-      if (!user) {
-        return ctx.unauthorized('Authentication required')
-      }
-
-      // Only admins can access statistics
-      if (user.role?.type !== 'admin') {
-        return ctx.forbidden('Admin access required')
+      // Validate query parameters
+      const validationService = strapi.service('api::payment-comment.validation')
+      const queryValidation = await validationService.validateQueryParams(query)
+      
+      if (!queryValidation.isValid) {
+        return ctx.badRequest(queryValidation.errors.join(', '))
       }
 
       const paymentId = query.paymentId
+
+      // Validate payment ID if provided
+      if (paymentId) {
+        const paymentIdValidation = await validationService.validatePaymentId(paymentId)
+        if (!paymentIdValidation.isValid) {
+          return ctx.badRequest(paymentIdValidation.errors.join(', '))
+        }
+      }
 
       const PaymentCommentService = strapi.service('api::payment-comment.payment-comment')
       const result = await PaymentCommentService.getCommentStatistics(paymentId)
@@ -297,10 +350,15 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
         return ctx.badRequest(result.error)
       }
 
-      return result.data
+      return {
+        data: result.data,
+        meta: {
+          message: 'Payment comment statistics retrieved successfully'
+        }
+      }
     } catch (error) {
       strapi.log.error('Error in getStatistics:', error)
-      ctx.throw(500, 'Internal server error')
+      return ctx.internalServerError('Failed to retrieve payment comment statistics', { error: error.message })
     }
   }
 })

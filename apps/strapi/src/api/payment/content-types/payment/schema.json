@@ -50,7 +50,7 @@
         "confirmed",
         "expired",
         "rejected",
-        "cancelled"
+        "refunded"
       ],
       "required": true,
       "default": "pending"
@@ -86,12 +86,6 @@
       "relation": "oneToMany",
       "target": "api::payment-comment.payment-comment",
       "mappedBy": "payment"
-    },
-    "createdAt": {
-      "type": "datetime"
-    },
-    "updatedAt": {
-      "type": "datetime"
     }
   }
 }

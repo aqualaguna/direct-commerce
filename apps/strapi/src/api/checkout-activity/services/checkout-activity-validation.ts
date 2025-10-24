@@ -3,9 +3,12 @@
  * Handles data validation and sanitization for checkout activity tracking
  */
 
+import { UserType } from "../../../../config/constant";
+
 interface CheckoutActivityData {
-  checkoutSessionId: string;
-  userId?: string;
+  checkout: string;
+  user?: any;
+  sessionId?: string;
   activityType: 'step_enter' | 'step_exit' | 'form_field_focus' | 'form_field_blur' | 'validation_error' | 'form_submit' | 'checkout_abandon' | 'checkout_complete';
   stepName?: 'cart' | 'shipping' | 'billing' | 'payment' | 'review' | 'confirmation';
   formField?: string;
@@ -26,28 +29,28 @@ interface CheckoutActivityData {
   location?: string;
   userAgent?: string;
   ipAddress?: string;
-  sessionId?: string;
-}
-
-interface ValidationResult {
-  isValid: boolean;
-  errors: string[];
-  sanitizedData: Partial<CheckoutActivityData>;
 }
 
 export default ({ strapi }: { strapi: any }) => ({
   /**
    * Sanitize and validate checkout activity data
    */
-  async sanitizeActivityData(data: Partial<CheckoutActivityData>): Promise<Partial<CheckoutActivityData>> {
+  async sanitizeActivityData(data: Partial<CheckoutActivityData>, userId: string, userType: UserType): Promise<{ isValid: boolean, data: Partial<CheckoutActivityData>, errors: string[] }> {
     const sanitized: Partial<CheckoutActivityData> = {};
     const errors: string[] = [];
 
     // Required fields validation
-    if (!data.checkoutSessionId) {
-      errors.push('checkoutSessionId is required');
+    if (!data.checkout) {
+      errors.push('checkout is required');
     } else {
-      sanitized.checkoutSessionId = this.sanitizeString(data.checkoutSessionId, 255);
+      const checkout = await strapi.documents('api::checkout.checkout').findOne({
+        documentId: data.checkout
+      });
+      if (!checkout) {
+        errors.push('checkout not found');
+      } else {
+        sanitized.checkout = checkout;
+      }
     }
 
     if (!data.activityType) {
@@ -64,10 +67,6 @@ export default ({ strapi }: { strapi: any }) => ({
       }
     }
 
-    // Optional fields validation and sanitization
-    if (data.userId) {
-      sanitized.userId = this.sanitizeString(data.userId, 255);
-    }
 
     if (data.stepName) {
       const validStepNames = ['cart', 'shipping', 'billing', 'payment', 'review', 'confirmation'];
@@ -110,7 +109,7 @@ export default ({ strapi }: { strapi: any }) => ({
     }
 
     if (data.activityData) {
-      sanitized.activityData = this.sanitizeActivityDataObject(data.activityData);
+      sanitized.activityData = data.activityData;
     }
 
     if (data.timestamp) {
@@ -184,42 +183,11 @@ export default ({ strapi }: { strapi: any }) => ({
       sanitized.sessionId = this.sanitizeString(data.sessionId, 255);
     }
 
-    if (errors.length > 0) {
-      throw new Error(`Validation errors: ${errors.join(', ')}`);
-    }
-
-    return sanitized;
-  },
-
-  /**
-   * Sanitize activity data JSON object
-   */
-  sanitizeActivityDataObject(data: Record<string, any>): Record<string, any> {
-    const sanitized: Record<string, any> = {};
-
-    // Only allow specific fields in activityData to prevent injection
-    const allowedFields = [
-      'timeSpent', 'fieldValue', 'validationErrors', 'timeToComplete',
-      'attempts', 'autoComplete', 'success', 'errorType'
-    ];
-
-    for (const [key, value] of Object.entries(data)) {
-      if (allowedFields.includes(key)) {
-        if (typeof value === 'string') {
-          sanitized[key] = this.sanitizeString(value, 1000);
-        } else if (typeof value === 'number') {
-          sanitized[key] = Math.max(0, value);
-        } else if (typeof value === 'boolean') {
-          sanitized[key] = value;
-        } else if (Array.isArray(value)) {
-          sanitized[key] = value.map(item => 
-            typeof item === 'string' ? this.sanitizeString(item, 200) : item
-          );
-        }
-      }
-    }
-
-    return sanitized;
+    return {
+      isValid : errors.length === 0,
+      data : sanitized,
+      errors : errors
+    };
   },
 
   /**
@@ -265,18 +233,6 @@ export default ({ strapi }: { strapi: any }) => ({
     return '';
   },
 
-  /**
-   * Validate checkout session ID format
-   */
-  validateCheckoutSessionId(sessionId: string): boolean {
-    if (!sessionId || typeof sessionId !== 'string') {
-      return false;
-    }
-
-    // UUID v4 format validation
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-    return uuidRegex.test(sessionId);
-  },
 
   /**
    * Validate activity data for GDPR compliance

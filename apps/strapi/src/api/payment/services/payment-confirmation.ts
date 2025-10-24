@@ -183,14 +183,32 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
           status: 'confirmed',
         }
       })
-
+      // validate order status change
+      const orderStatusService = strapi.service('api::order.order-status');
+      const result = await orderStatusService.validateStatusUpdate(confirmation.payment.order.status, 'confirmed');
+      if (!result.isValid) {
+        return {
+          success: false,
+          error: result.errors.join(', ')
+        }
+      }
       // Update order payment status
       await strapi.documents('api::order.order').update({
         documentId: confirmation.payment.order.documentId,
         data: {
+          status: 'confirmed',
           paymentStatus: 'paid'
         }
       })
+      // create order history
+      const orderHistoryService = strapi.service('api::order.order-history');
+      await orderHistoryService.recordPaymentUpdate(
+        confirmation.payment.order.documentId,
+        null,
+        confirmation.payment,
+        confirmedBy === 'api_token' ? null : confirmedBy,
+        'payment_gateway'
+      );
 
       return {
         success: true,
@@ -279,6 +297,16 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
         }
       })
 
+      // create order history
+      const orderHistoryService = strapi.service('api::order.order-history');
+      await orderHistoryService.recordPaymentUpdate(
+        confirmation.payment.order.documentId,
+        null,
+        confirmation.payment,
+        rejectedBy === 'api_token' ? null : rejectedBy,
+        'payment_gateway'
+      );
+
       return {
         success: true,
         data: updatedConfirmation
@@ -351,7 +379,7 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
       await strapi.documents('api::payment.payment').update({
         documentId: confirmation.payment.documentId,
         data: {
-          status: 'cancelled',
+          confirmationStatus: 'cancelled',
           adminNotes: `Payment cancelled: ${cancellationReason}`
         }
       })

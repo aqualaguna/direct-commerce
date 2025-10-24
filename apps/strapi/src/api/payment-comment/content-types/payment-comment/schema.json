@@ -21,7 +21,8 @@
     "author": {
       "type": "relation",
       "relation": "manyToOne",
-      "target": "plugin::users-permissions.user"
+      "target": "plugin::users-permissions.user",
+      "required": false
     },
     "type": {
       "type": "enumeration",
@@ -44,6 +45,12 @@
     "isInternal": {
       "type": "boolean",
       "default": false
+    },
+    "attachments": {
+      "type": "media",
+      "multiple": true,
+      "required": false,
+      "allowedTypes": ["images", "files", "videos"]
     },
     "metadata": {
       "type": "json",

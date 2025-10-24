@@ -1,5 +1,6 @@
 import { Core } from "@strapi/strapi"
 import type { Context } from "koa"
+import { UserType } from "../../../../config/constant";
 
 
 export default ({ strapi }: { strapi: Core.Strapi }) => ({
@@ -79,10 +80,15 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
   },
   async completeCheckout(ctx:Context) {
     try {
-      const { user } = ctx.state;
+      const { user, userType } = ctx.state;
       const sessionId = ctx?.query?.sessionId || ctx?.request?.body?.sessionId;
       const documentId = ctx.params?.documentId || ctx.params?.id;
-      
+      let userId;
+      if (userType === UserType.AUTHENTICATED) {
+        userId = user.id;
+      } else {
+        userId = sessionId;
+      }
       if (!documentId) {
         return ctx.badRequest('Checkout documentId is required');
       }
@@ -99,7 +105,8 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
       
       const order = await checkoutService.completeCheckoutProcess(
         checkout, 
-        auth.isUser ? auth.userId : null
+        userId,
+        userType
       );
       
       return {

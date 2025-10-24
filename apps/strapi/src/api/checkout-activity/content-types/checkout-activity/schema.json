@@ -16,16 +16,21 @@
     }
   },
   "attributes": {
-    "checkoutSessionId": {
-      "type": "uid",
-      "required": true,
-      "unique": false,
-      "targetField": "id"
-    },
-    "userId": {
+    "checkout": {
       "type": "relation",
       "relation": "manyToOne",
-      "target": "plugin::users-permissions.user"
+      "target": "api::checkout.checkout",
+      "required": true
+    },
+    "sessionId": {
+      "type": "string",
+      "required": false
+    },
+    "user": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user",
+      "required": false
     },
     "activityType": {
       "type": "enumeration",
@@ -143,10 +148,6 @@
     "ipAddress": {
       "type": "string",
       "maxLength": 45
-    },
-    "sessionId": {
-      "type": "string",
-      "required": false
     }
   }
 }

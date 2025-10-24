@@ -12,9 +12,6 @@ export default {
       handler: 'checkout-activity.find',
       config: {
         policies: ['global::is-authenticated'],
-        auth: {
-          scope: ['checkout-activity.find']
-        }
       }
     },
     {
@@ -23,9 +20,6 @@ export default {
       handler: 'checkout-activity.findOne',
       config: {
         policies: ['global::is-authenticated'],
-        auth: {
-          scope: ['checkout-activity.findOne']
-        }
       }
     },
     {
@@ -33,8 +27,7 @@ export default {
       path: '/checkout-activities',
       handler: 'checkout-activity.create',
       config: {
-        policies: ['global::is-public'], // Allow public tracking
-        auth: false
+        policies: ['global::is-authenticated'],
       }
     },
     {
@@ -43,9 +36,6 @@ export default {
       handler: 'checkout-activity.update',
       config: {
         policies: ['global::is-authenticated'],
-        auth: {
-          scope: ['checkout-activity.update']
-        }
       }
     },
     {
@@ -54,9 +44,6 @@ export default {
       handler: 'checkout-activity.delete',
       config: {
         policies: ['global::is-admin'],
-        auth: {
-          scope: ['checkout-activity.delete']
-        }
       }
     },
     
@@ -66,19 +53,15 @@ export default {
       path: '/checkout-activities/bulk',
       handler: 'checkout-activity.bulkCreate',
       config: {
-        policies: ['global::is-public'], // Allow public bulk tracking
-        auth: false
+        policies: ['global::is-authenticated'],
       }
     },
     {
       method: 'GET',
-      path: '/checkout-activities/session/:checkoutSessionId/summary',
+      path: '/checkout-activities/session/:checkoutId/summary',
       handler: 'checkout-activity.getSessionSummary',
       config: {
         policies: ['global::is-authenticated'],
-        auth: {
-          scope: ['checkout-activity.find']
-        }
       }
     },
     {
@@ -87,9 +70,6 @@ export default {
       handler: 'checkout-activity.cleanup',
       config: {
         policies: ['global::is-admin'],
-        auth: {
-          scope: ['checkout-activity.delete']
-        }
       }
     }
   ]

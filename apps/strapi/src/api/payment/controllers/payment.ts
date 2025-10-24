@@ -6,12 +6,14 @@
 
 import { Core } from '@strapi/strapi'
 import { Context } from 'koa'
+import { UserType } from '../../../../config/constant';
 
 export default ({ strapi }: { strapi: Core.Strapi }) => ({
   async confirmPayment(ctx: Context) {
     try {
       const { paymentId } = ctx.params;
       const { data } = ctx.request.body;
+      const { user, userType } = ctx.state;
 
       if (!paymentId) {
         return ctx.badRequest('Payment ID is required')
@@ -22,7 +24,7 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
       }
 
       const paymentService = strapi.service('api::payment.payment');
-      const result = await paymentService.confirmManualPayment(paymentId, data);
+      const result = await paymentService.confirmManualPayment(paymentId, data, userType, user?.id || 'api_token');
 
       return { data: result, meta: { message: 'Payment confirmed successfully' } }
     } catch (error) {
@@ -38,7 +40,7 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
   },
   async createPayment(ctx: Context) {
     try {
-      const { user } = ctx.state;
+      const { user, userType } = ctx.state;
       const { orderId } = ctx.params;
       const sessionId = ctx?.query?.sessionId || ctx?.request?.body?.sessionId;
       const { data } = ctx.request.body;
@@ -47,33 +49,23 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
         return ctx.badRequest('Order ID is required')
       }
 
-      if (!user && !sessionId) {
-        return ctx.badRequest('User or session ID is required')
-      }
-
-      if (user && sessionId) {
-        return ctx.badRequest('User and session ID cannot be provided together')
-      }
-
       if (!data) {
         return ctx.badRequest('Data is required')
       }
 
-      const isGuest = !user && (sessionId);
-
       const validationService = strapi.service('api::payment.validation');
-      const {isValid, errors, data: validatedData} = await validationService.validateCreatePayment(orderId, user?.id || sessionId, data, isGuest);
+      const userId = userType === UserType.AUTHENTICATED ? user.id : sessionId;
+      const {isValid, errors, data: validatedData} = await validationService.validateCreatePayment(orderId, userId, data, userType === UserType.GUEST);
 
       if (!isValid) {
         return ctx.badRequest('Validation failed', errors)
       }
 
       const paymentService = strapi.service('api::payment.payment');
-      const payment = await paymentService.createPayment(orderId, user?.id || sessionId, validatedData, isGuest);
+      const payment = await paymentService.createPayment(orderId, userId, validatedData, userType === UserType.GUEST);
 
       return { data: payment, meta: { message: 'Payment created successfully' } }
     } catch (error) {
-      console.log('error', error)
       strapi.log.error('Error in createPayment:', error)
       return ctx.internalServerError('Failed to create payment')
     }

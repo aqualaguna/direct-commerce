@@ -106,7 +106,7 @@ export default {
             $lt: anonymizeDate
           },
           $or: [
-            { userId: { documentId: { $notNull: true } } },
+            { user: { documentId: { $notNull: true } } },
             { ipAddress: { $notNull: true } },
             { userAgent: { $notNull: true } },
             { sessionId: { $notNull: true } }

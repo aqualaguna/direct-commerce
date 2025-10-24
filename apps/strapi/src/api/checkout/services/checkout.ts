@@ -1,4 +1,5 @@
 import { Core } from "@strapi/strapi"
+import { UserType } from "../../../../config/constant";
 
 export default ({ strapi }: { strapi: Core.Strapi }) => ({
   
@@ -121,13 +122,14 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
    * @param userId - User ID (null for guests)
    * @returns Created order
    */
-  async createOrderFromCheckout(checkout: any, userId: string | null) {
+  async createOrderFromCheckout(checkout: any, userId: string | null, userType: UserType) {
     const cartItems = (checkout.metadata as any).cartItems;
     const orderNumber = await strapi.service('api::order.order-creation').generateOrderNumber();
     
     const orderData = {
       orderNumber,
-      user: userId,
+      user: userType === UserType.AUTHENTICATED ? userId : null,
+      sessionId: userType === UserType.GUEST ? userId : null,
       checkout: checkout.documentId,
       status: 'pending' as const,
       subtotal: cartItems.reduce((sum: number, item: any) => sum + item.price * item.quantity, 0),
@@ -174,9 +176,12 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
       });
       await inventoryService.reserveStock(item.product.documentId, item.quantity, {
         orderId: order.documentId,
-        customerId: userId,
-        sessionId: checkout.sessionId,
+        customerId: userType === UserType.AUTHENTICATED ? userId : null,
+        sessionId: userType === UserType.GUEST ? userId : null,
       });
+      // create order history
+      await strapi.service('api::order.order-history').recordOrderCreation(order.documentId, orderData, userType === UserType.AUTHENTICATED ? userId : null, 'customer');
+      await strapi.service('api::order.order-history').recordStatusChange(order.documentId, 'pending', 'pending', userType === UserType.AUTHENTICATED ? userId : null, 'Order created from checkout');
     }
     return order;
   },
@@ -187,7 +192,7 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
    * @param userId - User ID (null for guests)
    * @returns Created order with populated data
    */
-  async completeCheckoutProcess(checkout: any, userId: string | null) {
+  async completeCheckoutProcess(checkout: any, userId: string | null, userType: UserType) {
     // Lock checkout session
     await strapi.documents('api::checkout.checkout').update({
       documentId: checkout.documentId,
@@ -196,7 +201,7 @@ export default ({ strapi }: { strapi: Core.Strapi }) => ({
 
     const order = await strapi.db.transaction(async ({ commit }) => {
       // Create order
-      const order = await this.createOrderFromCheckout(checkout, userId);
+      const order = await this.createOrderFromCheckout(checkout, userId, userType);
       
       // Update checkout session to completed
       await strapi.documents('api::checkout.checkout').update({

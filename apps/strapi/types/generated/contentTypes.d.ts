@@ -699,7 +699,8 @@ export interface ApiCheckoutActivityCheckoutActivity
       Schema.Attribute.SetMinMaxLength<{
         maxLength: 50;
       }>;
-    checkoutSessionId: Schema.Attribute.UID<'id'> & Schema.Attribute.Required;
+    checkout: Schema.Attribute.Relation<'manyToOne', 'api::checkout.checkout'> &
+      Schema.Attribute.Required;
     createdAt: Schema.Attribute.DateTime;
     createdBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
@@ -756,11 +757,11 @@ export interface ApiCheckoutActivityCheckoutActivity
     updatedAt: Schema.Attribute.DateTime;
     updatedBy: Schema.Attribute.Relation<'oneToOne', 'admin::user'> &
       Schema.Attribute.Private;
-    userAgent: Schema.Attribute.Text;
-    userId: Schema.Attribute.Relation<
+    user: Schema.Attribute.Relation<
       'manyToOne',
       'plugin::users-permissions.user'
     >;
+    userAgent: Schema.Attribute.Text;
     utmCampaign: Schema.Attribute.String &
       Schema.Attribute.SetMinMaxLength<{
         maxLength: 100;
@@ -1287,6 +1288,7 @@ export interface ApiOrderOrder extends Struct.CollectionTypeSchema {
       Schema.Attribute.Required &
       Schema.Attribute.DefaultTo<'pending'>;
     publishedAt: Schema.Attribute.DateTime;
+    sessionId: Schema.Attribute.String;
     shipping: Schema.Attribute.Decimal &
       Schema.Attribute.Required &
       Schema.Attribute.SetMinMax<
@@ -1311,8 +1313,9 @@ export interface ApiOrderOrder extends Struct.CollectionTypeSchema {
         'pending',
         'confirmed',
         'processing',
-        'shipped',
+        'shipping',
         'delivered',
+        'returned',
         'cancelled',
         'refunded',
       ]
@@ -1398,6 +1401,7 @@ export interface ApiOrderOrderHistory extends Struct.CollectionTypeSchema {
         'shipping_carrier',
         'fraud_detection',
         'webhook',
+        'api_token',
       ]
     > &
       Schema.Attribute.Required;
@@ -1601,10 +1605,11 @@ export interface ApiOrderOrderStatus extends Struct.CollectionTypeSchema {
         'pending',
         'confirmed',
         'processing',
-        'shipped',
+        'shipping',
         'delivered',
         'cancelled',
         'refunded',
+        'returned',
       ]
     > &
       Schema.Attribute.Required;
@@ -1748,6 +1753,7 @@ export interface ApiPaymentCommentPaymentComment
     draftAndPublish: false;
   };
   attributes: {
+    attachments: Schema.Attribute.Media<'images' | 'files' | 'videos', true>;
     author: Schema.Attribute.Relation<
       'manyToOne',
       'plugin::users-permissions.user'
@@ -1908,7 +1914,7 @@ export interface ApiPaymentPayment extends Struct.CollectionTypeSchema {
       Schema.Attribute.DefaultTo<'manual'>;
     publishedAt: Schema.Attribute.DateTime;
     status: Schema.Attribute.Enumeration<
-      ['pending', 'confirmed', 'expired', 'rejected', 'cancelled']
+      ['pending', 'confirmed', 'expired', 'rejected', 'refunded']
     > &
       Schema.Attribute.Required &
       Schema.Attribute.DefaultTo<'pending'>;
