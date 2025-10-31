@@ -1,0 +1,258 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import ProductGrid from '@/components/product/ProductGrid.astro';
+import FilterSidebar from '@/components/product/FilterSidebar.astro';
+import Breadcrumbs from '@/components/ui/Breadcrumbs.astro';
+import Button from '@/components/ui/Button.astro';
+
+const pageTitle = 'Search Results';
+const pageDescription = 'Find the perfect products with our advanced search and filtering options.';
+
+// Mock search results - in real implementation, this would come from API
+const searchQuery = 'wireless headphones';
+const searchResults = [
+  {
+    id: '1',
+    name: 'Premium Wireless Headphones',
+    slug: 'premium-wireless-headphones',
+    price: 299.99,
+    salePrice: 199.99,
+    image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&h=400&fit=crop',
+    rating: 4.8,
+    reviewCount: 124,
+    description: 'High-quality wireless headphones with noise cancellation.',
+    isNew: true,
+    isOnSale: true,
+    isFeatured: false,
+    isOutOfStock: false,
+  },
+  {
+    id: '2',
+    name: 'Bluetooth Wireless Earbuds',
+    slug: 'bluetooth-wireless-earbuds',
+    price: 149.99,
+    image: 'https://images.unsplash.com/photo-1484704849700-f032a568e944?w=400&h=400&fit=crop',
+    rating: 4.6,
+    reviewCount: 89,
+    description: 'Compact wireless earbuds with excellent sound quality.',
+    isNew: false,
+    isOnSale: false,
+    isFeatured: true,
+    isOutOfStock: false,
+  },
+  {
+    id: '3',
+    name: 'Gaming Wireless Headset',
+    slug: 'gaming-wireless-headset',
+    price: 199.99,
+    image: 'https://images.unsplash.com/photo-1546435770-a3e426bf472b?w=400&h=400&fit=crop',
+    rating: 4.7,
+    reviewCount: 156,
+    description: 'Professional gaming headset with 7.1 surround sound.',
+    isNew: false,
+    isOnSale: false,
+    isFeatured: false,
+    isOutOfStock: false,
+  },
+  {
+    id: '4',
+    name: 'Noise Cancelling Headphones',
+    slug: 'noise-cancelling-headphones',
+    price: 249.99,
+    salePrice: 179.99,
+    image: 'https://images.unsplash.com/photo-1583394838336-acd977736f90?w=400&h=400&fit=crop',
+    rating: 4.9,
+    reviewCount: 203,
+    description: 'Advanced noise cancellation technology for crystal clear audio.',
+    isNew: false,
+    isOnSale: true,
+    isFeatured: true,
+    isOutOfStock: false,
+  },
+];
+
+const categories = [
+  { name: 'Audio', count: 45, slug: 'audio' },
+  { name: 'Electronics', count: 32, slug: 'electronics' },
+  { name: 'Gaming', count: 18, slug: 'gaming' },
+  { name: 'Accessories', count: 25, slug: 'accessories' },
+];
+
+const suggestions = [
+  'wireless earbuds',
+  'bluetooth speakers',
+  'gaming headsets',
+  'noise cancelling',
+  'wireless charging',
+];
+---
+
+<BaseLayout title={pageTitle} description={pageDescription}>
+  <!-- Breadcrumbs -->
+  <div class="bg-white border-b border-gray-200">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <Breadcrumbs 
+        items={[
+          { name: 'Home', href: '/' },
+          { name: 'Search', href: '/search' }
+        ]}
+      />
+    </div>
+  </div>
+
+  <!-- Search Header -->
+  <section class="py-12 bg-gradient-to-r from-accent-teal-500 to-accent-purple-500 text-white">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center">
+        <h1 class="text-4xl md:text-5xl font-bold mb-6 animate-fade-in">
+          Search Results
+        </h1>
+        <p class="text-xl mb-8 text-white/90 animate-slide-up">
+          Found {searchResults.length} products for "{searchQuery}"
+        </p>
+        
+        <!-- Search Suggestions -->
+        <div class="max-w-2xl mx-auto animate-scale-in">
+          <p class="text-sm text-white/80 mb-4">Popular searches:</p>
+          <div class="flex flex-wrap justify-center gap-2">
+            {suggestions.map(suggestion => (
+              <button class="bg-white/20 text-white px-4 py-2 rounded-full text-sm hover:bg-white/30 transition-colors">
+                {suggestion}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main Content -->
+  <section class="py-12 bg-gray-50">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex flex-col lg:flex-row gap-8">
+        <!-- Filter Sidebar -->
+        <aside class="lg:w-1/4">
+          <div class="lg:sticky lg:top-8">
+            <FilterSidebar 
+              categories={categories}
+              activeFilters={{
+                categories: [],
+                priceRange: [0, 1000],
+                attributes: []
+              }}
+            />
+          </div>
+        </aside>
+
+        <!-- Search Results -->
+        <main class="lg:w-3/4">
+          <!-- Search Info -->
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 space-y-4 sm:space-y-0">
+            <div class="flex items-center space-x-4">
+              <span class="text-sm text-gray-600">
+                {searchResults.length} results for "{searchQuery}"
+              </span>
+              <select class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+                <option value="relevance">Most Relevant</option>
+                <option value="price-low">Price: Low to High</option>
+                <option value="price-high">Price: High to Low</option>
+                <option value="newest">Newest First</option>
+                <option value="rating">Highest Rated</option>
+              </select>
+            </div>
+            
+            <div class="flex items-center space-x-2">
+              <span class="text-sm text-gray-600">View:</span>
+              <div class="flex border border-gray-300 rounded-lg overflow-hidden">
+                <button class="px-3 py-2 bg-primary-600 text-white text-sm font-medium">
+                  Grid
+                </button>
+                <button class="px-3 py-2 bg-white text-gray-600 text-sm font-medium hover:bg-gray-50">
+                  List
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Search Results -->
+          {searchResults.length > 0 ? (
+            <ProductGrid 
+              products={searchResults}
+              layout="grid"
+              columns={3}
+              loading={false}
+            />
+          ) : (
+            <!-- No Results -->
+            <div class="text-center py-12">
+              <div class="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+              <h3 class="text-lg font-semibold text-gray-900 mb-2">No products found</h3>
+              <p class="text-gray-600 mb-6">Try adjusting your search terms or filters</p>
+              <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <Button variant="primary" href="/products">
+                  Browse All Products
+                </Button>
+                <Button variant="outline" href="/categories">
+                  Browse Categories
+                </Button>
+              </div>
+            </div>
+          )}
+
+          <!-- Load More -->
+          {searchResults.length > 0 && (
+            <div class="text-center mt-12">
+              <Button variant="outline" size="lg">
+                Load More Results
+              </Button>
+            </div>
+          )}
+        </main>
+      </div>
+    </div>
+  </section>
+
+  <!-- Search Tips -->
+  <section class="py-12 bg-white">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="max-w-4xl mx-auto text-center">
+        <h2 class="text-2xl font-bold text-gray-900 mb-6">Search Tips</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div class="p-6 bg-gray-50 rounded-lg">
+            <div class="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center mx-auto mb-4">
+              <svg class="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+            <h3 class="font-semibold text-gray-900 mb-2">Use Keywords</h3>
+            <p class="text-sm text-gray-600">Try different keywords or synonyms to find what you're looking for</p>
+          </div>
+          
+          <div class="p-6 bg-gray-50 rounded-lg">
+            <div class="w-12 h-12 bg-accent-teal-100 rounded-lg flex items-center justify-center mx-auto mb-4">
+              <svg class="w-6 h-6 text-accent-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+              </svg>
+            </div>
+            <h3 class="font-semibold text-gray-900 mb-2">Use Filters</h3>
+            <p class="text-sm text-gray-600">Narrow down results using our advanced filtering options</p>
+          </div>
+          
+          <div class="p-6 bg-gray-50 rounded-lg">
+            <div class="w-12 h-12 bg-accent-purple-100 rounded-lg flex items-center justify-center mx-auto mb-4">
+              <svg class="w-6 h-6 text-accent-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+            </div>
+            <h3 class="font-semibold text-gray-900 mb-2">Try Categories</h3>
+            <p class="text-sm text-gray-600">Browse by category to discover related products</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

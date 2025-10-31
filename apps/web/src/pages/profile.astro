@@ -1,0 +1,72 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+
+const pageTitle = 'Profile - Ecommerce Store';
+const pageDescription = 'Manage your account settings and preferences.';
+
+// This page is protected by middleware
+const user = Astro.locals['user'];
+---
+
+<BaseLayout title={pageTitle} description={pageDescription}>
+    <div class="min-h-screen bg-gray-50 py-12">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="bg-white shadow rounded-lg">
+          <div class="px-4 py-5 sm:p-6">
+            <h1 class="text-2xl font-bold text-gray-900 mb-6">Profile</h1>
+            
+            {user ? (
+              <div class="space-y-6">
+                <div>
+                  <h2 class="text-lg font-medium text-gray-900 mb-4">Account Information</h2>
+                  <dl class="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
+                    <div>
+                      <dt class="text-sm font-medium text-gray-500">Username</dt>
+                      <dd class="mt-1 text-sm text-gray-900">{user.username}</dd>
+                    </div>
+                    <div>
+                      <dt class="text-sm font-medium text-gray-500">Email</dt>
+                      <dd class="mt-1 text-sm text-gray-900">{user.email}</dd>
+                    </div>
+                    <div>
+                      <dt class="text-sm font-medium text-gray-500">Role</dt>
+                      <dd class="mt-1 text-sm text-gray-900">{user.role}</dd>
+                    </div>
+                    <div>
+                      <dt class="text-sm font-medium text-gray-500">Member since</dt>
+                      <dd class="mt-1 text-sm text-gray-900">
+                        {new Date(user.createdAt).toLocaleDateString()}
+                      </dd>
+                    </div>
+                  </dl>
+                </div>
+                
+                <div class="border-t border-gray-200 pt-6">
+                  <h2 class="text-lg font-medium text-gray-900 mb-4">Quick Actions</h2>
+                  <div class="flex space-x-4">
+                    <a 
+                      href="/orders" 
+                      class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700"
+                    >
+                      View Orders
+                    </a>
+                    <a 
+                      href="/settings" 
+                      class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                    >
+                      Settings
+                    </a>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div class="text-center">
+                <p class="text-gray-500">Loading user information...</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+</BaseLayout>
+

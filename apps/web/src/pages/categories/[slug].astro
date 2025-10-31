@@ -1,0 +1,293 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import ProductGrid from '@/components/product/ProductGrid.astro';
+import FilterSidebar from '@/components/product/FilterSidebar.astro';
+import Breadcrumbs from '@/components/ui/Breadcrumbs.astro';
+import Button from '@/components/ui/Button.astro';
+import Card from '@/components/ui/Card.astro';
+
+export async function getStaticPaths() {
+  return [
+    { params: { slug: 'audio' } },
+    { params: { slug: 'electronics' } },
+    { params: { slug: 'gaming' } },
+    { params: { slug: 'accessories' } },
+  ];
+}
+
+// Mock category data - in real implementation, this would come from API
+const category = {
+  name: 'Audio',
+  slug: 'audio',
+  description: 'Discover our premium collection of audio equipment including headphones, speakers, and audio accessories. Experience crystal clear sound quality with our carefully curated selection.',
+  image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=1200&h=400&fit=crop',
+  productCount: 45,
+  subcategories: [
+    { name: 'Headphones', count: 18, slug: 'headphones' },
+    { name: 'Speakers', count: 12, slug: 'speakers' },
+    { name: 'Earbuds', count: 8, slug: 'earbuds' },
+    { name: 'Microphones', count: 7, slug: 'microphones' },
+  ],
+  featuredProducts: [
+    {
+      id: '1',
+      name: 'Premium Wireless Headphones',
+      slug: 'premium-wireless-headphones',
+      price: 299.99,
+      salePrice: 199.99,
+      image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=300&h=300&fit=crop',
+      rating: 4.8,
+      reviewCount: 124,
+      description: 'High-quality wireless headphones with noise cancellation.',
+      isNew: true,
+      isOnSale: true,
+      isFeatured: false,
+      isOutOfStock: false,
+    },
+    {
+      id: '2',
+      name: 'Bluetooth Speaker',
+      slug: 'bluetooth-speaker',
+      price: 79.99,
+      salePrice: 59.99,
+      image: 'https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=300&h=300&fit=crop',
+      rating: 4.7,
+      reviewCount: 156,
+      description: 'Portable Bluetooth speaker with 360-degree sound.',
+      isNew: false,
+      isOnSale: true,
+      isFeatured: true,
+      isOutOfStock: false,
+    },
+    {
+      id: '3',
+      name: 'Noise Cancelling Earbuds',
+      slug: 'noise-cancelling-earbuds',
+      price: 149.99,
+      image: 'https://images.unsplash.com/photo-1484704849700-f032a568e944?w=300&h=300&fit=crop',
+      rating: 4.6,
+      reviewCount: 89,
+      description: 'Compact wireless earbuds with active noise cancellation.',
+      isNew: false,
+      isOnSale: false,
+      isFeatured: true,
+      isOutOfStock: false,
+    },
+    {
+      id: '4',
+      name: 'Gaming Headset',
+      slug: 'gaming-headset',
+      price: 199.99,
+      image: 'https://images.unsplash.com/photo-1546435770-a3e426bf472b?w=300&h=300&fit=crop',
+      rating: 4.9,
+      reviewCount: 203,
+      description: 'Professional gaming headset with 7.1 surround sound.',
+      isNew: true,
+      isOnSale: false,
+      isFeatured: false,
+      isOutOfStock: false,
+    },
+  ],
+};
+
+const categories = [
+  { name: 'Audio', count: 45, slug: 'audio' },
+  { name: 'Electronics', count: 32, slug: 'electronics' },
+  { name: 'Gaming', count: 18, slug: 'gaming' },
+  { name: 'Accessories', count: 25, slug: 'accessories' },
+];
+
+const pageTitle = `${category.name} Products - Premium Audio Collection`;
+const pageDescription = category.description;
+---
+
+<BaseLayout title={pageTitle} description={pageDescription}>
+  <!-- Breadcrumbs -->
+  <div class="bg-white border-b border-gray-200">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <Breadcrumbs 
+        items={[
+          { name: 'Home', href: '/' },
+          { name: 'Categories', href: '/categories' },
+          { name: category.name }
+        ]}
+      />
+    </div>
+  </div>
+
+  <!-- Category Hero -->
+  <section class="relative py-20 bg-gradient-to-r from-accent-coral-500 to-accent-teal-500 text-white overflow-hidden">
+    <!-- Background Image -->
+    <div class="absolute inset-0">
+      <img
+        src={category.image}
+        alt={category.name}
+        class="w-full h-full object-cover opacity-20"
+      />
+      <div class="absolute inset-0 bg-gradient-to-r from-accent-coral-500/80 to-accent-teal-500/80"></div>
+    </div>
+    
+    <div class="relative container mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center">
+        <h1 class="text-5xl md:text-7xl font-bold mb-6 animate-fade-in">
+          {category.name}
+        </h1>
+        <p class="text-xl md:text-2xl mb-8 text-white/90 max-w-3xl mx-auto animate-slide-up">
+          {category.description}
+        </p>
+        <div class="flex flex-col sm:flex-row gap-4 justify-center animate-scale-in">
+          <Button variant="secondary" size="lg" href="#products">
+            Shop {category.name}
+          </Button>
+          <Button variant="outline" size="lg" href="#subcategories">
+            Browse Subcategories
+          </Button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Subcategories -->
+  <section id="subcategories" class="py-12 bg-white">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+      <h2 class="text-2xl font-bold text-gray-900 mb-8 text-center">Shop by Type</h2>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+        {category.subcategories.map(subcategory => (
+          <Card variant="default" hover={true} interactive={true} class="text-center group">
+            <div class="aspect-square bg-gradient-to-br from-primary-100 to-accent-teal-100 rounded-lg mb-4 flex items-center justify-center">
+              <svg class="w-12 h-12 text-primary-600 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+              </svg>
+            </div>
+            <h3 class="font-semibold text-gray-900 mb-2">{subcategory.name}</h3>
+            <p class="text-sm text-gray-600 mb-4">{subcategory.count} products</p>
+            <Button variant="outline" size="sm" href={`/categories/${subcategory.slug}`}>
+              Shop Now
+            </Button>
+          </Card>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- Main Content -->
+  <section id="products" class="py-12 bg-gray-50">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex flex-col lg:flex-row gap-8">
+        <!-- Filter Sidebar -->
+        <aside class="lg:w-1/4">
+          <div class="lg:sticky lg:top-8">
+            <FilterSidebar 
+              categories={categories}
+              activeFilters={{
+                categories: [category.slug],
+                priceRange: [0, 1000],
+                attributes: []
+              }}
+            />
+          </div>
+        </aside>
+
+        <!-- Products Section -->
+        <main class="lg:w-3/4">
+          <!-- Sort and View Options -->
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 space-y-4 sm:space-y-0">
+            <div class="flex items-center space-x-4">
+              <span class="text-sm text-gray-600">
+                {category.productCount} products in {category.name}
+              </span>
+              <select class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+                <option value="newest">Newest First</option>
+                <option value="price-low">Price: Low to High</option>
+                <option value="price-high">Price: High to Low</option>
+                <option value="popularity">Most Popular</option>
+                <option value="rating">Highest Rated</option>
+              </select>
+            </div>
+            
+            <div class="flex items-center space-x-2">
+              <span class="text-sm text-gray-600">View:</span>
+              <div class="flex border border-gray-300 rounded-lg overflow-hidden">
+                <button class="px-3 py-2 bg-primary-600 text-white text-sm font-medium">
+                  Grid
+                </button>
+                <button class="px-3 py-2 bg-white text-gray-600 text-sm font-medium hover:bg-gray-50">
+                  List
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Featured Products -->
+          <div class="mb-8">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Featured {category.name} Products</h3>
+            <ProductGrid 
+              products={category.featuredProducts}
+              layout="grid"
+              columns={4}
+              loading={false}
+            />
+          </div>
+
+          <!-- All Products -->
+          <div>
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">All {category.name} Products</h3>
+            <ProductGrid 
+              products={category.featuredProducts}
+              layout="grid"
+              columns={3}
+              loading={false}
+            />
+          </div>
+
+          <!-- Load More Button -->
+          <div class="text-center mt-12">
+            <Button variant="outline" size="lg">
+              Load More Products
+            </Button>
+          </div>
+        </main>
+      </div>
+    </div>
+  </section>
+
+  <!-- Category Benefits -->
+  <section class="py-16 bg-white">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="max-w-4xl mx-auto text-center">
+        <h2 class="text-3xl font-bold text-gray-900 mb-8">Why Choose Our {category.name} Products?</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div class="text-center">
+            <div class="w-16 h-16 bg-accent-coral-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg class="w-8 h-8 text-accent-coral-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <h3 class="text-xl font-semibold mb-2">Premium Quality</h3>
+            <p class="text-gray-600">All our audio products are tested for superior sound quality and durability</p>
+          </div>
+          
+          <div class="text-center">
+            <div class="w-16 h-16 bg-accent-teal-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg class="w-8 h-8 text-accent-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+            </div>
+            <h3 class="text-xl font-semibold mb-2">Fast Shipping</h3>
+            <p class="text-gray-600">Free shipping on orders over $50 with same-day processing</p>
+          </div>
+          
+          <div class="text-center">
+            <div class="w-16 h-16 bg-accent-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg class="w-8 h-8 text-accent-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192L5.636 18.364M12 2.25a9.75 9.75 0 109.75 9.75A9.75 9.75 0 0012 2.25z" />
+              </svg>
+            </div>
+            <h3 class="text-xl font-semibold mb-2">Expert Support</h3>
+            <p class="text-gray-600">Get personalized recommendations from our audio specialists</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

@@ -15,10 +15,22 @@ const apiClient: AxiosInstance = axios.create({
   },
 });
 
+// Function to get auth token from localStorage
+const getAuthToken = () => {
+  if (typeof window !== 'undefined') {
+    return localStorage.getItem('authToken');
+  }
+  return null;
+};
+
 // Request interceptor
 apiClient.interceptors.request.use(
   (config) => {
-    // Add loading state or other request logic here
+    // Add auth token to requests if available
+    const authToken = getAuthToken();
+    if (authToken) {
+      config.headers.Authorization = `Bearer ${authToken}`;
+    }
     return config;
   },
   (error) => {
@@ -42,7 +54,13 @@ apiClient.interceptors.response.use(
   (error) => {
     // Handle common errors
     if (error.response?.status === 401) {
-      // Handle unauthorized
+      // Handle unauthorized - clear auth data
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('user');
+        // Optionally redirect to login page
+        // window.location.href = '/auth/login';
+      }
       console.error('Unauthorized access');
     } else if (error.response?.status === 404) {
       // Handle not found
@@ -106,6 +124,20 @@ export const api = {
     getAll: (params?: any) => api.get('/categories', params),
     getById: (id: string) => api.get(`/categories/${id}`),
     getBySlug: (slug: string) => api.get(`/categories?filters[slug][$eq]=${slug}`),
+  },
+
+  // Authentication endpoints
+  auth: {
+    login: (identifier: string, password: string) => 
+      api.post('/auth/local', { identifier, password }),
+    register: (username: string, email: string, password: string) =>
+      api.post('/auth/local/register', { username, email, password }),
+    forgotPassword: (email: string) =>
+      api.post('/auth/forgot-password', { email }),
+    resetPassword: (code: string, password: string, passwordConfirmation: string) =>
+      api.post('/auth/reset-password', { code, password, passwordConfirmation }),
+    changePassword: (currentPassword: string, password: string, passwordConfirmation: string) =>
+      api.post('/auth/change-password', { currentPassword, password, passwordConfirmation }),
   },
 
   // User-related endpoints

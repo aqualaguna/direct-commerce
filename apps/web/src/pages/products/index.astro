@@ -1,0 +1,254 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import ProductGrid from '@/components/product/ProductGrid.astro';
+import FilterSidebar from '@/components/product/FilterSidebar.astro';
+import Breadcrumbs from '@/components/ui/Breadcrumbs.astro';
+import Button from '@/components/ui/Button.astro';
+
+const pageTitle = 'All Products';
+const pageDescription = 'Browse our complete collection of products. Find exactly what you\'re looking for with our advanced filters and sorting options.';
+
+// Mock data - in real implementation, this would come from API
+const products = [
+  {
+    id: '1',
+    name: 'Premium Wireless Headphones',
+    slug: 'premium-wireless-headphones',
+    price: 299.99,
+    salePrice: 199.99,
+    image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&h=400&fit=crop',
+    rating: 4.8,
+    reviewCount: 124,
+    description: 'High-quality wireless headphones with noise cancellation and premium sound quality.',
+    isNew: true,
+    isOnSale: true,
+    isFeatured: false,
+    isOutOfStock: false,
+  },
+  {
+    id: '2',
+    name: 'Smart Fitness Watch',
+    slug: 'smart-fitness-watch',
+    price: 199.99,
+    image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&h=400&fit=crop',
+    rating: 4.6,
+    reviewCount: 89,
+    description: 'Track your fitness goals with this advanced smartwatch featuring heart rate monitoring.',
+    isNew: false,
+    isOnSale: false,
+    isFeatured: true,
+    isOutOfStock: false,
+  },
+  {
+    id: '3',
+    name: 'Wireless Charging Pad',
+    slug: 'wireless-charging-pad',
+    price: 49.99,
+    image: 'https://images.unsplash.com/photo-1583394838336-acd977736f90?w=400&h=400&fit=crop',
+    rating: 4.4,
+    reviewCount: 67,
+    description: 'Convenient wireless charging pad compatible with all Qi-enabled devices.',
+    isNew: false,
+    isOnSale: false,
+    isFeatured: false,
+    isOutOfStock: false,
+  },
+  {
+    id: '4',
+    name: 'Bluetooth Speaker',
+    slug: 'bluetooth-speaker',
+    price: 79.99,
+    salePrice: 59.99,
+    image: 'https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=400&h=400&fit=crop',
+    rating: 4.7,
+    reviewCount: 156,
+    description: 'Portable Bluetooth speaker with 360-degree sound and waterproof design.',
+    isNew: false,
+    isOnSale: true,
+    isFeatured: false,
+    isOutOfStock: false,
+  },
+  {
+    id: '5',
+    name: 'Gaming Mechanical Keyboard',
+    slug: 'gaming-mechanical-keyboard',
+    price: 149.99,
+    image: 'https://images.unsplash.com/photo-1541140532154-b024d705b90a?w=400&h=400&fit=crop',
+    rating: 4.9,
+    reviewCount: 203,
+    description: 'Professional gaming keyboard with mechanical switches and RGB lighting.',
+    isNew: true,
+    isOnSale: false,
+    isFeatured: true,
+    isOutOfStock: false,
+  },
+  {
+    id: '6',
+    name: 'USB-C Hub',
+    slug: 'usb-c-hub',
+    price: 89.99,
+    image: 'https://images.unsplash.com/photo-1593642632823-8f785ba67e45?w=400&h=400&fit=crop',
+    rating: 4.3,
+    reviewCount: 45,
+    description: 'Multi-port USB-C hub with HDMI, USB 3.0, and power delivery.',
+    isNew: false,
+    isOnSale: false,
+    isFeatured: false,
+    isOutOfStock: true,
+  },
+];
+
+const categories = [
+  { name: 'Electronics', count: 45, slug: 'electronics' },
+  { name: 'Accessories', count: 32, slug: 'accessories' },
+  { name: 'Gaming', count: 18, slug: 'gaming' },
+  { name: 'Audio', count: 25, slug: 'audio' },
+  { name: 'Smart Home', count: 12, slug: 'smart-home' },
+];
+
+const sortOptions = [
+  { value: 'newest', label: 'Newest First' },
+  { value: 'price-low', label: 'Price: Low to High' },
+  { value: 'price-high', label: 'Price: High to Low' },
+  { value: 'popularity', label: 'Most Popular' },
+  { value: 'rating', label: 'Highest Rated' },
+];
+---
+
+<BaseLayout title={pageTitle} description={pageDescription}>
+  <!-- Breadcrumbs -->
+  <div class="bg-white border-b border-gray-200">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <Breadcrumbs 
+        items={[
+          { name: 'Home', href: '/' },
+          { name: 'Products', href: '/products' }
+        ]}
+      />
+    </div>
+  </div>
+
+  <!-- Hero Section -->
+  <section class="bg-gradient-to-r from-primary-600 to-accent-purple-600 text-white py-16">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center">
+        <h1 class="text-4xl md:text-6xl font-bold mb-6 animate-fade-in">
+          Discover Amazing Products
+        </h1>
+        <p class="text-xl md:text-2xl mb-8 text-primary-100 animate-slide-up">
+          Find the perfect items for your lifestyle with our curated collection
+        </p>
+        <div class="flex flex-col sm:flex-row gap-4 justify-center animate-scale-in">
+          <Button variant="secondary" size="lg" href="#products">
+            Browse Products
+          </Button>
+          <Button variant="outline" size="lg" href="#filters">
+            Filter & Sort
+          </Button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main Content -->
+  <section id="products" class="py-12 bg-gray-50">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex flex-col lg:flex-row gap-8">
+        <!-- Filter Sidebar -->
+        <aside class="lg:w-1/4">
+          <div class="lg:sticky lg:top-8">
+            <FilterSidebar 
+              categories={categories}
+              activeFilters={{
+                categories: [],
+                priceRange: [0, 1000],
+                attributes: []
+              }}
+            />
+          </div>
+        </aside>
+
+        <!-- Products Section -->
+        <main class="lg:w-3/4">
+          <!-- Sort and View Options -->
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 space-y-4 sm:space-y-0">
+            <div class="flex items-center space-x-4">
+              <span class="text-sm text-gray-600">
+                Showing {products.length} products
+              </span>
+              <select class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+                {sortOptions.map(option => (
+                  <option value={option.value}>{option.label}</option>
+                ))}
+              </select>
+            </div>
+            
+            <div class="flex items-center space-x-2">
+              <span class="text-sm text-gray-600">View:</span>
+              <div class="flex border border-gray-300 rounded-lg overflow-hidden">
+                <button class="px-3 py-2 bg-primary-600 text-white text-sm font-medium">
+                  Grid
+                </button>
+                <button class="px-3 py-2 bg-white text-gray-600 text-sm font-medium hover:bg-gray-50">
+                  List
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Active Filters -->
+          <div class="flex flex-wrap gap-2 mb-6">
+            <span class="text-sm text-gray-600">Active filters:</span>
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-primary-100 text-primary-800">
+              Electronics
+              <button class="ml-2 text-primary-600 hover:text-primary-800">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </span>
+            <button class="text-sm text-primary-600 hover:text-primary-800 font-medium">
+              Clear all filters
+            </button>
+          </div>
+
+          <!-- Product Grid -->
+          <ProductGrid 
+            products={products}
+            layout="grid"
+            columns={3}
+            loading={false}
+          />
+
+          <!-- Load More Button -->
+          <div class="text-center mt-12">
+            <Button variant="outline" size="lg">
+              Load More Products
+            </Button>
+          </div>
+        </main>
+      </div>
+    </div>
+  </section>
+
+  <!-- Newsletter Section -->
+  <section class="py-16 bg-gradient-to-r from-accent-coral-500 to-accent-teal-500 text-white">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <h2 class="text-3xl font-bold mb-4">Stay Updated</h2>
+      <p class="text-xl mb-8 text-white/90">Get the latest product updates and exclusive offers</p>
+      
+      <div class="max-w-md mx-auto">
+        <div class="flex">
+          <input
+            type="email"
+            placeholder="Enter your email"
+            class="flex-1 px-4 py-3 rounded-l-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-white"
+          />
+          <Button variant="secondary" size="lg" class="rounded-l-none">
+            Subscribe
+          </Button>
+        </div>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

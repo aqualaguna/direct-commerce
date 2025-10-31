@@ -1,0 +1,381 @@
+---
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import Breadcrumbs from '@/components/ui/Breadcrumbs.astro';
+import Button from '@/components/ui/Button.astro';
+import Badge from '@/components/ui/Badge.astro';
+import Card from '@/components/ui/Card.astro';
+
+export async function getStaticPaths() {
+  return [
+    { params: { slug: 'premium-wireless-headphones' } },
+    { params: { slug: 'smart-fitness-watch' } },
+    { params: { slug: 'wireless-charging-pad' } },
+    { params: { slug: 'bluetooth-speaker' } },
+    { params: { slug: 'gaming-mechanical-keyboard' } },
+    { params: { slug: 'usb-c-hub' } },
+  ];
+}
+
+// Mock product data - in real implementation, this would come from API
+const product = {
+  id: '1',
+  name: 'Premium Wireless Headphones',
+  slug: 'premium-wireless-headphones',
+  price: 299.99,
+  salePrice: 199.99,
+  images: [
+    'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=600&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1484704849700-f032a568e944?w=600&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1583394838336-acd977736f90?w=600&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=600&h=600&fit=crop',
+  ],
+  rating: 4.8,
+  reviewCount: 124,
+  description: 'Experience premium sound quality with our wireless headphones featuring active noise cancellation, 30-hour battery life, and comfortable over-ear design.',
+  longDescription: 'These premium wireless headphones deliver exceptional audio quality with our proprietary 40mm drivers and advanced noise cancellation technology. The comfortable memory foam ear cushions and adjustable headband ensure all-day comfort, while the 30-hour battery life keeps you connected throughout your day.',
+  features: [
+    'Active Noise Cancellation',
+    '30-hour battery life',
+    'Quick charge (3 hours in 15 minutes)',
+    'Premium 40mm drivers',
+    'Comfortable over-ear design',
+    'Bluetooth 5.0 connectivity',
+    'Voice assistant compatible',
+    'Foldable design for travel'
+  ],
+  specifications: {
+    'Driver Size': '40mm',
+    'Frequency Response': '20Hz - 20kHz',
+    'Battery Life': '30 hours',
+    'Charging Time': '3 hours',
+    'Quick Charge': '15 minutes for 3 hours',
+    'Connectivity': 'Bluetooth 5.0',
+    'Weight': '250g',
+    'Cable Length': '1.2m'
+  },
+  variants: {
+    color: [
+      { name: 'Black', value: 'black', available: true },
+      { name: 'White', value: 'white', available: true },
+      { name: 'Blue', value: 'blue', available: false },
+    ],
+    size: [
+      { name: 'Small', value: 's', available: true },
+      { name: 'Medium', value: 'm', available: true },
+      { name: 'Large', value: 'l', available: true },
+    ]
+  },
+  isNew: true,
+  isOnSale: true,
+  isFeatured: false,
+  isOutOfStock: false,
+  stock: 15,
+  category: 'Audio',
+  brand: 'TechSound',
+  tags: ['wireless', 'noise-cancellation', 'premium', 'bluetooth'],
+};
+
+const relatedProducts = [
+  {
+    id: '2',
+    name: 'Smart Fitness Watch',
+    slug: 'smart-fitness-watch',
+    price: 199.99,
+    image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=300&h=300&fit=crop',
+    rating: 4.6,
+    reviewCount: 89,
+  },
+  {
+    id: '3',
+    name: 'Wireless Charging Pad',
+    slug: 'wireless-charging-pad',
+    price: 49.99,
+    image: 'https://images.unsplash.com/photo-1583394838336-acd977736f90?w=300&h=300&fit=crop',
+    rating: 4.4,
+    reviewCount: 67,
+  },
+  {
+    id: '4',
+    name: 'Bluetooth Speaker',
+    slug: 'bluetooth-speaker',
+    price: 79.99,
+    salePrice: 59.99,
+    image: 'https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=300&h=300&fit=crop',
+    rating: 4.7,
+    reviewCount: 156,
+  },
+];
+
+
+const pageTitle = `${product.name} - Premium Audio`;
+const pageDescription = product.description;
+---
+
+<BaseLayout title={pageTitle} description={pageDescription}>
+  <!-- Breadcrumbs -->
+  <div class="bg-white border-b border-gray-200">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <Breadcrumbs 
+        items={[
+          { name: 'Home', href: '/' },
+          { name: 'Products', href: '/products' },
+          { name: product.category, href: `/categories/${product.category.toLowerCase()}` },
+          { name: product.name }
+        ]}
+      />
+    </div>
+  </div>
+
+  <!-- Product Details -->
+  <section class="py-12 bg-white">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-12">
+        <!-- Product Images -->
+        <div class="space-y-4">
+          <!-- Main Image -->
+          <div class="aspect-square bg-gray-100 rounded-2xl overflow-hidden">
+            <img
+              src={product.images[0]}
+              alt={product.name}
+              class="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+            />
+          </div>
+          
+          <!-- Thumbnail Images -->
+          <div class="grid grid-cols-4 gap-4">
+            {product.images.map((image, index) => (
+              <div class="aspect-square bg-gray-100 rounded-lg overflow-hidden cursor-pointer hover:ring-2 hover:ring-primary-500 transition-all">
+                <img
+                  src={image}
+                  alt={`${product.name} view ${index + 1}`}
+                  class="w-full h-full object-cover"
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <!-- Product Info -->
+        <div class="space-y-6">
+          <!-- Badges -->
+          <div class="flex items-center space-x-2">
+            {product.isNew && <Badge variant="new" />}
+            {product.isOnSale && <Badge variant="sale" />}
+            {product.isFeatured && <Badge variant="featured" />}
+          </div>
+
+          <!-- Product Title -->
+          <h1 class="text-3xl font-bold text-gray-900">{product.name}</h1>
+
+          <!-- Rating -->
+          <div class="flex items-center space-x-2">
+            <div class="flex items-center">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <svg
+                  class={`w-5 h-5 ${i < Math.floor(product.rating) ? 'text-yellow-400' : 'text-gray-300'}`}
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                </svg>
+              ))}
+            </div>
+            <span class="text-sm text-gray-600">({product.reviewCount} reviews)</span>
+          </div>
+
+          <!-- Price -->
+          <div class="flex items-center space-x-4">
+            {product.salePrice ? (
+              <>
+                <span class="text-3xl font-bold text-accent-coral-600">
+                  ${product.salePrice}
+                </span>
+                <span class="text-xl text-gray-500 line-through">
+                  ${product.price}
+                </span>
+                <span class="bg-accent-coral-100 text-accent-coral-800 px-2 py-1 rounded text-sm font-medium">
+                  Save ${product.price - product.salePrice}
+                </span>
+              </>
+            ) : (
+              <span class="text-3xl font-bold text-gray-900">
+                ${product.price}
+              </span>
+            )}
+          </div>
+
+          <!-- Description -->
+          <p class="text-gray-600 text-lg">{product.description}</p>
+
+          <!-- Variants -->
+          <div class="space-y-4">
+            <!-- Color Selection -->
+            <div>
+              <h3 class="text-sm font-medium text-gray-900 mb-2">Color</h3>
+              <div class="flex space-x-2">
+                {product.variants.color.map(variant => (
+                  <button
+                    class={`px-4 py-2 border-2 rounded-lg text-sm font-medium transition-colors ${
+                      variant.available
+                        ? 'border-gray-300 text-gray-700 hover:border-primary-500 hover:text-primary-600'
+                        : 'border-gray-200 text-gray-400 cursor-not-allowed'
+                    }`}
+                    disabled={!variant.available}
+                  >
+                    {variant.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <!-- Size Selection -->
+            <div>
+              <h3 class="text-sm font-medium text-gray-900 mb-2">Size</h3>
+              <div class="flex space-x-2">
+                {product.variants.size.map(variant => (
+                  <button
+                    class={`px-4 py-2 border-2 rounded-lg text-sm font-medium transition-colors ${
+                      variant.available
+                        ? 'border-gray-300 text-gray-700 hover:border-primary-500 hover:text-primary-600'
+                        : 'border-gray-200 text-gray-400 cursor-not-allowed'
+                    }`}
+                    disabled={!variant.available}
+                  >
+                    {variant.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <!-- Quantity -->
+          <div class="flex items-center space-x-4">
+            <h3 class="text-sm font-medium text-gray-900">Quantity</h3>
+            <div class="flex items-center border border-gray-300 rounded-lg">
+              <button class="px-3 py-2 text-gray-600 hover:text-gray-900">-</button>
+              <span class="px-4 py-2 border-x border-gray-300">1</span>
+              <button class="px-3 py-2 text-gray-600 hover:text-gray-900">+</button>
+            </div>
+            <span class="text-sm text-gray-500">{product.stock} in stock</span>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="flex space-x-4">
+            <Button variant="primary" size="lg" class="flex-1">
+              Add to Cart
+            </Button>
+            <Button variant="outline" size="lg">
+              <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+              </svg>
+              Wishlist
+            </Button>
+          </div>
+
+          <!-- Features -->
+          <div class="bg-gray-50 rounded-lg p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Key Features</h3>
+            <ul class="grid grid-cols-1 md:grid-cols-2 gap-2">
+              {product.features.map(feature => (
+                <li class="flex items-center text-sm text-gray-600">
+                  <svg class="w-4 h-4 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                  </svg>
+                  {feature}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Product Tabs -->
+  <section class="py-12 bg-gray-50">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="max-w-4xl mx-auto">
+        <!-- Tab Navigation -->
+        <div class="border-b border-gray-200 mb-8">
+          <nav class="flex space-x-8">
+            <button class="py-2 px-1 border-b-2 border-primary-500 text-primary-600 font-medium">
+              Description
+            </button>
+            <button class="py-2 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700">
+              Specifications
+            </button>
+            <button class="py-2 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700">
+              Reviews ({product.reviewCount})
+            </button>
+          </nav>
+        </div>
+
+        <!-- Tab Content -->
+        <div class="prose max-w-none">
+          <h3 class="text-xl font-semibold text-gray-900 mb-4">Product Description</h3>
+          <p class="text-gray-600 mb-6">{product.longDescription}</p>
+          
+          <h4 class="text-lg font-semibold text-gray-900 mb-3">Specifications</h4>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {Object.entries(product.specifications).map(([key, value]) => (
+              <div class="flex justify-between py-2 border-b border-gray-200">
+                <span class="font-medium text-gray-900">{key}</span>
+                <span class="text-gray-600">{value}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Related Products -->
+  <section class="py-12 bg-white">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+      <h2 class="text-2xl font-bold text-gray-900 mb-8">Related Products</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {relatedProducts.map(product => (
+          <Card variant="default" hover={true} class="group">
+            <div class="aspect-square bg-gray-100 rounded-lg overflow-hidden mb-4">
+              <img
+                src={product.image}
+                alt={product.name}
+                class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              />
+            </div>
+            <h3 class="font-semibold text-gray-900 mb-2">{product.name}</h3>
+            <div class="flex items-center mb-2">
+              <div class="flex items-center">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <svg
+                    class={`w-4 h-4 ${i < Math.floor(product.rating) ? 'text-yellow-400' : 'text-gray-300'}`}
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                  </svg>
+                ))}
+              </div>
+              <span class="text-sm text-gray-500 ml-1">({product.reviewCount})</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <div class="flex items-center space-x-2">
+                {product.salePrice ? (
+                  <>
+                    <span class="text-lg font-bold text-accent-coral-600">${product.salePrice}</span>
+                    <span class="text-sm text-gray-500 line-through">${product.price}</span>
+                  </>
+                ) : (
+                  <span class="text-lg font-bold text-gray-900">${product.price}</span>
+                )}
+              </div>
+              <Button variant="primary" size="sm">
+                Add to Cart
+              </Button>
+            </div>
+          </Card>
+        ))}
+      </div>
+    </div>
+  </section>
+</BaseLayout>

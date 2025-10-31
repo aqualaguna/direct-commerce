@@ -1,0 +1,62 @@
+---
+export interface Props {
+  variant?: 'sale' | 'new' | 'featured' | 'out-of-stock' | 'coral' | 'teal' | 'purple' | 'success' | 'warning' | 'info';
+  size?: 'sm' | 'md' | 'lg';
+  position?: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right';
+  class?: string;
+}
+
+const {
+  variant = 'sale',
+  size = 'md',
+  position = 'top-right',
+  class: className = '',
+} = Astro.props;
+
+const baseClasses = 'inline-flex items-center font-semibold rounded-full transition-all duration-200';
+
+const variantClasses = {
+  sale: 'bg-accent-coral-500 text-white shadow-glow-coral',
+  new: 'bg-accent-teal-500 text-white shadow-glow-teal',
+  featured: 'bg-accent-purple-500 text-white shadow-glow-purple',
+  'out-of-stock': 'bg-gray-500 text-white',
+  coral: 'bg-accent-coral-100 text-accent-coral-800 border border-accent-coral-200',
+  teal: 'bg-accent-teal-100 text-accent-teal-800 border border-accent-teal-200',
+  purple: 'bg-accent-purple-100 text-accent-purple-800 border border-accent-purple-200',
+  success: 'bg-success-100 text-success-800 border border-success-200',
+  warning: 'bg-warning-100 text-warning-800 border border-warning-200',
+  info: 'bg-info-100 text-info-800 border border-info-200',
+};
+
+const sizeClasses = {
+  sm: 'px-2 py-0.5 text-xs',
+  md: 'px-3 py-1 text-sm',
+  lg: 'px-4 py-1.5 text-base',
+};
+
+const positionClasses = {
+  'top-left': 'absolute top-2 left-2 z-10',
+  'top-right': 'absolute top-2 right-2 z-10',
+  'bottom-left': 'absolute bottom-2 left-2 z-10',
+  'bottom-right': 'absolute bottom-2 right-2 z-10',
+};
+
+const badgeClasses = `${baseClasses} ${variantClasses[variant]} ${sizeClasses[size]} ${positionClasses[position]} ${className}`;
+
+const badgeText = {
+  sale: 'Sale',
+  new: 'New',
+  featured: 'Featured',
+  'out-of-stock': 'Out of Stock',
+  coral: 'Special',
+  teal: 'Trending',
+  purple: 'Premium',
+  success: 'Available',
+  warning: 'Limited',
+  info: 'Info',
+};
+---
+
+<span class={badgeClasses}>
+  <slot>{badgeText[variant]}</slot>
+</span>

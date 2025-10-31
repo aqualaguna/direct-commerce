@@ -1,0 +1,92 @@
+---
+import ProductCard from './ProductCard.astro';
+
+export interface Props {
+  products: Array<{
+    id: string;
+    name: string;
+    slug: string;
+    price: number;
+    salePrice?: number;
+    image: string;
+    rating?: number;
+    reviewCount?: number;
+    description?: string;
+    isNew?: boolean;
+    isOnSale?: boolean;
+    isFeatured?: boolean;
+    isOutOfStock?: boolean;
+  }>;
+  layout?: 'grid' | 'list' | 'compact';
+  columns?: 1 | 2 | 3 | 4 | 5 | 6;
+  loading?: boolean;
+  emptyMessage?: string;
+  class?: string;
+}
+
+const {
+  products = [],
+  layout = 'grid',
+  columns = 4,
+  loading = false,
+  emptyMessage = 'No products found',
+  class: className = '',
+} = Astro.props;
+
+const gridClasses = {
+  1: 'grid-cols-1',
+  2: 'grid-cols-1 md:grid-cols-2',
+  3: 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3',
+  4: 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4',
+  5: 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5',
+  6: 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6',
+};
+
+const containerClasses = layout === 'list' 
+  ? 'space-y-4'
+  : layout === 'compact'
+  ? 'space-y-2'
+  : `grid gap-6 ${gridClasses[columns]}`;
+---
+
+<div class={`${containerClasses} ${className}`}>
+  {loading ? (
+    <!-- Loading State -->
+    {Array.from({ length: 8 }).map(() => (
+      <div class="animate-pulse">
+        <div class="bg-gray-200 rounded-lg h-64 mb-4"></div>
+        <div class="space-y-2">
+          <div class="h-4 bg-gray-200 rounded w-3/4"></div>
+          <div class="h-4 bg-gray-200 rounded w-1/2"></div>
+          <div class="h-6 bg-gray-200 rounded w-1/4"></div>
+        </div>
+      </div>
+    ))}
+  ) : products.length === 0 ? (
+    <!-- Empty State -->
+    <div class="col-span-full flex flex-col items-center justify-center py-12 text-center">
+      <div class="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+        <svg class="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+        </svg>
+      </div>
+      <h3 class="text-lg font-semibold text-gray-900 mb-2">No Products Found</h3>
+      <p class="text-gray-600 mb-4">{emptyMessage}</p>
+      <button class="bg-primary-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-primary-700 transition-colors">
+        Clear Filters
+      </button>
+    </div>
+  ) : (
+    <!-- Product Grid -->
+    {products.map((product, index) => (
+      <div class="animate-fade-in" style={`animation-delay: ${index * 0.1}s`}>
+        <ProductCard 
+          product={product} 
+          layout={layout}
+          showQuickAdd={true}
+          showWishlist={true}
+        />
+      </div>
+    ))}
+  )}
+</div>

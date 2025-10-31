@@ -1,139 +1,365 @@
 ---
 import BaseLayout from '@/layouts/BaseLayout.astro';
+import Button from '@/components/ui/Button.astro';
+import Badge from '@/components/ui/Badge.astro';
+import HeroCarouselClient from '@/components/home/HeroCarouselClient';
+import CategoryCarouselClient from '@/components/home/CategoryCarouselClient';
 
 const pageTitle = 'Welcome to Our Ecommerce Store';
 const pageDescription = 'Discover amazing products at great prices. Shop with confidence and enjoy fast shipping.';
+
+// Mock data for homepage
+const featuredProducts = [
+  {
+    id: '1',
+    name: 'Premium Wireless Headphones',
+    slug: 'premium-wireless-headphones',
+    price: 299.99,
+    salePrice: 199.99,
+    image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&h=400&fit=crop',
+    rating: 4.8,
+    reviewCount: 124,
+    description: 'High-quality wireless headphones with noise cancellation.',
+    isNew: true,
+    isOnSale: true,
+    isFeatured: false,
+    isOutOfStock: false,
+  },
+  {
+    id: '2',
+    name: 'Smart Fitness Watch',
+    slug: 'smart-fitness-watch',
+    price: 199.99,
+    image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&h=400&fit=crop',
+    rating: 4.6,
+    reviewCount: 89,
+    description: 'Track your fitness goals with this advanced smartwatch.',
+    isNew: false,
+    isOnSale: false,
+    isFeatured: true,
+    isOutOfStock: false,
+  },
+  {
+    id: '3',
+    name: 'Bluetooth Speaker',
+    slug: 'bluetooth-speaker',
+    price: 79.99,
+    salePrice: 59.99,
+    image: 'https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?w=400&h=400&fit=crop',
+    rating: 4.7,
+    reviewCount: 156,
+    description: 'Portable Bluetooth speaker with 360-degree sound.',
+    isNew: false,
+    isOnSale: true,
+    isFeatured: false,
+    isOutOfStock: false,
+  },
+  {
+    id: '4',
+    name: 'Gaming Mechanical Keyboard',
+    slug: 'gaming-mechanical-keyboard',
+    price: 149.99,
+    image: 'https://images.unsplash.com/photo-1541140532154-b024d705b90a?w=400&h=400&fit=crop',
+    rating: 4.9,
+    reviewCount: 203,
+    description: 'Professional gaming keyboard with mechanical switches.',
+    isNew: true,
+    isOnSale: false,
+    isFeatured: true,
+    isOutOfStock: false,
+  },
+  {
+    id: '5',
+    name: 'Wireless Mouse',
+    slug: 'wireless-mouse',
+    price: 49.99,
+    image: 'https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=400&h=400&fit=crop',
+    rating: 4.5,
+    reviewCount: 78,
+    description: 'Ergonomic wireless mouse with precision tracking.',
+    isNew: false,
+    isOnSale: false,
+    isFeatured: false,
+    isOutOfStock: false,
+  },
+  {
+    id: '6',
+    name: 'USB-C Hub',
+    slug: 'usb-c-hub',
+    price: 89.99,
+    salePrice: 69.99,
+    image: 'https://images.unsplash.com/photo-1625842268584-8f3296236761?w=400&h=400&fit=crop',
+    rating: 4.4,
+    reviewCount: 92,
+    description: 'Multi-port USB-C hub with HDMI and SD card slots.',
+    isNew: true,
+    isOnSale: true,
+    isFeatured: false,
+    isOutOfStock: false,
+  },
+  {
+    id: '7',
+    name: 'LED Desk Lamp',
+    slug: 'led-desk-lamp',
+    price: 39.99,
+    image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop',
+    rating: 4.3,
+    reviewCount: 156,
+    description: 'Adjustable LED desk lamp with touch controls.',
+    isNew: false,
+    isOnSale: false,
+    isFeatured: false,
+    isOutOfStock: false,
+  },
+  {
+    id: '8',
+    name: 'Phone Stand',
+    slug: 'phone-stand',
+    price: 24.99,
+    image: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=400&h=400&fit=crop',
+    rating: 4.6,
+    reviewCount: 203,
+    description: 'Adjustable phone stand for desk and travel.',
+    isNew: false,
+    isOnSale: false,
+    isFeatured: true,
+    isOutOfStock: false,
+  },
+];
+
+const categories = [
+{
+    name: 'Electronics',
+    slug: 'electronics',
+    image: 'https://images.unsplash.com/photo-1498049794561-7780e7231661?w=300&h=200&fit=crop',
+    productCount: 45,
+    color: 'from-accent-coral-500 to-accent-coral-600',
+  },
+  {
+    name: 'Audio',
+    slug: 'audio',
+    image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=300&h=200&fit=crop',
+    productCount: 32,
+    color: 'from-accent-teal-500 to-accent-teal-600',
+  },
+  {
+    name: 'Gaming',
+    slug: 'gaming',
+    image: 'https://images.unsplash.com/photo-1541140532154-b024d705b90a?w=300&h=200&fit=crop',
+    productCount: 18,
+    color: 'from-accent-purple-500 to-accent-purple-600',
+  },
+  {
+    name: 'Accessories',
+    slug: 'accessories',
+    image: 'https://images.unsplash.com/photo-1583394838336-acd977736f90?w=300&h=200&fit=crop',
+    productCount: 25,
+    color: 'from-primary-500 to-primary-600',
+  },
+  
+];
+
+const partners = [
+  {
+    name: 'Omron',
+    logo: '/images/partners/Omron.png',
+    description: 'Medical Equipment',
+  },
+  {
+    name: 'Beurer',
+    logo: '/images/partners/Beurer.png',
+    description: 'Health & Wellness',
+  },
+  {
+    name: 'Yuwell',
+    logo: '/images/partners/Yuwell.png',
+    description: 'Medical Devices',
+  },
+  {
+    name: 'Sinocare',
+    logo: '/images/partners/Sinocare.png',
+    description: 'Diagnostic Equipment',
+  },
+  {
+    name: 'Nesco',
+    logo: '/images/partners/Nesco.png',
+    description: 'Medical Supplies',
+  },
+  {
+    name: 'Autocheck',
+    logo: '/images/partners/Autocheck.png',
+    description: 'Health Monitoring',
+  },
+  {
+    name: 'General Care',
+    logo: '/images/partners/General Care.png',
+    description: 'Healthcare Solutions',
+  },
+  {
+    name: 'GP Care',
+    logo: '/images/partners/GPcare.png',
+    description: 'Medical Technology',
+  },
+];
+
 ---
 
 <BaseLayout title={pageTitle} description={pageDescription}>
-  <!-- Hero Section -->
-  <section class="bg-gradient-to-r from-primary-600 to-primary-800 text-white">
-    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-24">
-      <div class="text-center">
-        <h1 class="text-4xl md:text-6xl font-bold mb-6">
-          Welcome to Our Store
-        </h1>
-        <p class="text-xl md:text-2xl mb-8 text-primary-100">
-          Discover amazing products at great prices
-        </p>
-        <div class="flex flex-col sm:flex-row gap-4 justify-center">
-          <a
-            href="/products"
-            class="bg-white text-primary-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
-          >
-            Shop Now
-          </a>
-          <a
-            href="/categories"
-            class="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-primary-600 transition-colors"
-          >
-            Browse Categories
-          </a>
-        </div>
-      </div>
-    </div>
-  </section>
+    <!-- Hero Carousel Section -->
+    <HeroCarouselClient client:load />
 
   <!-- Features Section -->
-  <section class="py-16 bg-white">
+  <section class="py-20 bg-white">
     <div class="container mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="text-center mb-12">
-        <h2 class="text-3xl font-bold text-gray-900 mb-4">Why Choose Us</h2>
-        <p class="text-lg text-gray-600">We provide the best shopping experience</p>
+      <div class="text-center mb-16">
+        <h2 class="text-4xl font-bold text-gray-900 mb-6 animate-fade-in">Why Choose Us</h2>
+        <p class="text-xl text-gray-600 max-w-2xl mx-auto animate-slide-up">We provide the best shopping experience with premium products and exceptional service</p>
       </div>
       
       <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-        <div class="text-center">
-          <div class="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg class="w-8 h-8 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div class="text-center group animate-fade-in stagger-1">
+          <div class="w-20 h-20 bg-gradient-to-br from-accent-coral-100 to-accent-coral-200 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
+            <svg class="w-10 h-10 text-accent-coral-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
             </svg>
           </div>
-          <h3 class="text-xl font-semibold mb-2">Fast Shipping</h3>
-          <p class="text-gray-600">Free shipping on orders over $50</p>
+          <h3 class="text-2xl font-bold mb-4 text-gray-900">Lightning Fast Shipping</h3>
+          <p class="text-gray-600 text-lg">Free shipping on orders over $50 with same-day processing and tracking</p>
         </div>
         
-        <div class="text-center">
-          <div class="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg class="w-8 h-8 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div class="text-center group animate-fade-in stagger-2">
+          <div class="w-20 h-20 bg-gradient-to-br from-accent-teal-100 to-accent-teal-200 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
+            <svg class="w-10 h-10 text-accent-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
-          <h3 class="text-xl font-semibold mb-2">Quality Guarantee</h3>
-          <p class="text-gray-600">30-day money-back guarantee</p>
+          <h3 class="text-2xl font-bold mb-4 text-gray-900">Premium Quality</h3>
+          <p class="text-gray-600 text-lg">30-day money-back guarantee on all products with lifetime warranty on select items</p>
         </div>
         
-        <div class="text-center">
-          <div class="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg class="w-8 h-8 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div class="text-center group animate-fade-in stagger-3">
+          <div class="w-20 h-20 bg-gradient-to-br from-accent-purple-100 to-accent-purple-200 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
+            <svg class="w-10 h-10 text-accent-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192L5.636 18.364M12 2.25a9.75 9.75 0 109.75 9.75A9.75 9.75 0 0012 2.25z" />
             </svg>
           </div>
-          <h3 class="text-xl font-semibold mb-2">24/7 Support</h3>
-          <p class="text-gray-600">Round-the-clock customer service</p>
+          <h3 class="text-2xl font-bold mb-4 text-gray-900">Expert Support</h3>
+          <p class="text-gray-600 text-lg">24/7 customer service with dedicated product specialists and live chat</p>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- Featured Products Section -->
-  <section class="py-16 bg-gray-50">
+  <!-- Categories Section -->
+  <section class="py-20 bg-gray-50">
     <div class="container mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="text-center mb-12">
-        <h2 class="text-3xl font-bold text-gray-900 mb-4">Featured Products</h2>
-        <p class="text-lg text-gray-600">Check out our most popular items</p>
+      <div class="text-center mb-16">
+        <h2 class="text-4xl font-bold text-gray-900 mb-6 animate-fade-in">Shop by Category</h2>
+        <p class="text-xl text-gray-600 max-w-2xl mx-auto animate-slide-up">Explore our curated collections of premium products</p>
       </div>
       
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <!-- Placeholder for featured products -->
-        {Array.from({ length: 4 }).map((_, i) => (
-          <div class="bg-white rounded-lg shadow-md overflow-hidden">
-            <div class="h-48 bg-gray-200 flex items-center justify-center">
-              <span class="text-gray-500">Product Image {i + 1}</span>
-            </div>
-            <div class="p-4">
-              <h3 class="font-semibold text-gray-900 mb-2">Product {i + 1}</h3>
-              <p class="text-gray-600 text-sm mb-2">Product description goes here</p>
-              <div class="flex justify-between items-center">
-                <span class="text-lg font-bold text-primary-600">$99.99</span>
-                <button class="bg-primary-600 text-white px-4 py-2 rounded text-sm hover:bg-primary-700 transition-colors">
-                  Add to Cart
-                </button>
+      <div class="animate-fade-in">
+        <CategoryCarouselClient client:load categories={categories} />
+      </div>
+    </div>
+  </section>
+
+  <!-- Recommended Products Section -->
+  <section class="py-20 bg-white">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center mb-16">
+        <h2 class="text-4xl font-bold text-gray-900 mb-6 animate-fade-in">Recommended for you</h2>
+        <p class="text-xl text-gray-600 max-w-2xl mx-auto animate-slide-up">Discover our handpicked selection of premium products</p>
+      </div>
+      
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-2 sm:gap-3 md:gap-4 lg:gap-5 xl:gap-6">
+        {featuredProducts.map((product, index) => (
+          <div class={`group animate-fade-in stagger-${index + 1} bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden`}>
+            <div class="relative">
+              <div class="aspect-square bg-gray-100 rounded-t-xl overflow-hidden">
+                <img
+                  src={product.image}
+                  alt={product.name}
+                  class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                />
               </div>
+              
+              <!-- Badges -->
+              <div class="absolute top-2 left-2 flex flex-col space-y-2">
+                {product.isNew && <Badge variant="new" />}
+                {product.isOnSale && <Badge variant="sale" />}
+                {product.isFeatured && <Badge variant="featured" />}
+              </div>
+            </div>
+            
+            <div class="p-2 sm:p-4 flex flex-col h-full">
+              <h3 class="font-bold text-gray-900 mb-2 sm:mb-3 text-sm sm:text-lg line-clamp-2">{product.name}</h3>
+              
+              <!-- Rating -->
+              <div class="flex items-center mb-2 sm:mb-3">
+                <svg class="w-3 h-3 sm:w-4 sm:h-4 text-yellow-400 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                </svg>
+                <span class="text-xs sm:text-sm text-gray-600 font-medium">{product.rating}</span>
+              </div>
+              
+              <!-- Price -->
+              <div class="flex items-center mb-3">
+                <div class="flex items-center space-x-1 sm:space-x-2">
+                  {product.salePrice ? (
+                    <>
+                      <span class="text-lg sm:text-xl font-bold text-accent-coral-600">${product.salePrice}</span>
+                      <span class="text-xs sm:text-sm text-gray-500 line-through">${product.price}</span>
+                    </>
+                  ) : (
+                    <span class="text-lg sm:text-xl font-bold text-gray-900">${product.price}</span>
+                  )}
+                </div>
+              </div>
+              
+              <!-- Add to Cart Button -->
+              <Button variant="primary" size="sm" class="text-xs sm:text-sm px-2 py-1 sm:px-3 sm:py-2 w-full hidden">
+                Add to Cart
+              </Button>
             </div>
           </div>
         ))}
       </div>
       
-      <div class="text-center mt-8">
-        <a
-          href="/products"
-          class="inline-block bg-primary-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-primary-700 transition-colors"
-        >
+      <div class="text-center mt-12 animate-fade-in">
+        <Button variant="primary" size="lg" href="/products">
           View All Products
-        </a>
+        </Button>
       </div>
     </div>
   </section>
 
-  <!-- Newsletter Section -->
-  <section class="py-16 bg-primary-600 text-white">
-    <div class="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
-      <h2 class="text-3xl font-bold mb-4">Stay Updated</h2>
-      <p class="text-xl mb-8 text-primary-100">Get the latest updates and exclusive offers</p>
+  <!-- Our Partners Section -->
+  <section class="py-20 bg-white">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="text-center mb-16">
+        <h2 class="text-4xl font-bold text-gray-900 mb-6 animate-fade-in">
+          <span class="text-primary-600">Our</span> Partners
+        </h2>
+        <p class="text-xl text-gray-600 max-w-2xl mx-auto animate-slide-up">
+          We have worked with renowned names. From hospitals, clinics and homes, we have worked with partners from all backgrounds.
+        </p>
+      </div>
       
-      <div class="max-w-md mx-auto">
-        <div class="flex">
-          <input
-            type="email"
-            placeholder="Enter your email"
-            class="flex-1 px-4 py-3 rounded-l-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-white"
-          />
-          <button class="bg-white text-primary-600 px-6 py-3 rounded-r-lg font-semibold hover:bg-gray-100 transition-colors">
-            Subscribe
-          </button>
-        </div>
+      <div class="grid grid-cols-2 md:grid-cols-6 gap-4">
+        {partners.map((partner, index) => (
+          <div class={`group animate-fade-in stagger-${index + 1}`}>
+            <div class="flex items-center justify-center w-full h-30 bg-white rounded-xl transition-all duration-300 group-hover:scale-105 p-2">
+              <img
+                src={partner.logo}
+                alt={partner.name}
+                class="w-full h-full object-contain transition-transform duration-300 group-hover:scale-110"
+              />
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   </section>
+
 </BaseLayout>
