@@ -55,6 +55,11 @@ export const useAuthStore = create<AuthStore>()(
         localStorage.removeItem('authToken');
         localStorage.removeItem('user');
         
+        // Clear cookie (for middleware)
+        if (typeof document !== 'undefined') {
+          document.cookie = 'authToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+        }
+        
         set({
           user: null,
           token: null,
@@ -82,6 +87,17 @@ export const useAuthStore = create<AuthStore>()(
         if (token && userStr) {
           try {
             const user = JSON.parse(userStr);
+            
+            // Set cookie if it doesn't exist (for middleware to access)
+            if (typeof document !== 'undefined') {
+              const cookieExists = document.cookie.split(';').some(c => c.trim().startsWith('authToken='));
+              if (!cookieExists) {
+                const expires = new Date();
+                expires.setTime(expires.getTime() + 7 * 24 * 60 * 60 * 1000);
+                document.cookie = `authToken=${token}; expires=${expires.toUTCString()}; path=/; SameSite=Lax`;
+              }
+            }
+            
             set({
               user,
               token,
@@ -91,6 +107,9 @@ export const useAuthStore = create<AuthStore>()(
             // Invalid user data, clear storage
             localStorage.removeItem('authToken');
             localStorage.removeItem('user');
+            if (typeof document !== 'undefined') {
+              document.cookie = 'authToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+            }
             set({
               user: null,
               token: null,

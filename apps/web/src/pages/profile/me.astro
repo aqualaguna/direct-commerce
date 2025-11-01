@@ -1,0 +1,24 @@
+---
+export const prerender = false;
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import ProfileTabs from '@/components/profile/ProfileTabs';
+
+const pageTitle = 'My Profile - Ecommerce Store';
+const pageDescription = 'Manage your profile, preferences, and privacy settings.';
+
+// This page is protected by middleware
+const user = Astro.locals['user'];
+---
+
+<BaseLayout title={pageTitle} description={pageDescription}>
+    <div class="min-h-screen bg-gray-50 py-12">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="mb-6">
+          <h1 class="text-3xl font-bold text-gray-900">My Profile</h1>
+          <p class="mt-2 text-sm text-gray-600">Manage your account settings and preferences</p>
+        </div>
+        <ProfileTabs client:load client:only="react" />
+      </div>
+    </div>
+</BaseLayout>
+

@@ -96,6 +96,12 @@ export default function RegisterForm({ onSuccess, onError, className = '' }: Reg
       localStorage.setItem('authToken', data.jwt);
       localStorage.setItem('user', JSON.stringify(data.user));
 
+      // Set cookie for middleware to access (server-side)
+      // Cookie expires in 7 days
+      const expires = new Date();
+      expires.setTime(expires.getTime() + 7 * 24 * 60 * 60 * 1000);
+      document.cookie = `authToken=${data.jwt}; expires=${expires.toUTCString()}; path=/; SameSite=Lax`;
+
       // Call success callback
       onSuccess?.(data.user);
 

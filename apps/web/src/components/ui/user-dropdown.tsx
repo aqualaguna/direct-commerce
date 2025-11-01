@@ -20,6 +20,22 @@ const UserDropdown: React.FC<UserDropdownProps> = ({
   onRegisterClick
 }) => {
   const { user, isAuthenticated, logout } = useAuthStore();
+
+  const handleLoginClick = () => {
+    if (onLoginClick) {
+      onLoginClick();
+    } else {
+      window.location.href = '/auth/login?callback=' + window.location.pathname;
+    }
+  };
+
+  const handleRegisterClick = () => {
+    if (onRegisterClick) {
+      onRegisterClick();
+    } else {
+      window.location.href = '/auth/register';
+    }
+  };
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -40,14 +56,13 @@ const UserDropdown: React.FC<UserDropdownProps> = ({
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="cursor-pointer">
-              <span>Profile</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem className="cursor-pointer">
+            <DropdownMenuItem 
+              className="cursor-pointer"
+              onClick={() => {
+                window.location.href = '/profile/me';
+              }}
+            >
               <span>Settings</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem className="cursor-pointer">
-              <span>Orders</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem 
@@ -63,13 +78,13 @@ const UserDropdown: React.FC<UserDropdownProps> = ({
             <DropdownMenuSeparator />
             <DropdownMenuItem 
               className="cursor-pointer"
-              onClick={onLoginClick}
+              onClick={handleLoginClick}
             >
               <span>Login</span>
             </DropdownMenuItem>
             <DropdownMenuItem 
               className="cursor-pointer"
-              onClick={onRegisterClick}
+              onClick={handleRegisterClick}
             >
               <span>Register</span>
             </DropdownMenuItem>

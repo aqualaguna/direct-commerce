@@ -1,12 +1,16 @@
 ---
 import UserDropdown from '../ui/user-dropdown.tsx';
 import { CategoryDropdown } from '../ui/CategoryDropdown.tsx';
+import AuthInitializer from '../auth/AuthInitializer.tsx';
 
 import { MdOutlineFavoriteBorder, MdOutlineShoppingCart, MdMyLocation, MdOutlineAccessTime, MdOutlineMenu, MdOutlineSearch } from "react-icons/md";
 import { LuArchive } from "react-icons/lu";
 
 const siteName = import.meta.env.PUBLIC_SITE_NAME || 'Ecommerce Store';
 ---
+
+<!-- Initialize auth state on page load -->
+<AuthInitializer client:load client:only="react" />
 
 <!-- Top Navigation Bar - Fixed at top -->
 <div class="header-top-bar border-b border-gray-100 bg-white">
@@ -182,6 +186,7 @@ const siteName = import.meta.env.PUBLIC_SITE_NAME || 'Ecommerce Store';
         </div>
         <!-- Mobile Menu Toggle -->
         <button
+          type="button"
           id="mobileMenuToggle"
           class="relative p-2 text-gray-600 hover:text-gray-900 md:hidden"
           aria-label="Open menu"
@@ -215,6 +220,7 @@ const siteName = import.meta.env.PUBLIC_SITE_NAME || 'Ecommerce Store';
       <!-- Mobile Menu Header -->
       <div class="flex items-center justify-end border-b border-gray-200 p-4">
         <button
+          type="button"
           id="mobileMenuClose"
           class="p-2 text-gray-600 hover:text-gray-900"
         >
@@ -309,66 +315,73 @@ const siteName = import.meta.env.PUBLIC_SITE_NAME || 'Ecommerce Store';
   </div>
 </div>
 
-<script>
-  // Wait for DOM to be ready
-  document.addEventListener('DOMContentLoaded', function () {
-    const mobileMenu = document.getElementById('mobileMenu');
-    const mobileMenuPanel = document.getElementById('mobileMenuPanel');
-    const mobileMenuToggle = document.getElementById('mobileMenuToggle');
-    const mobileMenuClose = document.getElementById('mobileMenuClose');
+<script is:inline>
+  (function() {
+    function initMobileMenu() {
+      const mobileMenu = document.getElementById('mobileMenu');
+      const mobileMenuPanel = document.getElementById('mobileMenuPanel');
+      const mobileMenuToggle = document.getElementById('mobileMenuToggle');
+      const mobileMenuClose = document.getElementById('mobileMenuClose');
 
-    function toggleMobileMenu() {
-      console.log('toggleMobileMenu called'); // Debug log
-      if (mobileMenu && mobileMenuPanel) {
-        console.log('Elements found, toggling menu'); // Debug log
+      if (!mobileMenu || !mobileMenuPanel || !mobileMenuToggle) {
+        // If elements aren't ready yet, try again after a short delay
+        setTimeout(initMobileMenu, 50);
+        return;
+      }
+
+      function toggleMobileMenu() {
+        if (!mobileMenu || !mobileMenuPanel) return;
+        
         if (mobileMenu.classList.contains('hidden')) {
-          console.log('Opening menu'); // Debug log
+          // Opening menu
           mobileMenu.classList.remove('hidden');
-          // Make sure the panel is visible immediately
           mobileMenuPanel.style.display = 'block';
-          mobileMenuPanel.style.transform = 'translateX(0)';
-          console.log('Menu should be visible now'); // Debug log
+          // Use requestAnimationFrame to ensure the display change takes effect before transform
+          requestAnimationFrame(() => {
+            mobileMenuPanel.style.transform = 'translateX(0)';
+          });
         } else {
-          console.log('Closing menu'); // Debug log
+          // Closing menu
           mobileMenuPanel.style.transform = 'translateX(100%)';
-          // Wait for animation to complete before hiding
           setTimeout(() => {
-            mobileMenu.classList.add('hidden');
-            mobileMenuPanel.style.display = 'none';
+            if (mobileMenu && mobileMenuPanel) {
+              mobileMenu.classList.add('hidden');
+              mobileMenuPanel.style.display = 'none';
+            }
           }, 300);
         }
-      } else {
-        console.log('Elements not found:', { mobileMenu, mobileMenuPanel }); // Debug log
       }
-    }
 
-    // Add click event to toggle button
-    if (mobileMenuToggle) {
-      console.log('Adding event listener to toggle button'); // Debug log
+      // Add click event to toggle button
       mobileMenuToggle.addEventListener('click', function (e) {
         e.preventDefault();
+        e.stopPropagation();
         toggleMobileMenu();
       });
-    } else {
-      console.log('Toggle button not found'); // Debug log
-    }
 
-    // Add click event to close button
-    if (mobileMenuClose) {
-      console.log('Adding event listener to close button'); // Debug log
-      mobileMenuClose.addEventListener('click', function (e) {
-        e.preventDefault();
-        toggleMobileMenu();
-      });
-    }
+      // Add click event to close button
+      if (mobileMenuClose) {
+        mobileMenuClose.addEventListener('click', function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          toggleMobileMenu();
+        });
+      }
 
-    // Close mobile menu when clicking outside
-    if (mobileMenu) {
+      // Close mobile menu when clicking outside (on the backdrop)
       mobileMenu.addEventListener('click', function (e) {
         if (e.target === this) {
           toggleMobileMenu();
         }
       });
     }
-  });
+
+    // Initialize when DOM is ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initMobileMenu);
+    } else {
+      // DOM is already ready
+      initMobileMenu();
+    }
+  })();
 </script>

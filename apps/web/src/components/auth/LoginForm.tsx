@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
+import { useAuthStore } from '@/stores/authStore';
 
 interface LoginFormProps {
   onSuccess?: (user: any) => void;
@@ -24,12 +25,25 @@ interface AuthResponse {
 }
 
 export default function LoginForm({ onSuccess, onError, className = '' }: LoginFormProps) {
+  const login = useAuthStore((state) => state.login);
   const [formData, setFormData] = useState<LoginData>({
     identifier: '',
     password: '',
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>('');
+  const [callbackUrl, setCallbackUrl] = useState<string>('/');
+
+  // Read callback query parameter from URL
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const callback = params.get('callback');
+      if (callback) {
+        setCallbackUrl(callback);
+      }
+    }
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -65,11 +79,23 @@ export default function LoginForm({ onSuccess, onError, className = '' }: LoginF
       localStorage.setItem('authToken', data.jwt);
       localStorage.setItem('user', JSON.stringify(data.user));
 
+      // Set cookie for middleware to access (server-side)
+      // Cookie expires in 7 days
+      const expires = new Date();
+      expires.setTime(expires.getTime() + 7 * 24 * 60 * 60 * 1000);
+      document.cookie = `authToken=${data.jwt}; expires=${expires.toUTCString()}; path=/; SameSite=Lax`;
+
+      // Update auth store
+      login(data.jwt, data.user);
+
       // Call success callback
       onSuccess?.(data.user);
 
       // Reset form
       setFormData({ identifier: '', password: '' });
+
+      // Redirect to callback URL or root
+      window.location.href = callbackUrl;
 
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';

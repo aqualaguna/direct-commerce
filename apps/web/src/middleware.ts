@@ -13,8 +13,9 @@ export const onRequest = defineMiddleware(async (context, next) => {
                      context.cookies.get('authToken')?.value;
     
     if (!authToken) {
-      // Redirect to login page
-      return context.redirect('/auth/login');
+      // Redirect to login page with callback to return to this page after login
+      const callbackUrl = encodeURIComponent(url.pathname + url.search);
+      return context.redirect(`/auth/login?callback=${callbackUrl}`);
     }
     
     // Optionally validate the token with Strapi
@@ -27,8 +28,9 @@ export const onRequest = defineMiddleware(async (context, next) => {
       });
       
       if (!response.ok) {
-        // Token is invalid, redirect to login
-        return context.redirect('/auth/login');
+        // Token is invalid, redirect to login with callback
+        const callbackUrl = encodeURIComponent(url.pathname + url.search);
+        return context.redirect(`/auth/login?callback=${callbackUrl}`);
       }
       
       // Add user data to context for use in pages
@@ -37,7 +39,8 @@ export const onRequest = defineMiddleware(async (context, next) => {
       
     } catch (error) {
       console.error('Auth validation error:', error);
-      return context.redirect('/auth/login');
+      const callbackUrl = encodeURIComponent(url.pathname + url.search);
+      return context.redirect(`/auth/login?callback=${callbackUrl}`);
     }
   }
   

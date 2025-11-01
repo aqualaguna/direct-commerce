@@ -106,6 +106,10 @@ export const api = {
   put: <T>(url: string, data?: any): Promise<ApiResponse<T>> =>
     apiClient.put(url, data),
 
+  // Generic PATCH request
+  patch: <T>(url: string, data?: any): Promise<ApiResponse<T>> =>
+    apiClient.patch(url, data),
+
   // Generic DELETE request
   delete: <T>(url: string): Promise<ApiResponse<T>> =>
     apiClient.delete(url),
@@ -144,6 +148,50 @@ export const api = {
   users: {
     getProfile: () => api.get('/users/me'),
     updateProfile: (data: any) => api.put('/users/me', data),
+  },
+
+  // Profile endpoints
+  profile: {
+    getProfile: () => api.get('/profile/me'),
+    updateProfile: (data: any) => api.put('/profile/me', { data }),
+    getCompletion: () => api.get('/profile/me/completion'),
+    uploadPicture: (file: File) => {
+      const formData = new FormData();
+      formData.append('profilePicture', file);
+      return apiClient.post('/profile/me/picture', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+    },
+    deletePicture: () => api.delete('/profile/me/picture'),
+  },
+
+  // User preferences endpoints
+  preferences: {
+    getPreferences: () => api.get('/user-preferences/me'),
+    updatePreferences: (data: any) => api.put('/user-preferences/me', { data }),
+    getCategory: (category: string) => api.get(`/user-preferences/me/${category}`),
+    updateCategory: (category: string, data: any) => {
+      // Use PATCH for category updates as per test files
+      return apiClient.patch(`/user-preferences/me/${category}`, { data });
+    },
+    reset: () => api.post('/user-preferences/me/reset'),
+    export: () => api.get('/user-preferences/me/export'),
+  },
+
+  // Privacy settings endpoints
+  privacy: {
+    getPrivacySettings: () => api.get('/privacy-settings/me'),
+    updatePrivacySettings: (data: any) => api.put('/privacy-settings/me', { data }),
+    updateConsent: (consentData: any) => {
+      // Use PATCH for consent updates as per test files
+      return apiClient.patch('/privacy-settings/me/consent', { consentData });
+    },
+    getConsentHistory: () => api.get('/privacy-settings/me/consent-history'),
+    reset: () => api.post('/privacy-settings/me/reset'),
+    export: () => api.get('/privacy-settings/me/export'),
+    requestDeletion: (data: any) => api.post('/privacy-settings/me/request-deletion', { data }),
   },
 
   // Order-related endpoints
